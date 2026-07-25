@@ -125,7 +125,8 @@ class QBittorrentWatcher:
                     # Если запись есть, но нет torrent_id, обновим его
                     if not record.get("torrent_id"):
                         src = torrents_sources.get(torrent_hash, "")
-                        self.db.update_torrent_id(str(full_path), torrent_hash, src)
+                        # TODO: Populate download_url properly if possible
+                        self.db.update_torrent_id(str(full_path), torrent_hash, src, "")
                         db_updated = True
                     continue
 

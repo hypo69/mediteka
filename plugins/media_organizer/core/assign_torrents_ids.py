@@ -116,23 +116,24 @@ async def ask_ai_for_matching(ai_model, torrents_json: List[Dict], media_chunk: 
 def update_database(db: MediaDatabase, matching_result: Dict, qbt_client=None, torrents_sources: Dict = {}) -> Dict:
     """Обновляет базу данных и qBittorrent."""
     results = {'matched': 0, 'redirected': 0, 'started_downloads': 0, 'errors': []}
-    
+
     for match in matching_result.get('matches', []):
         try:
             torrent_hash = match['torrent_hash']
             torrent_src = torrents_sources.get(torrent_hash, "")
-            db.update_torrent_id(match['media_path'], torrent_hash, torrent_src)
+            # TODO: Populate download_url properly if possible
+            db.update_torrent_id(match['media_path'], torrent_hash, torrent_src, "")
             results['matched'] += 1
-            
+
             if qbt_client:
                 # Определяем новую папку как родительскую папку медиа-файла
                 new_location = str(Path(match['media_path']).parent)
                 qbt_client.set_location(torrent_hash, new_location)
                 results['redirected'] += 1
-                
+
         except Exception as e:
             results['errors'].append(str(e))
-    
+
     return results
 
 # =============================================================================
