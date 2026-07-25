@@ -290,20 +290,7 @@ def get_random_media(
     media_type: Optional[str] = '',
     mood: Optional[str] = '',
 ) -> str:
-    """Получение случайной рекомендации из медиатеки.
-
-    Args:
-        category (Optional[str]): Категория (Боевики, Триллеры, etc).
-        media_type (Optional[str]): Тип: 'movie' или 'series'.
-        mood (Optional[str]): Настроение (для вечера пятницы, для выходных, etc).
-
-    Returns:
-        str: JSON со случайной записью или ошибка.
-
-    Examples:
-        >>> rec = get_random_media(category="Боевики")
-        >>> rec = get_random_media(media_type="series", mood="для вечера с бокалом вина")
-    """
+    """Получение случайной рекомендации из медиатеки с учетом подключенных дисков."""
     try:
         db = MediaDatabase(_DB_FILE)
         records = db.export_all()
@@ -311,9 +298,17 @@ def get_random_media(
         if not records:
             return json.dumps({'error': 'База медиатеки пуста'}, ensure_ascii=False)
 
-        # Фильтрация
-        active_disks = load_active_storage()
-        filtered = [r for r in records if r.get('disk_name') in active_disks]
+        # Получаем актуальные диски из памяти (переменная окружения)
+        connected_drives_str = os.environ.get('CONNECTED_DRIVES', '')
+        # Ожидается формат "S:\,N:\" или "S:,N:"
+        active_paths = [d.strip().rstrip('\\') for d in connected_drives_str.split(',') if d.strip()]
+        
+        # Фильтрация по наличию пути на подключенном диске
+        # Предпологаем, что path в БД начинается с буквы диска, например "S:\..."
+        filtered = [
+            r for r in records 
+            if any(r.get('path', '').upper().startswith(path.upper()) for path in active_paths)
+        ]
         
         if category:
             filtered = [r for r in filtered if r.get('main_category') == category]
@@ -329,8 +324,9 @@ def get_random_media(
 
         if not filtered:
             return json.dumps({
-                'error': 'Нет записей по заданным критериям',
-                'filters': {'category': category, 'type': media_type, 'mood': mood}
+                'error': 'Нет записей по заданным критериям на подключенных дисках',
+                'filters': {'category': category, 'type': media_type, 'mood': mood},
+                'active_drives': active_paths
             }, ensure_ascii=False)
 
         # Случайный выбор

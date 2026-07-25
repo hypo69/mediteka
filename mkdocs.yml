@@ -59,6 +59,15 @@ nav:
       - integrations/gemini.md
       - integrations/tgmini.md
       - integrations/rc.md
+  - Руководство QA:
+      - qa/index.md
+      - qa/README.md
+      - qa/testing-strategy.md
+      - qa/test-cases.md
+      - qa/api-testing.md
+      - qa/integration-testing.md
+      - qa/qa-checklist.md
+      - qa/qa-tools.md
   - Troubleshooting:
       - troubleshooting.md
       - changelog.md
