@@ -348,3 +348,86 @@ plugins/qbittorrent/category_cache.json
 *secrets*.json
 *password*.txt
 
+# =============================================================================
+# 🎬 MEDIA FILES
+# =============================================================================
+
+# Video
+*.3g2
+*.3gp
+*.amv
+*.asf
+*.avi
+*.av1
+*.drc
+*.f4v
+*.flv
+*.h264
+*.hevc
+*.m2ts
+*.m2v
+*.m4v
+*.mkv
+*.mov
+*.mp2
+*.mp4
+*.mpe
+*.mpeg
+*.mpg
+*.mts
+*.mxf
+*.ogm
+*.ogv
+*.qt
+*.rm
+*.rmvb
+*.roq
+*.swf
+*.ts
+*.vob
+*.webm
+*.wmv
+*.y4m
+
+# Audio
+*.aac
+*.ac3
+*.aif
+*.aiff
+*.alac
+*.amr
+*.ape
+*.au
+*.caf
+*.dff
+*.dsf
+*.flac
+*.it
+*.m4a
+*.mid
+*.midi
+*.mod
+*.mp1
+*.mp2
+*.mp3
+*.mpc
+*.oga
+*.ogg
+*.opus
+*.ra
+*.s3m
+*.spx
+*.tak
+*.tta
+*.voc
+*.wav
+*.weba
+*.wma
+*.wv
+*.xm
+
+
+# Keep sample media
+!docs/media/
+!examples/media/
+!samples/

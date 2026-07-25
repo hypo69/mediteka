@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional
 from google.genai import types
 
 from plugins.media_organizer.core.database import MediaDatabase
+from plugins.media_organizer.core.storage_manager import load_active_storage
 from plugins.media_organizer.core.media_rag import (
     build_media_rag,
     get_media_rag,
@@ -311,7 +312,9 @@ def get_random_media(
             return json.dumps({'error': 'База медиатеки пуста'}, ensure_ascii=False)
 
         # Фильтрация
-        filtered = records
+        active_disks = load_active_storage()
+        filtered = [r for r in records if r.get('disk_name') in active_disks]
+        
         if category:
             filtered = [r for r in filtered if r.get('main_category') == category]
         if media_type:

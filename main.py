@@ -120,6 +120,9 @@ app.include_router(init_tts_router())
 
 @app.on_event("startup")
 async def startup_event():
+    from plugins.media_organizer.core.storage_manager import scan_and_save_active_storage
+    scan_and_save_active_storage()
+
     from src.logger.log_analyzer import start_log_analyzer
     start_log_analyzer()
     

@@ -145,6 +145,15 @@ if ($useFoundry) {
 }
 
 # ============================================
+# СКАНАДИРОВАНИЕ ПОДКЛЮЧЕННЫХ ДИСКОВ
+# ============================================
+Write-Host ""
+Write-Host "[4.3] Сканирование подключенных дисков..." -ForegroundColor Cyan
+$connectedDrives = (Get-PSDrive -PSProvider FileSystem | Where-Object { $_.DisplayRoot -ne $null -or $_.Name -ne 'C' } | Select-Object -ExpandProperty Root) -join ','
+$env:CONNECTED_DRIVES = $connectedDrives
+Write-Host "    Подключенные диски: $connectedDrives" -ForegroundColor Gray
+
+# ============================================
 # ФИНАЛ И ЗАПУСК СЕРВЕРА (через Run-Unicorn.ps1)
 # ============================================
 Write-Host ""

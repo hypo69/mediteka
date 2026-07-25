@@ -133,6 +133,6 @@ if (-not (Test-Path $logsDir)) {
 $logFilePath = Join-Path $logsDir "uvicorn.log"
 
 Write-Host "[INFO] Запуск uvicorn в текущем окне..." -ForegroundColor Green
-$cmdToRun = "`"$venvPython`" $argStr 2>&1"
+$cmdToRun = "set CONNECTED_DRIVES=$env:CONNECTED_DRIVES && `"$venvPython`" $argStr 2>&1"
 cmd /c $cmdToRun | Tee-Object -FilePath $logFilePath
 
