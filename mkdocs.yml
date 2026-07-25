@@ -1,13 +1,13 @@
-# MkDocs Configuration for ai-mediteka
+# MkDocs Configuration for mediteka
 # =============================================================================
-# Project: ai-mediteka
+# Project: mediteka
 # Description: AI Assistant & Media Player Control Documentation
 # =============================================================================
 
-site_name: ai-mediteka
+site_name: mediteka
 site_description: AI Assistant with Media Player, Telegram Mini App, Remote Control and Voice Interface
-site_url: https://ai-mediteka.readthedocs.io/
-repo_url: https://github.com/hypo69/ai-mediteka
+site_url: https://hypo69.github.io/mediteka/
+repo_url: https://github.com/hypo69/mediteka
 edit_uri: edit/main/docs/
 
 # Theme

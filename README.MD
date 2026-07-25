@@ -1,6 +1,6 @@
 # AI Assistant & Media Player Control
 
-[![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://ai-mediteka.readthedocs.io/)
+[![Documentation Status](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://hypo69.github.io/mediteka/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
@@ -8,11 +8,11 @@
 
 ## 📚 Документация
 
-Полная документация доступна на [ai-mediteka.readthedocs.io](https://ai-mediteka.readthedocs.io/):
+Полная документация доступна на GitHub Pages:
 
-- 📖 **[Руководство пользователя](https://ai-mediteka.readthedocs.io/en/latest/user/getting-started/)** — установка, использование плеера, голосовое управление, Telegram Mini App
-- 💻 **[Руководство разработчика](https://ai-mediteka.readthedocs.io/en/latest/dev/getting-started/)** — архитектура, разработка, деплойment
-- 🔌 **[API Reference](https://ai-mediteka.readthedocs.io/en/latest/dev/api-reference/)** — все endpoints и плагины
+- 📖 **[Руководство пользователя](https://hypo69.github.io/mediteka/user/getting-started/)** — установка, использование плеера, голосовое управление, Telegram Mini App
+- 💻 **[Руководство разработчика](https://hypo69.github.io/mediteka/dev/getting-started/)** — архитектура, разработка, деплойment
+- 🔌 **[API Reference](https://hypo69.github.io/mediteka/dev/api-reference/)** — все endpoints и плагины
 
 ## Возможности
 
@@ -72,8 +72,8 @@
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/hypo69/ai-mediteka.git
-cd ai-mediteka
+git clone https://github.com/hypo69/mediteka.git
+cd mediteka
 
 # Установка зависимостей
 pip install -r requirements.txt

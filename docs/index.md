@@ -1,6 +1,6 @@
-# Добро пожаловать в ai-mediteka
+# Добро пожаловать в mediteka
 
-**ai-mediteka** — это многофункциональная платформа с веб-интерфейсом, которая объединяет:
+**mediteka** — это многофункциональная платформа с веб-интерфейсом, которая объединяет:
 
 - 🤖 **ИИ-ассистент** на основе Google Gemini
 - 🎬 **Умный медиаплеер** с управлением через Telegram
@@ -46,8 +46,8 @@
 
 ```bash
 # Клонируйте репозиторий
-git clone https://github.com/hypo69/ai-mediteka.git
-cd ai-mediteka
+git clone https://github.com/hypo69/mediteka.git
+cd mediteka
 
 # Установите зависимости
 pip install -r requirements.txt
