@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stream Controller</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
+    
+    h1 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    .control-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    button:hover {
+      background: #3367d6;
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    #status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+    }
+    
+    #status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    #status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    #status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+    
+    .connection-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+      background: #e2e3e5;
+      color: #383d41;
+    }
+    
+    .player-status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .player-status span {
+      font-weight: bold;
+      color: #4285f4;
+    }
+    
+    .server-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📺 Stream Controller</h1>
+  
+  <div class="server-section">
+    <div class="connection-status" id="connectionStatus">
+      Сервер: не подключен
+    </div>
+  </div>
+  
+  <div class="control-group">
+    <label for="videoUrl">URL видео стрима:</label>
+    <input type="text" id="videoUrl" placeholder="https://example.com/stream.mp4">
+  </div>
+  
+  <button id="startStreamBtn">▶️ Запустить стрим</button>
+  <button id="checkPlayerBtn" style="margin-top: 10px; background: #6c757d;">🔍 Проверить плеер</button>
+  <button id="refreshPlayerBtn" style="margin-top: 10px; background: #17a2b8;">🔄 Обновить плеер</button>
+  
+  <div id="status" class="info">Нажмите кнопку чтобы запустить стрим</div>
+  
+  <div class="player-status" id="playerStatus">
+    Вкладка плеера: неизвестно
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mediaтека Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo">
+        <i class="bi bi-film logo-icon"></i>
+        <h1>Media<span>тека</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="btn-add-media" class="btn btn-primary btn-glow">
+          <i class="bi bi-plus-circle"></i> Добавить медиа
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- Statistics Widget Row -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <div class="stat-icon purple"><i class="bi bi-collection-play"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-total">-</h3>
+          <p>Всего тайтлов</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><i class="bi bi-camera-reels"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-movies">-</h3>
+          <p>Фильмы</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="bi bi-tv"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-series">-</h3>
+          <p>Сериалы</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold"><i class="bi bi-tags"></i></div>
+        <div class="stat-info">
+          <h3 id="stat-categories">-</h3>
+          <p>Категории</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters & Search Controls -->
+    <section class="controls-section glass-panel">
+      <div class="search-box">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" id="search-input" placeholder="Поиск по названию, оригиналу, сюжету...">
+      </div>
+
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="filter-type">Тип</label>
+          <select id="filter-type">
+            <option value="">Все типы</option>
+            <option value="movie">Фильмы</option>
+            <option value="series">Сериалы</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-category">Категория</label>
+          <select id="filter-category">
+            <option value="">Все категории</option>
+            <!-- Dynamic categories here -->
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-year">Год</label>
+          <input type="number" id="filter-year" placeholder="гггг" min="1900" max="2100">
+        </div>
+
+        <button id="btn-reset-filters" class="btn btn-secondary">
+          <i class="bi bi-x-lg"></i> Сбросить
+        </button>
+      </div>
+    </section>
+
+    <!-- Media Library Grid -->
+    <section class="library-section">
+      <div id="media-grid" class="media-grid">
+        <!-- Loader / Placeholder -->
+        <div class="grid-loader">
+          <div class="spinner"></div>
+          <p>Загрузка коллекции...</p>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="pagination-container">
+        <button id="btn-prev" class="btn btn-nav" disabled><i class="bi bi-arrow-left"></i> Назад</button>
+        <span id="page-indicator">Страница 1 из 1</span>
+        <button id="btn-next" class="btn btn-nav" disabled>Вперед <i class="bi bi-arrow-right"></i></button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal detail / Edit view -->
+  <div id="media-modal" class="modal-overlay hidden">
+    <div class="modal-window glass-panel">
+      <div class="modal-header">
+        <span class="media-type-badge" id="modal-badge-type">Movie</span>
+        <button class="modal-close" id="btn-close-modal"><i class="bi bi-x-lg"></i></button>
+      </div>
+      
+      <div class="modal-body scrollable-content">
+        <!-- View mode -->
+        <div id="modal-view-mode" class="modal-mode">
+          <div class="modal-media-title-area">
+            <h2 id="modal-title-ru">Название на русском</h2>
+            <h4 id="modal-title-orig">Original Title (Year)</h4>
+            <div class="meta-row">
+              <span id="modal-meta-year"><i class="bi bi-calendar"></i> 2024</span>
+              <span id="modal-meta-category"><i class="bi bi-folder2"></i> Категория</span>
+              <span id="modal-meta-genres"><i class="bi bi-hash"></i> Жанры</span>
+              <span id="modal-meta-rating"><i class="bi bi-star-fill text-warning"></i> -/10</span>
+            </div>
+          </div>
+
+          <div class="modal-content-grid">
+            <div class="info-block main-info">
+              <h3>Описание сюжета</h3>
+              <p id="modal-plot">Сюжет отсутствует.</p>
+              
+              <div class="grid-details-two-columns">
+                <div>
+                  <strong>Страна:</strong> <span id="modal-country">-</span>
+                </div>
+                <div>
+                  <strong>Режиссер:</strong> <span id="modal-directors">-</span>
+                </div>
+                <div>
+                  <strong>В ролях:</strong> <span id="modal-cast">-</span>
+                </div>
+                <div>
+                  <strong>Размер:</strong> <span id="modal-size">-</span>
+                </div>
+              </div>
+
+              <div id="modal-episodes-section" class="info-block episodes-list hidden">
+                <h3>Список эпизодов</h3>
+                <div class="episodes-table-wrapper">
+                  <table class="episodes-table">
+                    <thead>
+                      <tr>
+                        <th>Сезон</th>
+                        <th>Эпизод</th>
+                        <th>Название</th>
+                      </tr>
+                    </thead>
+                    <tbody id="modal-episodes-body">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-block extra-info">
+              <div class="opinion-card">
+                <h4><i class="bi bi-chat-left-quote"></i> Вердикт и рецензия</h4>
+                <p id="modal-verdict" class="quote-text"></p>
+                <p id="modal-review"></p>
+              </div>
+
+              <div class="features-list">
+                <div class="feature-item">
+                  <span class="feature-label">Атмосфера:</span>
+                  <span class="feature-value" id="modal-atmosphere">-</span>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-label">Почему стоит смотреть:</span>
+                  <span class="feature-value" id="modal-why-watch">-</span>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-label">Настроение:</span>
+                  <span class="feature-value" id="modal-mood">-</span>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-label">Крылатые фразы:</span>
+                  <span class="feature-value" id="modal-catchphrases">-</span>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-label">Интересные факты:</span>
+                  <span class="feature-value" id="modal-facts">-</span>
+                </div>
+                <div class="feature-item">
+                  <span class="feature-label">Похожие:</span>
+                  <span class="feature-value" id="modal-similar">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit/Create mode -->
+        <form id="modal-edit-form" class="modal-mode hidden">
+          <h2 id="edit-modal-header-title">Редактирование записи</h2>
+          
+          <div class="form-grid">
+            <div class="form-group col-span-2">
+              <label for="edit-title">Отображаемое название (Title)</label>
+              <input type="text" id="edit-title" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="edit-title-ru">Название на русском</label>
+              <input type="text" id="edit-title-ru">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-title-orig">Оригинальное название</label>
+              <input type="text" id="edit-title-orig">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-type">Тип</label>
+              <select id="edit-type">
+                <option value="movie">Фильм</option>
+                <option value="series">Сериал</option>
+                <option value="season">Сезон</option>
+                <option value="episode">Эпизод</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-year">Год</label>
+              <input type="number" id="edit-year" min="1800" max="2100">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-category">Основная категория</label>
+              <input type="text" id="edit-category">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-genres">Жанры</label>
+              <input type="text" id="edit-genres" placeholder="Драма, Комедия">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-rating">Рейтинг</label>
+              <input type="text" id="edit-rating" placeholder="8.5 или 8.5/10">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-size">Размер медиа (ГБ)</label>
+              <input type="number" step="0.01" id="edit-size">
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-path">Путь к файлу/папке</label>
+              <input type="text" id="edit-path">
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-plot">Сюжет</label>
+              <textarea id="edit-plot" rows="4"></textarea>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-review">Рецензия</label>
+              <textarea id="edit-review" rows="3"></textarea>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-final-verdict">Вердикт</label>
+              <input type="text" id="edit-final-verdict">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-directors">Режиссеры</label>
+              <input type="text" id="edit-directors">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-country">Страна</label>
+              <input type="text" id="edit-country">
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-cast">В главных ролях</label>
+              <input type="text" id="edit-cast">
+            </div>
+
+            <div class="form-group col-span-2">
+              <h3 class="form-section-title">Дополнительные поля ИИ</h3>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-atmosphere">Атмосфера</label>
+              <input type="text" id="edit-atmosphere">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-why-watch">Почему стоит смотреть</label>
+              <input type="text" id="edit-why-watch">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-mood">Настроение</label>
+              <input type="text" id="edit-mood">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-catchphrases">Крылатые фразы</label>
+              <input type="text" id="edit-catchphrases">
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-facts">Интересные факты</label>
+              <textarea id="edit-facts" rows="2"></textarea>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="edit-similar">Похожие фильмы/сериалы</label>
+              <input type="text" id="edit-similar">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <div class="footer-left">
+          <button id="btn-delete-media" class="btn btn-danger hidden"><i class="bi bi-trash"></i> Удалить</button>
+        </div>
+        <div class="footer-right">
+          <button id="btn-edit-toggle" class="btn btn-secondary"><i class="bi bi-pencil"></i> Редактировать</button>
+          <button id="btn-save-media" class="btn btn-success hidden"><i class="bi bi-check-lg"></i> Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+# MkDocs Configuration for ai-mediteka
+# =============================================================================
+# Project: ai-mediteka
+# Description: AI Assistant & Media Player Control Documentation
+# =============================================================================
+
+site_name: ai-mediteka
+site_description: AI Assistant with Media Player, Telegram Mini App, Remote Control and Voice Interface
+site_url: https://ai-mediteka.readthedocs.io/
+repo_url: https://github.com/hypo69/ai-mediteka
+edit_uri: edit/main/docs/
+
+# Theme
+theme:
+  name: material
+  language: ru
+  palette:
+    primary: indigo
+    accent: indigo
+  favicon: assets/favicon.png
+  logo: assets/logo.png
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - toc.integrate
+    - content.code.copy
+    - content.tabs.link
+
+# Navigation
+nav:
+  - Добро пожаловать:
+      - index.md
+      - quickstart.md
+      - features.md
+  - Руководство пользователя:
+      - user/getting-started.md
+      - user/player.md
+      - user/remote-control.md
+      - user/telegram.md
+      - user/admin-panel.md
+  - Руководство разработчика:
+      - dev/getting-started.md
+      - dev/architecture.md
+      - dev/api-reference.md
+      - dev/plugins.md
+      - dev/development.md
+      - dev/deployment.md
+  - Модули:
+      - modules/ai.md
+      - modules/plugins.md
+      - modules/api.md
+      - modules/media-organizer.md
+      - modules/smart-torrent-storage.md
+  - Интеграции:
+      - integrations/mcp.md
+      - integrations/gemini.md
+      - integrations/tgmini.md
+      - integrations/rc.md
+  - Troubleshooting:
+      - troubleshooting.md
+      - changelog.md
+
+# Plugins
+plugins:
+  - search:
+      lang: ru
+  - mkdocstrings:
+      handlers:
+        python: {}
+
+# Extra
+extra:
+  version: 1.0.0
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hypo69/gemini-simplechat
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/gemini-simplechat/
+
+# Copyright
+copyright: Copyright © 2026 hypo69. Licensed under MIT.
+
+# Markdown Extensions
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - fenced_code
+
+# Custom CSS
+extra_css:
+  - stylesheets/extra.css
+
+# Site metadata
+extra:
+  authors:
+    - hypo69
+  license: MIT
+  repository: github
+
+# Validation
+strict: false

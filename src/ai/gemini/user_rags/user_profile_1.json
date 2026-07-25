@@ -1,0 +1,19 @@
+{
+  "user_id": "1",
+  "created_at": 1784699246.0380464,
+  "updated_at": 1784703796.793731,
+  "watch_history": {},
+  "last_watched": null,
+  "search_history": [
+    {
+      "query": "Счастливое число Слевина",
+      "timestamp": 1784703796.793723
+    }
+  ],
+  "preferences": {
+    "liked_titles": [],
+    "disliked_titles": [],
+    "favorite_genres": {},
+    "favorite_categories": {}
+  }
+}
