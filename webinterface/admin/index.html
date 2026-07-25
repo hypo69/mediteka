@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant - Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/html/css/main.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/i18next@23.11.5/i18next.min.js"></script>
+</head>
+<body>
+<!-- Password Protection Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="passwordModalLabel"><i class="bi bi-lock-fill"></i> Вход в админку</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="closePasswordModal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted">Введите пароль для доступа к администраторскому интерфейсу:</p>
+        <div class="mb-3">
+          <input type="password" class="form-control bg-dark text-white border-secondary" id="admin-password" placeholder="••••••" autofocus>
+        </div>
+        <div id="password-error" class="alert alert-danger d-none">Неверный пароль</div>
+        <button type="button" class="btn btn-primary w-100" id="login-btn">Войти</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt-2" id="admin-interface" style="display:none;">
+
+  <ul class="nav nav-tabs mb-3" id="mainTabs">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-chat" data-i18n="tabs.chat">💬 Чат</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-torrents" data-i18n="tabs.torrents">🧲 Торренты</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-media" data-i18n="tabs.media">🎬 Медиатека</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-admin" data-i18n="tabs.admin">⚙️ Управление</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-help" data-i18n="tabs.help">📚 Справочник</button>
+    </li>
+    <li class="nav-item ms-auto">
+      <select class="form-select form-select-sm lang-selector" id="lang-selector" style="width:auto;">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+      </select>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- Chat Tab -->
+    <div id="tab-chat" class="tab-pane fade show active">
+      <div class="chat-window mb-2" id="chat-window"></div>
+
+      <!-- Media Controls -->
+      <div class="media-controls mb-2 d-none" id="media-controls">
+        <div class="card">
+          <div class="card-body p-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small" data-i18n="mediaControls.nowPlaying">▶️ Сейчас играет:</span>
+              <strong id="now-playing-title">—</strong>
+              <button class="btn btn-sm btn-outline-primary ms-auto" id="btn-open-player" data-i18n="mediaControls.openPlayer">Открыть плеер</button>
+              <button class="btn btn-sm btn-outline-secondary" id="btn-close-player" data-i18n="mediaControls.close">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <input type="text" class="form-control" id="message-input" data-i18n-placeholder="chat.placeholder" placeholder="Введите сообщение...">
+        <button class="btn btn-primary" id="send-button" data-i18n="chat.send">Отправить</button>
+      </div>
+    </div>
+
+    <!-- Torrents Tab -->
+    <div id="tab-torrents" class="tab-pane fade"></div>
+
+    <!-- Media Tab -->
+    <div id="tab-media" class="tab-pane fade"></div>
+
+    <!-- Admin Tab -->
+    <div id="tab-admin" class="tab-pane fade"></div>
+
+    <!-- Help Tab -->
+    <div id="tab-help" class="tab-pane fade"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="/html/admin/main.js?v=20260725"></script>
+
+<!-- HELP Modal -->
+<div class="modal fade modal-help" id="help-modal" tabindex="-1" aria-labelledby="help-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="help-modal-label" data-i18n="helpModal.title">Помощь</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="help-modal-content">
+        <p data-i18n="common.loading">Загрузка...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="helpModal.close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

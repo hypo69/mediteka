@@ -33,10 +33,9 @@ MEDIA_RAG_DB = DATA_DIR / 'media_rag.db'
 DB_FILE = MEDIA_DB  # Alias for backward compatibility
 
 # Конфигурационные файлы
-MEDIA_PATHS_FILE = CONFIG_DIR / 'media_paths.txt'
 INSTRUCTION_FILE = __root__ / '.ai_instructions' / 'prompts' / 'media_organizer' / 'system_instruction.md'
 TORRENTS_FILE = CONFIG_DIR / 'torrents_names.json.md'
-PATHS_FILE = MEDIA_PATHS_FILE  # Alias for backward compatibility
+
 
 
 def _build_system_instruction() -> str:

@@ -25,8 +25,8 @@ from plugins.plugin import BasePlugin
 from src.logger import logger
 
 from plugins.media_organizer.core import (
-    DEFAULT_CATEGORIES, MEDIA_DB, REPORTS_DIR, OUTPUT_DIR, MEDIA_PATHS_FILE,
-    INSTRUCTION_FILE, TORRENTS_FILE, PATHS_FILE, DB_FILE, CONFIG_DIR,
+    DEFAULT_CATEGORIES, MEDIA_DB, REPORTS_DIR, OUTPUT_DIR,
+    INSTRUCTION_FILE, TORRENTS_FILE, DB_FILE, CONFIG_DIR,
     SYSTEM_INSTRUCTION
 )
 from plugins.media_organizer.core.database import MediaDatabase
@@ -179,16 +179,16 @@ class MediaOrganizerPlugin(BasePlugin):
             return "❌ Не найден TMDB_API_KEY в .env"
 
         if not self.media_paths:
-            return f"⚠️ Не заданы пути для сканирования. Добавьте пути в {MEDIA_PATHS_FILE}"
+            return "⚠️ Не заданы пути для сканирования."
 
         # Фильтруем пути по disk_name
         paths_to_use = disk_paths if disk_paths else self.media_paths
         if not paths_to_use:
-            return f"⚠️ Не заданы пути для сканирования. Добавьте пути в {MEDIA_PATHS_FILE}"
+            return "⚠️ Не заданы пути для сканирования."
 
         disk_paths_filtered = _filter_paths_by_disk(paths_to_use, disk_name)
         if not disk_paths_filtered:
-            return f"⚠️ Не найден путь для {disk_name}. Проверьте {MEDIA_PATHS_FILE}"
+            return f"⚠️ Не найден путь для {disk_name}."
 
         original_instruction = self.ai.system_instruction
         self.ai.system_instruction = INSTRUCTION

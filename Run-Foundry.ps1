@@ -105,7 +105,12 @@ if ($Action -eq 'start') {
     } else {
         Write-Host "🚀 Запуск локальной службы Microsoft AI Foundry..." -ForegroundColor Cyan
         try {
-            Start-Process -FilePath "foundry" -ArgumentList "server", "start" -WindowStyle Minimized
+            $logsDir = Join-Path $PSScriptRoot "logs"
+            if (-not (Test-Path $logsDir)) {
+                New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
+            }
+            $logFilePath = Join-Path $logsDir "foundry.log"
+            Start-Process -FilePath "foundry" -ArgumentList "server", "start" -RedirectStandardOutput $logFilePath -RedirectStandardError $logFilePath -WindowStyle Minimized
             
             for ($i = 1; $i -le 15; $i++) {
                 Start-Sleep -Seconds 2

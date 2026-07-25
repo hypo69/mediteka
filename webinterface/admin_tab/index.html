@@ -1,0 +1,83 @@
+<!-- Admin Tab -->
+<div class="container-fluid">
+  <div class="alert alert-info">
+    <h5 data-i18n="admin.title">⚙️ Управление медиатекой</h5> <button class="btn btn-sm btn-outline-primary ms-2" onclick="showHelpModal('scan')">?</button>
+    <p data-i18n="admin.description">Полный функционал: полное сканирование, аудит, восстановление из JSON, RAG-индекс.</p>
+    <button class="btn btn-outline-primary btn-sm" onclick="assignCategoriesFromDB()">
+      🏷 Назначить категории торрентам
+    </button>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: диск и пути -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header" data-i18n="admin.disk">
+          💾 Диск <button class="btn btn-sm btn-outline-primary ms-2" onclick="showHelpModal('scan')">?</button>
+        </div>
+        <div class="card-body">
+          <div class="input-group input-group-sm mb-2">
+            <span class="input-group-text" data-i18n="admin.disk">Диск</span>
+            <input type="text" class="form-control" id="admin-disk-input" value="1">
+          </div>
+          <div class="mb-2">
+            <label class="form-label small text-muted" data-i18n="admin.paths">Пути</label>
+            <div id="admin-paths-list" class="border rounded p-2" style="max-height:200px;overflow-y:auto;">
+              <div class="text-muted small" data-i18n="admin.noPaths">Нет путей</div>
+            </div>
+            <div class="input-group input-group-sm mt-1">
+              <input type="text" class="form-control" id="admin-path-input" data-i18n-placeholder="admin.addPathPlaceholder" placeholder="D:\Series">
+              <button class="btn btn-outline-primary" id="btn-admin-add-path" data-i18n="media.addPath">+</button>
+            </div>
+          </div>
+          <div class="d-grid gap-1">
+            <button class="btn btn-primary btn-sm" id="btn-admin-scan" data-i18n="admin.fullScan">🔍 Полное сканирование</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: аудит и восстановление -->
+    <div class="col-md-4">
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span data-i18n="admin.dbAudit">🗂 Аудит БД</span>
+          <button class="btn btn-sm btn-outline-primary me-2" onclick="showHelpModal('audit')">?</button>
+          <button class="btn btn-outline-warning btn-sm" id="btn-admin-audit" data-i18n="admin.run">Запустить</button>
+        </div>
+        <div class="card-body p-2">
+          <div id="admin-audit-body" class="small" data-i18n="admin.auditHint">Сверяет таблицу media с файлами на диске</div>
+        </div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span data-i18n="admin.rebuild">🔧 Восстановление</span>
+          <button class="btn btn-sm btn-outline-primary me-2" onclick="showHelpModal('rebuild')">?</button>
+          <button class="btn btn-outline-success btn-sm" id="btn-admin-rebuild" data-i18n="admin.rebuild">Восстановить</button>
+        </div>
+        <div class="card-body p-2">
+          <div id="admin-rebuild-body" class="small" data-i18n="admin.rebuildHint">Восстанавливает БД из JSON</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RAG и ключи -->
+    <div class="col-md-4">
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span data-i18n="admin.ragIndex">🧠 RAG-индекс</span>
+          <button class="btn btn-sm btn-outline-primary me-2" onclick="showHelpModal('rag')">?</button>
+          <button class="btn btn-outline-info btn-sm" id="btn-admin-rag-build" data-i18n="media.buildIndex">Построить</button>
+        </div>
+        <div class="card-body p-2">
+          <p class="small" data-i18n="admin.semanticSearch">Семантический поиск по медиатеке</p>
+          <div class="input-group input-group-sm mb-1">
+            <input type="text" class="form-control" id="admin-rag-query" data-i18n-placeholder="admin.searchPlaceholder" placeholder="Поиск...">
+            <button class="btn btn-outline-primary" id="btn-admin-rag-search" data-i18n="common.search">Поиск</button>
+          </div>
+          <div id="admin-rag-results" class="small text-muted mt-1"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

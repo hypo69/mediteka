@@ -15,27 +15,19 @@
 
 from pathlib import Path
 from typing import List, Optional
+from header import __root__
 
-from plugins.media_organizer.core import MEDIA_PATHS_FILE
 
-
-def load_media_paths() -> List[Path]:
-    """Загружает пути к медиа-дискам из конфигурационного файла.
+def load_media_paths(filepath: Optional[Path] = None) -> List[Path]:
+    """Возвращает пути к медиа-дискам (сериалы и фильмы в корне проекта).
     
+    Args:
+        filepath: Не используется, сохранено для обратной совместимости.
+        
     Returns:
-        List[Path]: Список путей к дискам.
+        List[Path]: Список путей к папкам медиа.
     """
-    paths = []
-    if not MEDIA_PATHS_FILE.exists():
-        return paths
-    
-    with open(MEDIA_PATHS_FILE, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                paths.append(Path(line))
-    
-    return paths
+    return [__root__ / 'сериалы', __root__ / 'фильмы']
 
 
 def _filter_paths_by_disk(paths: List[Path], disk_name: str) -> List[Path]:

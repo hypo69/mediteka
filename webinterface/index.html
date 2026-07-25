@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/html/css/main.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/i18next@23.11.5/i18next.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+<div class="container-fluid mt-2">
+
+  <ul class="nav nav-tabs mb-3" id="mainTabs">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-chat" data-i18n="tabs.chat">💬 Чат</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-torrents" data-i18n="tabs.torrents">🧲 Торренты</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-media" data-i18n="tabs.media">🎬 Медиатека</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-admin" data-i18n="tabs.admin">⚙️ Управление</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-help" data-i18n="tabs.help">📚 Справочник</button>
+    </li>
+    <li class="nav-item ms-auto">
+      <select class="form-select form-select-sm lang-selector" id="lang-selector" style="width:auto;">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+        <option value="he">עברית</option>
+      </select>
+    </li>
+    <li class="nav-item ms-1">
+      <button class="btn btn-sm btn-outline-secondary" id="theme-toggle" title="Переключить тему">
+        <i class="bi bi-moon-fill"></i>
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- Tabs will be injected via JavaScript -->
+    <div id="tab-chat" class="tab-pane fade show active"></div>
+    <div id="tab-torrents" class="tab-pane fade"></div>
+    <div id="tab-media" class="tab-pane fade"></div>
+    <div id="tab-admin" class="tab-pane fade"></div>
+    <div id="tab-help" class="tab-pane fade"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/html/js/chatService.js"></script>
+<script type="module" src="/html/js/main.js?v=2.1"></script>
+
+<!-- HELP Modal -->
+<div class="modal fade modal-help" id="help-modal" tabindex="-1" aria-labelledby="help-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="help-modal-label" data-i18n="helpModal.title">Помощь</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="help-modal-content">
+        <p data-i18n="common.loading">Загрузка...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="helpModal.close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

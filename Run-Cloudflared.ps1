@@ -29,6 +29,8 @@ if ([string]::IsNullOrEmpty($scriptDir)) {
 }
 $envFile = Join-Path $scriptDir ".env"
 $token = $null
+$mode = "dev"
+$debug = "true"
 
 if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
@@ -39,6 +41,8 @@ if (Test-Path $envFile) {
             if ($key -eq "CLOUDFLARE_TUNNEL_TOKEN") {
                 $token = $val
             }
+            if ($key -eq "MODE") { $mode = $val.ToLower() }
+            if ($key -eq "DEBUG") { $debug = $val.ToLower() }
         }
     }
 }
@@ -89,10 +93,21 @@ Start-Sleep -Seconds 2
 #
 # Запуск туннеля
 #
-Write-Host "Запуск Cloudflare Tunnel в фоновом режиме..." -ForegroundColor Green
-$argList = @("tunnel", "--no-autoupdate", "run", "--token", $token)
+# Запуск туннеля
+#
+Write-Host "Запуск Cloudflare Tunnel..." -ForegroundColor Green
+$logsDir = Join-Path $scriptDir "logs"
+if (-not (Test-Path $logsDir)) {
+    New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
+}
+$logFilePath = Join-Path $logsDir "cloudflared.log"
 
-$cfProcess = Start-Process $localExePath -ArgumentList $argList -PassThru -WindowStyle Normal
+$is_debug = ($mode -in ("dev","debug")) -or ($debug -in ("true","1","yes"))
+$logLevelArg = if ($is_debug) { "debug" } else { "info" }
+
+$argList = @("tunnel", "--no-autoupdate", "run", "--token", $token, "--loglevel", $logLevelArg, "--logfile", $logFilePath)
+
+$cfProcess = Start-Process $localExePath -ArgumentList $argList -PassThru -WindowStyle Minimized
 
 if (-not $cfProcess) {
     Write-Host "[ERROR] Не удалось запустить cloudflared." -ForegroundColor Red

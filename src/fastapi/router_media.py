@@ -29,7 +29,6 @@ from plugins.media_organizer.core.media_organizer import (
     export_disk_md,
     export_disk_json,
     load_media_paths,
-    PATHS_FILE,
     DB_FILE,
 )
 from plugins.media_organizer.media_rag import build_media_rag
@@ -158,9 +157,9 @@ def init_router(prefix: str = '/api/media') -> APIRouter:
 
         def _do_scan():
             try:
-                paths = load_media_paths(PATHS_FILE)
+                paths = load_media_paths()
                 if not paths:
-                    _scan_state['last'] = {'error': 'media_paths.txt пуст'}
+                    _scan_state['last'] = {'error': 'Медиа пути пусты'}
                     return
                 scanner = MediaScanner(_db(), paths)
                 scanner.scan_all()

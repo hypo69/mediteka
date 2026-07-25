@@ -22,7 +22,7 @@ from plugins.media_organizer.core.media_organizer import (
     MediaOrganizerPlugin
 )
 from plugins.media_organizer.core.database import MediaDatabase
-from plugins.media_organizer.core import MEDIA_PATHS_FILE, MEDIA_DB
+from plugins.media_organizer.core import MEDIA_DB
 from plugins.media_organizer.core.report_generator import _record_to_md
 
 load_dotenv()
@@ -224,7 +224,7 @@ async def main():
 
     existing_paths = load_media_paths()
     if not args.path and not existing_paths:
-        parser.error(f"--path обязателен, так как {MEDIA_PATHS_FILE} пуст")
+        parser.error("--path обязателен, так как пути для сканирования не заданы")
     from src.secrets.api_key_state import load_api_keys
 
     if args.key:

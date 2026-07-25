@@ -48,6 +48,7 @@ nav:
       - dev/deployment.md
   - Модули:
       - modules/ai.md
+      - modules/logger.md
       - modules/plugins.md
       - modules/api.md
       - modules/media-organizer.md

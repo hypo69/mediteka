@@ -66,6 +66,7 @@ if (Test-Path $configPath) {
 }
 
 $useFoundry = $false
+$preloadSilero = $false
 if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
         $line = $_.Trim()
@@ -77,6 +78,9 @@ if (Test-Path $envFile) {
             }
             if ($key -eq "USE_FOUNDRY") {
                 $useFoundry = $val -eq "true"
+            }
+            if ($key -eq "PRELOAD_SILERO") {
+                $preloadSilero = $val -eq "true"
             }
         }
     }
@@ -113,25 +117,10 @@ if ($occupied) {
 }
 
 # ============================================
-# ЗАПУСК СЕРВЕРА (через Run-Unicorn.ps1)
-# ============================================
-Write-Host ""
-Write-Host "[4.1] Запуск сервера через Run-Unicorn.ps1..." -ForegroundColor Cyan
-$unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
-if (Test-Path $unicornScript) {
-    Write-Host "    Вызов Run-Unicorn.ps1..." -ForegroundColor DarkGray
-    & $unicornScript
-    Write-Host "    [OK] Сервер запущен (в отдельном окне)" -ForegroundColor Green
-} else {
-    Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
-    exit 1
-}
-
-# ============================================
 # ЗАПУСК CLOUDFLARE TUNNEL (через Run-Cloudflared.ps1)
 # ============================================
 Write-Host ""
-Write-Host "[4.2] Запуск Cloudflare Tunnel..." -ForegroundColor Cyan
+Write-Host "[4.1] Запуск Cloudflare Tunnel..." -ForegroundColor Cyan
 $cloudflaredScript = Join-Path $scriptDir "Run-Cloudflared.ps1"
 if (Test-Path $cloudflaredScript) {
     Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
@@ -145,7 +134,7 @@ if (Test-Path $cloudflaredScript) {
 # ============================================
 if ($useFoundry) {
     Write-Host ""
-    Write-Host "[4.3] Запуск локальной службы Foundry..." -ForegroundColor Cyan
+    Write-Host "[4.2] Запуск локальной службы Foundry..." -ForegroundColor Cyan
     $foundryScript = Join-Path $scriptDir "Run-Foundry.ps1"
     if (Test-Path $foundryScript) {
         Write-Host "    Вызов Run-Foundry.ps1..." -ForegroundColor DarkGray
@@ -156,26 +145,28 @@ if ($useFoundry) {
 }
 
 # ============================================
-# ОЖИДАНИЕ И ПРОВЕРКА
+# ФИНАЛ И ЗАПУСК СЕРВЕРА (через Run-Unicorn.ps1)
 # ============================================
 Write-Host ""
-Write-Host "[5/5] Ожидаем 3 секунды для инициализации сервера..." -ForegroundColor Cyan
-Start-Sleep -Seconds 3
-$started = $true
+Write-Host "[5/5] Запуск сервера..." -ForegroundColor Green
+Write-Host "[SUCCESS] Настройка завершена. Сервер будет доступен по адресу:" -ForegroundColor Green
+Write-Host "        https://kino.davidka.net (через Cloudflare Tunnel)" -ForegroundColor Green
+Write-Host "        Локальный адрес: $url" -ForegroundColor Cyan
+Write-Host ""
 
-# ============================================
-# ФИНАЛ
-# ============================================
-if ($started) {
-    Write-Host "[SUCCESS] Сервер запущен и доступен по адресу:" -ForegroundColor Green
-    Write-Host "        https://kino.davidka.net (через Cloudflare Tunnel)" -ForegroundColor Green
-    Write-Host "        Локальный адрес: $url" -ForegroundColor Cyan
-    Write-Host ""
-    
-    # Открываем браузер на внешнем домене
-    Start-Process "https://kino.davidka.net"
-    Write-Host "[INFO] Браузер открыт. Окно Python осталось открытым для логирования." -ForegroundColor Cyan
-    Write-Host "[INFO] Для остановки сервера закройте окно Python или нажмите Ctrl+C." -ForegroundColor Cyan
-    Write-Host ""
+# Открываем браузер на внешнем домене заранее
+Start-Process "https://kino.davidka.net"
+Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
+Write-Host "[INFO] Запускаем uvicorn в текущем окне. Для остановки нажмите Ctrl+C." -ForegroundColor Cyan
+Write-Host ""
+
+$env:PRELOAD_SILERO = $preloadSilero
+$unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
+if (Test-Path $unicornScript) {
+    & $unicornScript
+} else {
+    Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
+    exit 1
 }
+
 

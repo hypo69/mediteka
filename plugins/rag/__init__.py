@@ -15,14 +15,21 @@
 # =============================================================================
 
 import json
+import os
+import re
+import sqlite3
+import random
+import asyncio
 from plugins.plugin import BasePlugin
 from plugins.media_organizer.core.media_rag_functions import (
     get_media_tools,
     dispatch_media_tool_call,
+    search_media,
+    get_media_card,
 )
-from plugins.media_organizer.core.media_rag import get_media_rag
-from src.ai.dev_rag import rag_search_tool # ИМПОРТ ИНСТРУМЕНТА
-import os
+from plugins.media_organizer.core import MEDIA_DB
+from src.ai.dev_rag import rag_search_tool
+from src.logger import logger
 
 _MEDIA_KEYWORDS = (
     "фильм", "сериал", "кино", "эпизод", "сезон", "актёр", "режиссёр",
@@ -40,7 +47,23 @@ _DEV_KEYWORDS = (
 
 
 class RAGPlugin(BasePlugin):
-    # ... (предыдущий код без изменений) ...
+    """RAG-плагин для семантического поиска медиатеки в чате.
+
+    Использует Gemini Function Calling для поиска фильмов и сериалов
+    через RAG-индекс с семантическим поиском.
+    """
+
+    name = "rag"
+
+    def __init__(self, ai_model):
+        """Инициализация RAG-плагина."""
+        super().__init__(ai_model)
+        self._tools = get_media_tools()
+
+    def _is_media_query(self, message: str) -> bool:
+        """Определение медиа-запроса по ключевым словам."""
+        low = message.lower()
+        return any(kw in low for kw in _MEDIA_KEYWORDS)
 
     def _is_dev_query(self, message: str) -> bool:
         """Определение технического запроса."""
@@ -49,71 +72,13 @@ class RAGPlugin(BasePlugin):
 
     async def _handle(self, message: str, **kwargs):
         """Обработка запроса (медиа или технический)."""
+        low_message = message.lower()
 
-        # 1. Сначала медиа-поиск
+        # 1. Медиа-поиск
         if self._is_media_query(message):
-            # ... (логика медиа-поиска осталась прежней) ...
-            # ПРИМЕЧАНИЕ: Для краткости я опускаю здесь вставку всего кода медиа-поиска,
-            # но при замене он ОСТАНЕТСЯ внутри функции _handle.
-            pass 
-
-        # 2. Если не медиа, но технический запрос — ищем по коду
-        if self._is_dev_query(message):
-            yield {"status": "🛠️ Поиск по техническому контексту..."}
-            api_key = os.getenv('GEMINI_API_KEY', '')
-            results_json = rag_search_tool(message, api_key=api_key)
-
-            # ... (логика обработки результатов dev_rag аналогична media_rag) ...
-            yield {"text": f"🛠️ Результаты поиска по коду:\n{results_json}"}
-            return
-
-    """RAG-плагин для семантического поиска медиатеки в чате.
-
-    Использует Gemini Function Calling для поиска фильмов и сериалов
-    через RAG-индекс с семантическим поиском.
-
-    Attributes:
-        name (str): Имя плагина.
-        _tools (list): Список инструментов Function Calling.
-    """
-
-    name = "rag"
-
-    def __init__(self, ai_model):
-        """Инициализация RAG-плагина.
-
-        Args:
-            ai_model: Экземпляр GoogleGenerativeAI.
-        """
-        super().__init__(ai_model)
-        self._tools = get_media_tools()
-
-    def _is_media_query(self, message: str) -> bool:
-        """Определение медиа-запроса по ключевым словам.
-
-        Args:
-            message (str): Сообщение пользователя.
-
-        Returns:
-            bool: True если запрос о медиа.
-        """
-        low = message.lower()
-        return any(kw in low for kw in _MEDIA_KEYWORDS)
-
-    async def _handle(self, message: str, **kwargs):
-        """Обработка медиа-запроса через локальный поиск (без вызова Gemini)."""
-        if not self._is_media_query(message):
-            return
-
-        try:
-            low_message = message.lower()
+            # Проверяем на рулетку (карусель)
             if "карусель" in low_message or "случайн" in low_message or "рандом" in low_message:
-                import sqlite3
-                import random
-                import asyncio
-                from plugins.media_organizer.core import MEDIA_DB
                 from src.fastapi.router_control import manager
-
                 yield {"status": "🎡 Выбор случайного фильма через карусель..."}
 
                 with sqlite3.connect(MEDIA_DB) as conn:
@@ -168,9 +133,7 @@ class RAGPlugin(BasePlugin):
                 yield {"text": response_text}
                 return
 
-            import json
-            from plugins.media_organizer.core.media_rag_functions import search_media
-
+            # Семантический RAG-поиск
             yield {"status": "🔍 Поиск в локальном RAG-индексе..."}
             results_json = search_media(message)
             results_data = json.loads(results_json)
@@ -180,30 +143,105 @@ class RAGPlugin(BasePlugin):
                 return
 
             results = results_data.get("results", [])
-            if not results:
-                yield {"text": f"🔍 По запросу **«{message}»** ничего не найдено в локальной медиатеке."}
-                return
 
-            text = f"🔍 **Результаты поиска в медиатеке по запросу «{message}»**:\n\n"
-            for i, item in enumerate(results, 1):
-                text += f"{i}. **{item.get('title')}** ({item.get('year') or '?'})\n"
-                text += f"   * Тип: {item.get('type')}, Категория: {item.get('category')}\n"
-                text += f"   * Диск: {item.get('disk_name')} (Схожесть: {item.get('score')})\n\n"
+            # Определяем, нужен ли вызов Gemini для генерации естественного ответа
+            conversational_keywords = ["посоветуй", "рекомендуй", "расскажи", "кто", "как", "почему", "о чём", "какой", "что", "где", "когда", "чей", "какие", "подробнее"]
+            is_conversational = (
+                "?" in message or 
+                any(w in low_message for w in conversational_keywords) or
+                not results or
+                kwargs.get("history")
+            )
 
-            yield {"text": text}
-            voice_parts = []
-            for i, item in enumerate(results, 1):
-                title_ru = item.get('title_ru') or item.get('title') or ""
-                clean_title = re.sub(r'[a-zA-Z]', '', title_ru).replace('(', '').replace(')', '').strip()
-                tts_text = item.get('why_watch') or item.get('plot') or ""
-                voice_parts.append(f"{i}. {clean_title}. {tts_text}")
-            voice_text = " ".join(voice_parts)
-            yield {"voice": voice_text}
+            if is_conversational:
+                yield {"status": "🤖 Генерация ответа ИИ..."}
+                # Формируем контекст из результатов поиска
+                context_parts = []
+                for idx, item in enumerate(results, 1):
+                    # Подгружаем карточку для более детального контекста
+                    card_json = get_media_card(item.get('disk_name', ''), item.get('title', ''), item.get('type', ''))
+                    try:
+                        card_data = json.loads(card_json)
+                        plot_desc = card_data.get('plot') or card_data.get('why_watch') or "Нет описания."
+                        genres_str = ", ".join(card_data.get('genres', []))
+                        cast_str = ", ".join(card_data.get('cast', []))
+                        
+                        item_ctx = (
+                            f"{idx}. {item.get('title')} ({item.get('year') or '?'})\n"
+                            f"   Тип: {item.get('type')}, Категория: {item.get('category')}, Диск: {item.get('disk_name')}\n"
+                            f"   Жанры: {genres_str}\n"
+                            f"   В ролях: {cast_str}\n"
+                            f"   Описание: {plot_desc}"
+                        )
+                        context_parts.append(item_ctx)
+                    except Exception:
+                        context_parts.append(f"{idx}. {item.get('title')} ({item.get('year') or '?'})")
 
-        except Exception as e:
-            from src.logger import logger
-            logger.error(f"RAG Plugin error: {e}", exc_info=True)
-            yield {"text": f"❌ Произошла ошибка при выполнении локального поиска: {e}"}
+                context_str = "\n\n".join(context_parts)
+                
+                system_prompt = (
+                    f"Ты — AI Assistant домашней медиатеки кино.davidka.net. Тебе предоставлены результаты локального RAG-поиска по запросу пользователя.\n"
+                    f"Используй эти результаты для построения подробного, вежливого и структурированного ответа.\n"
+                    f"Если фильм/сериал найден, обязательно используй тег <film>Название на русском</film> при его упоминании, чтобы система плеера могла автоматически запустить его.\n"
+                    f"Если информации в результатах RAG недостаточно для ответа, ответь на основе своих общих знаний, но вежливо предупреди пользователя, что в его локальной медиатеке этого нет.\n\n"
+                    f"Результаты поиска в локальной медиатеке:\n{context_str}"
+                )
+
+                answer = await self.ai.chat(
+                    message,
+                    system_instruction=system_prompt,
+                    model_name=kwargs.get('model_name')
+                )
+                yield {"text": answer}
+            else:
+                # Обычный список результатов
+                if not results:
+                    yield {"text": f"🔍 По запросу **«{message}»** ничего не найдено в локальной медиатеке."}
+                    return
+
+                text = f"🔍 **Результаты поиска в медиатеке по запросу «{message}»**:\n\n"
+                for i, item in enumerate(results, 1):
+                    text += f"{i}. **{item.get('title')}** ({item.get('year') or '?'})\n"
+                    text += f"   * Тип: {item.get('type')}, Категория: {item.get('category')}\n"
+                    text += f"   * Диск: {item.get('disk_name')} (Схожесть: {item.get('score')})\n\n"
+
+                yield {"text": text}
+                
+                # Формируем голос для озвучки (TTS)
+                voice_parts = []
+                for i, item in enumerate(results, 1):
+                    card_json = get_media_card(item.get('disk_name', ''), item.get('title', ''), item.get('type', ''))
+                    try:
+                        card_data = json.loads(card_json)
+                        title_ru = card_data.get('title_ru') or card_data.get('title') or ""
+                        clean_title = re.sub(r'[a-zA-Z]', '', title_ru).replace('(', '').replace(')', '').strip()
+                        tts_text = card_data.get('why_watch') or card_data.get('plot') or ""
+                        voice_parts.append(f"{i}. {clean_title}. {tts_text}")
+                    except Exception:
+                        pass
+                voice_text = " ".join(voice_parts)
+                yield {"voice": voice_text}
             return
-# Export for plugin loader
+
+        # 2. Технический (dev) поиск
+        if self._is_dev_query(message):
+            yield {"status": "🛠️ Поиск по техническому контексту..."}
+            api_key = os.getenv('GEMINI_API_KEY', '')
+            results_json = rag_search_tool(message, api_key=api_key)
+
+            yield {"status": "🤖 Генерация технического ответа..."}
+            system_prompt = (
+                f"Ты — технический ассистент разработчика медиатеки. Ответь на вопрос пользователя, используя "
+                f"результаты поиска по коду и технической документации проекта.\n\n"
+                f"Найденные фрагменты кода и документации:\n{results_json}"
+            )
+            answer = await self.ai.chat(
+                message,
+                system_instruction=system_prompt,
+                model_name=kwargs.get('model_name')
+            )
+            yield {"text": answer}
+            return
+
+
 plugin = RAGPlugin

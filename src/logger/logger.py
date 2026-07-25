@@ -133,24 +133,34 @@ class Logger(metaclass=SingletonMeta):
         self.logger_console = logging.getLogger(name="logger_console")
         self.logger_console.setLevel(logging.DEBUG)
 
+        import os
+        from dotenv import load_dotenv
+        load_dotenv(__root__ / '.env')
+        mode_val = os.getenv('MODE', 'dev').lower()
+        debug_val = os.getenv('DEBUG', 'true').lower()
+        self.is_debug_mode = (mode_val in ('dev', 'debug') or debug_val in ('true', '1', 'yes'))
+
         # Info file logger
         self.logger_file_info = logging.getLogger(name="logger_file_info")
         self.logger_file_info.setLevel(logging.INFO)
-        info_handler = logging.FileHandler(self.info_log_path)
+        self.logger_file_info.propagate = False
+        info_handler = logging.FileHandler(self.info_log_path, encoding='utf-8')
         info_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         self.logger_file_info.addHandler(info_handler)
 
         # Debug file logger
         self.logger_file_debug = logging.getLogger(name="logger_file_debug")
         self.logger_file_debug.setLevel(logging.DEBUG)
-        debug_handler = logging.FileHandler(self.debug_log_path)
+        self.logger_file_debug.propagate = False
+        debug_handler = logging.FileHandler(self.debug_log_path, encoding='utf-8')
         debug_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         self.logger_file_debug.addHandler(debug_handler)
 
         # Errors file logger
         self.logger_file_errors = logging.getLogger(name="logger_file_errors")
         self.logger_file_errors.setLevel(logging.ERROR)
-        errors_handler = logging.FileHandler(self.errors_log_path)
+        self.logger_file_errors.propagate = False
+        errors_handler = logging.FileHandler(self.errors_log_path, encoding='utf-8')
         errors_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         self.logger_file_errors.addHandler(errors_handler)
 
@@ -158,7 +168,8 @@ class Logger(metaclass=SingletonMeta):
         # JSON file logger
         self.logger_file_json = logging.getLogger(name='logger_json')
         self.logger_file_json.setLevel(logging.DEBUG)
-        json_handler = logging.FileHandler(self.json_log_path)
+        self.logger_file_json.propagate = False
+        json_handler = logging.FileHandler(self.json_log_path, encoding='utf-8')
         json_handler.setFormatter(JsonFormatter())  # Используем наш кастомный форматтер
         self.logger_file_json.addHandler(json_handler)
 
@@ -174,7 +185,10 @@ class Logger(metaclass=SingletonMeta):
             text_color, bg_color = color
             text_color = TEXT_COLORS.get(text_color, colorama.Fore.RESET)
             bg_color = BG_COLORS.get(bg_color, colorama.Back.RESET)
-            message = f"{text_color}{bg_color}{message} {ex or ''}{colorama.Style.RESET_ALL}"
+            ex_str = ""
+            if ex:
+                ex_str = f" {ex}"
+            message = f"{text_color}{bg_color}{message}{ex_str}{colorama.Style.RESET_ALL}"
         return message
 
     def _ex_full_info(self, ex):
@@ -184,10 +198,17 @@ class Logger(metaclass=SingletonMeta):
         function_name = frame_info.function
         line_number = frame_info.lineno
 
-        return f"\nFile: {file_name}, \n |\n  -Function: {function_name}, \n   |\n    --Line: {line_number}\n{ex if ex else ''}"
+        ex_str = ""
+        if ex:
+            ex_str = f"{ex}"
+        return f"\nFile: {file_name}, \n |\n  -Function: {function_name}, \n   |\n    --Line: {line_number}\n{ex_str}"
 
     def log(self, level, message, ex=None, exc_info=False, color: Optional[Tuple[str, str]] = None):
         """ General method to log messages at specified level with optional color."""
+        # In PROD mode (not self.is_debug_mode), do not log DEBUG events
+        if level == logging.DEBUG and not self.is_debug_mode:
+            return
+
         formatted_message = self._format_message(message, ex, color)
         if exc_info:
             formatted_message += self._ex_full_info(ex)
@@ -195,23 +216,17 @@ class Logger(metaclass=SingletonMeta):
         if self.logger_console:
             self.logger_console.log(level, formatted_message, exc_info=exc_info)
 
-#######################################################################################################
-#
-#           Запись логов в файл. Проблема - двойной вывод в косоль
+        if self.logger_file_json:
+            self.logger_file_json.log(level, message, exc_info=exc_info)
 
-        # if self.logger_file_json:
-        #     self.logger_file_json.log(level, message, exc_info=exc_info)
+        if level == logging.INFO and self.logger_file_info:
+            self.logger_file_info.log(level, formatted_message)
 
-        # if level == logging.INFO and self.logger_file_info:
-        #     self.logger_file_info.log(level, formatted_message)
+        if level == logging.DEBUG and self.logger_file_debug:
+            self.logger_file_debug.log(level, formatted_message)
 
-        # if level == logging.DEBUG and self.logger_file_debug:
-        #     self.logger_file_debug.log(level, formatted_message)
-
-
-        # if level in [logging.ERROR, logging.CRITICAL] and self.logger_file_errors:
-        #     self.logger_file_errors.log(level, formatted_message)
-########################################################################################################
+        if level in [logging.ERROR, logging.CRITICAL] and self.logger_file_errors:
+            self.logger_file_errors.log(level, formatted_message)
 
     def info(self, message, ex=None, exc_info=False, text_color: str = "green", bg_color: str = ""):
         """ Logs an info message with optional text and background colors."""

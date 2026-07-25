@@ -349,27 +349,34 @@ def get_random_media(
         return json.dumps({'error': str(e)}, ensure_ascii=False)
 
 
-def rebuild_rag_index() -> str:
+import shutil
+from datetime import datetime
+
+def rebuild_rag_index(fresh: bool = False) -> str:
     """Перестроение RAG-индекса медиатеки.
 
-    Используй эту функцию если:
-    - Индекс повреждён или пуст
-    - Добавлены новые записи в базу
-    - Изменились описания фильмов/сериалов
-
-    Внимание: Это долгая операция для большой медиатеки.
+    Args:
+        fresh (bool): Если True, выполняет бэкап и полное удаление старого индекса.
 
     Returns:
         str: JSON с результатом переиндексации.
-
-    Examples:
-        >>> result = rebuild_rag_index()
     """
     api_key = _get_gemini_api_key()
     if not api_key:
         return json.dumps({'error': 'GEMINI_API_KEY не найден'}, ensure_ascii=False)
 
     try:
+        if fresh and _RAG_DB.exists():
+            # Бэкап
+            timestamp = datetime.now().strftime('%m%d-%H%M%S')
+            backup_path = _RAG_DB.with_name(f"{_RAG_DB.name}.{timestamp}")
+            shutil.copy2(_RAG_DB, backup_path)
+            logger.info(f"Создан бэкап RAG-индекса: {backup_path}")
+            
+            # Удаление
+            os.remove(_RAG_DB)
+            logger.info(f"Старый RAG-индекс удален: {_RAG_DB}")
+
         db = MediaDatabase(_DB_FILE)
         records = db.export_all()
 

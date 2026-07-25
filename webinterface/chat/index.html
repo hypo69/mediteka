@@ -1,0 +1,20 @@
+<div class="chat-window mb-2" id="chat-window"></div>
+
+<!-- Media Controls -->
+<div class="media-controls mb-2 d-none" id="media-controls">
+  <div class="card">
+    <div class="card-body p-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small" data-i18n="mediaControls.nowPlaying">▶️ Сейчас играет:</span>
+        <strong id="now-playing-title">—</strong>
+        <button class="btn btn-sm btn-outline-primary ms-auto" id="btn-open-player" data-i18n="mediaControls.openPlayer">Открыть плеер</button>
+        <button class="btn btn-sm btn-outline-secondary" id="btn-close-player" data-i18n="mediaControls.close">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="input-group">
+  <input type="text" class="form-control" id="message-input" data-i18n-placeholder="chat.placeholder" placeholder="Введите сообщение...">
+  <button class="btn btn-primary" id="send-button" data-i18n="chat.send">Отправить</button>
+</div>

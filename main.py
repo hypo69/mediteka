@@ -49,8 +49,10 @@ app.add_middleware(
 )
 
 # Mount static files
-app.mount('/webinterface', StaticFiles(directory=__root__ / 'webinterface'), name='webinterface')
-app.mount('/html', StaticFiles(directory=__root__ / 'webinterface'), name='html')
+webinterface_dir = __root__ / 'webinterface'
+webinterface_dir.mkdir(parents=True, exist_ok=True)
+app.mount('/webinterface', StaticFiles(directory=webinterface_dir), name='webinterface')
+app.mount('/html', StaticFiles(directory=webinterface_dir), name='html')
 
 
 _system_instruction: str = read_text_file(__root__ / '.ai_instructions' / 'prompts' / 'chat' / 'system_instruction.md') or ''
@@ -79,6 +81,21 @@ app.include_router(init_media_router(prefix='/api/media'))
 app.include_router(init_auth_router())
 app.include_router(init_control_router())
 app.include_router(init_tts_router())
+
+
+@app.on_event("startup")
+async def startup_event():
+    from src.logger.log_analyzer import start_log_analyzer
+    start_log_analyzer()
+    
+    if os.getenv('PRELOAD_SILERO', 'false').lower() in ('true', '1', 'yes'):
+        from src.tts.silero import get_silero_model
+        logger.info("Pre-loading Silero TTS model...")
+        try:
+            get_silero_model()
+            logger.info("Silero TTS model pre-loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to pre-load Silero TTS model: {e}")
 
 
 
@@ -165,10 +182,184 @@ async def user_tts_static(full_path: str) -> HTMLResponse:
 
 
 
+ADMIN_LOGIN_HTML = """<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в панель управления</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Plus+Jakarta+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient background glow */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            top: 20%;
+            left: 30%;
+            z-index: 0;
+            filter: blur(40px);
+            animation: float-slow 12s infinite alternate ease-in-out;
+        }
+        body::after {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
+            bottom: 15%;
+            right: 25%;
+            z-index: 0;
+            filter: blur(50px);
+            animation: float-slow 15s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes float-slow {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 30px) scale(1.1); }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px var(--primary-glow);
+            font-family: inherit;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>Панель управления</h1>
+            <p>Введите пароль администратора для доступа</p>
+        </div>
+        <form method="POST" action="/admin">
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Пароль" required autofocus autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn-submit">Войти</button>
+        </form>
+    </div>
+</body>
+</html>
+"""
+
+
 def check_admin_auth(request: Request):
-    import base64
-    from fastapi import Response
-    from fastapi.responses import RedirectResponse
+    from fastapi.responses import RedirectResponse, HTMLResponse
     token = request.cookies.get('auth_token')
     if not token:
         return RedirectResponse(url='/', status_code=303)
@@ -183,30 +374,14 @@ def check_admin_auth(request: Request):
     if not db_user or (not db_user.get('is_admin', 0) and db_user.get('role') != 'admin'):
         return RedirectResponse(url='/', status_code=303)
         
-    # User is admin. Now check password "onela" using Basic Auth.
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Basic "):
-        return Response(
-            status_code=401,
-            headers={"WWW-Authenticate": 'Basic realm="Admin Login"'}
-        )
+    # User is admin. Now check password "onela" using cookie check.
+    if request.cookies.get('admin_password_verified') == 'true':
+        return False
         
-    try:
-        encoded = auth_header.split(" ")[1]
-        decoded = base64.b64decode(encoded).decode("utf-8")
-        username, password = decoded.split(":", 1)
-        if password != "onela":
-            return Response(
-                status_code=401,
-                headers={"WWW-Authenticate": 'Basic realm="Admin Login"'}
-            )
-    except Exception:
-        return Response(
-            status_code=401,
-            headers={"WWW-Authenticate": 'Basic realm="Admin Login"'}
-        )
+    if request.url.path != '/admin':
+        return RedirectResponse(url='/admin', status_code=303)
         
-    return None
+    return HTMLResponse(content=ADMIN_LOGIN_HTML)
 
 
 @app.get('/admin')
@@ -219,6 +394,35 @@ async def admin_interface(request: Request):
     if not content:
         raise HTTPException(status_code=500, detail='Failed to read admin index page')
     return HTMLResponse(content=content)
+
+
+@app.post('/admin')
+async def admin_interface_post(request: Request):
+    """Verify password and set admin verification cookie or redirect to main page."""
+    from fastapi.responses import RedirectResponse
+    # First ensure user has valid auth token and role
+    token = request.cookies.get('auth_token')
+    if not token:
+        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+        
+    from src.fastapi.router_auth import verify_jwt_token
+    user_data = verify_jwt_token(token)
+    if not user_data:
+        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+        
+    from src.user_manager import user_manager
+    db_user = user_manager.get_user_by_email(user_data.email)
+    if not db_user or (not db_user.get('is_admin', 0) and db_user.get('role') != 'admin'):
+        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+
+    form = await request.form()
+    password = form.get('password')
+    if password == 'onela':
+        response = RedirectResponse(url='/admin', status_code=303)
+        response.set_cookie(key='admin_password_verified', value='true', max_age=86400 * 30, httponly=True)
+        return response
+    else:
+        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
 
 
 @app.get('/admin/{full_path:path}')

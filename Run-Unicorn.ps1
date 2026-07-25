@@ -44,7 +44,9 @@ if (Test-Path $configPath) {
     Write-Host "    Workers: $workers" -ForegroundColor Gray
 }
 
-# Читаем .env для USE_SSL
+# Читаем .env для настроек
+$mode = "dev"
+$debug = "true"
 if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
         $line = $_.Trim()
@@ -52,6 +54,8 @@ if (Test-Path $envFile) {
             $key = $Matches[1].Trim()
             $val = $Matches[2].Trim().Trim('"').Trim("'")
             if ($key -eq "USE_SSL") { $useSsl = $val -in ("true","1","yes") }
+            if ($key -eq "MODE") { $mode = $val.ToLower() }
+            if ($key -eq "DEBUG") { $debug = $val.ToLower() }
         }
     }
 }
@@ -94,6 +98,13 @@ $uvicornArgs = @(
     "--loop", "asyncio"
 )
 
+$is_debug = ($mode -in ("dev","debug")) -or ($debug -in ("true","1","yes"))
+if ($is_debug) {
+    $uvicornArgs += "--log-level", "debug"
+} else {
+    $uvicornArgs += "--log-level", "info"
+}
+
 # SSL
 if ($useSsl) {
     $certFile = "C:\Users\onela\.certs\localhost+2.pem"
@@ -113,15 +124,15 @@ Write-Host "║  ЗАПУЩЕНО $workers ВОРКЕРОВ — Ctrl+C для о
 Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-# Запуск в отдельном окне PowerShell
+# Запуск в текущем окне PowerShell
 $argStr = ($uvicornArgs | ForEach-Object { "`"$_`"" }) -join " "
-$cmd = "Set-Location '$scriptDir'; & '$venvPython' $argStr"
-
-$serverProcess = Start-Process powershell -ArgumentList "-NoExit", "-Command", $cmd -PassThru -WindowStyle Normal
-
-if (-not $serverProcess) {
-    Write-Host "[ERROR] Не удалось запустить сервер." -ForegroundColor Red
-    exit 1
+$logsDir = Join-Path $scriptDir "logs"
+if (-not (Test-Path $logsDir)) {
+    New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 }
+$logFilePath = Join-Path $logsDir "uvicorn.log"
 
-Write-Host "[OK] Сервер запущен. PID: $($serverProcess.Id)" -ForegroundColor Green
+Write-Host "[INFO] Запуск uvicorn в текущем окне..." -ForegroundColor Green
+$cmdToRun = "`"$venvPython`" $argStr 2>&1"
+cmd /c $cmdToRun | Tee-Object -FilePath $logFilePath
+
