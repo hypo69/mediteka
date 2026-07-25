@@ -255,6 +255,18 @@ class GoogleGenerativeAI:
         print(f"[MODEL] Switched down to: {next_model}, key: {self._key_names_active[0]}")
         return True
 
+    async def embed(self, text: str, model_name: str = "text-embedding-004") -> Optional[np.ndarray]:
+        """Генерация эмбеддинга для текста."""
+        try:
+            response = self._client.models.embed_content(
+                model=model_name,
+                contents=text,
+            )
+            return np.array(response.embeddings[0].values)
+        except Exception as ex:
+            logger.error("Ошибка генерации эмбеддинга", ex, False)
+            return None
+
     def clear_history(self):
         """Очищает историю чата в памяти."""
         self.chat_history = []

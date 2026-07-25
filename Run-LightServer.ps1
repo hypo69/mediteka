@@ -9,6 +9,15 @@ Write-Host "╚═════════════════════�
 Write-Host ""
 
 # ============================================
+# СКАНАДИРОВАНИЕ ПОДКЛЮЧЕННЫХ ДИСКОВ
+# ============================================
+Write-Host ""
+Write-Host "[1.5] Сканирование подключенных дисков..." -ForegroundColor Cyan
+python -m plugins.media_organizer.core.drive_scanner
+$env:CONNECTED_DRIVES = python -c "import os; print(os.environ.get('CONNECTED_DRIVES', ''))"
+Write-Host "    Подключенные диски: $env:CONNECTED_DRIVES" -ForegroundColor Gray
+
+# ============================================
 # АКТИВАЦИЯ ВИРТУАЛЬНОГО ОКРУЖЕНИЯ
 # ============================================
 Write-Host "[1/4] Проверка виртуального окружения..." -ForegroundColor Cyan

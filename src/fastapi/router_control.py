@@ -189,7 +189,26 @@ async def get_active_players(request: Request):
     return {"players": active, "user_email": user_email}
 
 
-def init_router() -> APIRouter:
-    """Инициализация роутера управления."""
-    return router
+@router.get("/rescan")
+async def rescan_storage(request: Request):
+    """Принудительное пересканирование доступных хранилищ."""
+    # Проверка прав администратора
+    token = request.cookies.get("auth_token")
+    if not token:
+        raise HTTPException(status_code=403)
+        
+    from src.fastapi.router_auth import verify_jwt_token
+    user_data = verify_jwt_token(token)
+    if not user_data:
+        raise HTTPException(status_code=403)
+    
+    from src.user_manager import user_manager
+    db_user = user_manager.get_user_by_email(user_data.email)
+    if not db_user or (not db_user.get('is_admin', 0) and db_user.get('role') != 'admin'):
+        raise HTTPException(status_code=403)
+
+    from plugins.media_organizer.core.drive_scanner import update_environment_drives
+    drives = update_environment_drives()
+    
+    return {"status": "success", "drives": drives}
 

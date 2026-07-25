@@ -6,7 +6,22 @@
     <button class="btn btn-outline-primary btn-sm" onclick="assignCategoriesFromDB()">
       🏷 Назначить категории торрентам
     </button>
+    <button class="btn btn-outline-info btn-sm" onclick="rescanStorage()">
+      🔄 Пересканировать диски
+    </button>
   </div>
+
+<script>
+async function rescanStorage() {
+  try {
+    showNotification('Пересканирование дисков...', 'info');
+    const result = await window.api.fetch('/api/control/rescan', { method: 'GET' });
+    showNotification('Диски обновлены: ' + result.drives, 'success');
+  } catch (e) {
+    showNotification('Ошибка: ' + e.message, 'danger');
+  }
+}
+</script>
 
   <div class="row g-3">
     <!-- LEFT: диск и пути -->

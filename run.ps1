@@ -149,9 +149,9 @@ if ($useFoundry) {
 # ============================================
 Write-Host ""
 Write-Host "[4.3] Сканирование подключенных дисков..." -ForegroundColor Cyan
-$connectedDrives = (Get-PSDrive -PSProvider FileSystem | Where-Object { $_.DisplayRoot -ne $null -or $_.Name -ne 'C' } | Select-Object -ExpandProperty Root) -join ','
-$env:CONNECTED_DRIVES = $connectedDrives
-Write-Host "    Подключенные диски: $connectedDrives" -ForegroundColor Gray
+python -m plugins.media_organizer.core.drive_scanner
+$env:CONNECTED_DRIVES = python -c "import os; print(os.environ.get('CONNECTED_DRIVES', ''))"
+Write-Host "    Подключенные диски: $env:CONNECTED_DRIVES" -ForegroundColor Gray
 
 # ============================================
 # ФИНАЛ И ЗАПУСК СЕРВЕРА (через Run-Unicorn.ps1)

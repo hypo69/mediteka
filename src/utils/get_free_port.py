@@ -1,150 +1,105 @@
-## \file /src/utils/get_free_port.py
 # -*- coding: utf-8 -*-
-#! .pyenv/bin/python3
-"""
-.. module:: src.utils.get_free_port
-    :platform: Windows, Unix
-    :synopsis: Модуль определяющий корневой путь к проекту. Все импорты строятся относительно этого пути.
-"""
+# =============================================================================
+# Название процесса: Определение свободного сетевого порта
+# =============================================================================
+# Описание:
+#   Поиск и выделение свободного TCP-порта в заданном диапазоне для запуска
+#   локальных сетевых сервисов и процессов мониторинга.
+#
+# Примеры:
+#   >>> port = get_free_port(host='localhost', port_range='3000-3005')
+#   >>> print(f'Свободный порт: {port}')
+#
+# File: get_free_port.py
+# Project: Наш интеллектуальный помощник
+# Package: Utils
+# Module: Network
+# Function: get_free_port
+# Author: hypo69
+# Copyright: © 2026 hypo69
+# =============================================================================
 
 import socket
-from typing import Optional, Tuple, List
+from typing import List, Tuple, Union
 
-
-import header # Not used
 from src.logger import logger
 
-
-def get_free_port(host: str, port_range: Optional[str | List[str]] = None) -> int:
+def get_free_port(host: str, port_range: Union[str, List[str]] = '') -> int:
     """
-    Finds and returns a free port within the specified range, or the first available port if no range is given.
+    Поиск и выделение свободного TCP-порта.
 
-    :param host: The host address to check for available ports.
-    :type host: str
-    :param port_range: (Optional) A port range specified as a string "min-max" or a list of strings.
-           E.g.: "3000-3999", ["3000-3999", "8000-8010"], None
-    :type port_range: Optional[str | List[str]]
-    :return: An available port number.
-    :rtype: int
-    :raises ValueError: If no free port can be found within the specified range, or if the port range is invalid.
+    Поиск свободного порта в заданном диапазоне или первого доступного, если диапазон не указан.
+
+    Args:
+        host (str): Адрес хоста для проверки доступности порта.
+        port_range (Union[str, List[str]]): Диапазон(ы) портов ("min-max" или список строк).
+               Значение по умолчанию: '' (поиск первого доступного).
+
+    Returns:
+        int: Номер свободного порта.
+
+    Exceptions:
+        ValueError: Ошибка, если свободный порт не найден или диапазон задан некорректно.
+
+    Examples:
+        >>> port = get_free_port(host='localhost', port_range='3000-3005')
     """
 
     def _is_port_in_use(host: str, port: int) -> bool:
-        """
-        Checks if a given port is in use on the specified host.
-        """
+        """Проверка занятости порта на хосте."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             try:
                 sock.bind((host, port))
-                return False  # Port is available
+                return False  # Порт свободен
             except OSError:
-                return True  # Port is in use
+                return True  # Порт занят
 
     def _parse_port_range(port_range_str: str) -> Tuple[int, int]:
-        """Parses port range string "min-max" into a tuple (min_port, max_port)."""
+        """Парсинг строки диапазона портов 'min-max'."""
         try:
             parts = port_range_str.split('-')
-            if len(parts) != 2:
-                logger.error(f'Error: Invalid port range string format: {port_range_str}')
-                raise ValueError(f'Invalid port range string format: {port_range_str}')
+            if len(parts) != 2 or not parts[0] or not parts[1]:
+                raise ValueError(f'Некорректный формат диапазона: {port_range_str}')
+            
             min_port = int(parts[0])
             max_port = int(parts[1])
 
             if min_port >= max_port:
-                logger.error(f'Error: Invalid port range {port_range_str}')
-                raise ValueError(f'Invalid port range {port_range_str}')
+                raise ValueError(f'Некорректный диапазон: {port_range_str}')
             return min_port, max_port
 
-        except ValueError:
-            logger.error(f'Error: Invalid port range {port_range_str}')
-            raise ValueError(f'Invalid port range {port_range_str}')
+        except ValueError as e:
+            logger.error(f'Ошибка парсинга диапазона: {port_range_str}')
+            raise ValueError(f'Ошибка парсинга диапазона: {port_range_str}') from e
 
     if port_range:
         if isinstance(port_range, str):
-            try:
-                min_port, max_port = _parse_port_range(port_range)
-            except ValueError as e:
-                logger.error(f'Error: {e}')
-                raise ValueError(f'Invalid port range {port_range}')
+            min_port, max_port = _parse_port_range(port_range)
             for port in range(min_port, max_port + 1):
                 if not _is_port_in_use(host, port):
                     return port
-            logger.error(f'Error: No free port found in range {port_range}')
-            raise ValueError(f'No free port found in range {port_range}')
+            raise ValueError(f'Свободный порт в диапазоне {port_range} не найден')
 
         elif isinstance(port_range, list):
             for item in port_range:
+                if not isinstance(item, str):
+                    continue
                 try:
-                    if isinstance(item, str):
-                        min_port, max_port = _parse_port_range(item)
-                    else:
-                        logger.error(f'Error: Invalid port range item {item}')
-                        raise ValueError(f'Invalid port range item {item}')
-
+                    min_port, max_port = _parse_port_range(item)
                     for port in range(min_port, max_port + 1):
                         if not _is_port_in_use(host, port):
                             return port
-                except ValueError as e:
-                    logger.error(f'Error: {e}')
-                    continue  # Skip to the next range in the list if any range fails parsing or no port
+                except ValueError:
+                    continue  # Пропуск некорректных диапазонов
 
-            logger.error(f'Error: No free port found in specified ranges {port_range}')
-            raise ValueError(f'No free port found in specified ranges {port_range}')
-
+            raise ValueError(f'Свободный порт в диапазонах {port_range} не найден')
         else:
-            logger.error(f'Error: Invalid port range type {type(port_range)}')
-            raise ValueError(f'Invalid port range type {type(port_range)}')
+            raise ValueError(f'Некорректный тип диапазона: {type(port_range)}')
     else:
-        # If no range given, find first available port
-        port = 1024  # start from 1024, since lower ports are system ports
-        while True:
+        # Поиск первого доступного порта начиная с 1024
+        port = 1024
+        while port <= 65535:
             if not _is_port_in_use(host, port):
                 return port
             port += 1
-            if port > 65535:
-                logger.error(f'Error: No free port found')
-                raise ValueError('No free port found')
-
-
-if __name__ == '__main__':
-    host = 'localhost'
-
-    # Пример с одним диапазоном:
-    try:
-        port = get_free_port(host, '3000-3005')
-        logger.info(f'Свободный порт: {port}')
-    except ValueError as e:
-        logger.error(f'Ошибка: {e}')
-
-    # Пример со списком диапазонов:
-    try:
-        port = get_free_port(host, ['3000-3005', '8000-8005'])
-        logger.info(f'Свободный порт: {port}')
-    except ValueError as e:
-        logger.error(f'Ошибка: {e}')
-
-    # Пример без диапазона (первый свободный):
-    try:
-        port = get_free_port(host)
-        logger.info(f'Свободный порт: {port}')
-    except ValueError as e:
-        logger.error(f'Ошибка: {e}')
-
-    # Пример с некорректным форматом
-    try:
-        port = get_free_port(host, '3000-')
-        logger.info(f'Свободный порт: {port}')
-    except ValueError as e:
-        logger.error(f'Ошибка: {e}')
-
-    # Пример с некорректными портами
-    try:
-        port = get_free_port(host, '5000-4000')
-        logger.info(f'Свободный порт: {port}')
-    except ValueError as e:
-        logger.error(f'Ошибка: {e}')
-    try:
-        port = get_free_port(host, [5000, 4000])
-        logger.info(f'Свободный порт: {port}')
-    except ValueError as e:
-        logger.error(f'Ошибка: {e}')
+        raise ValueError('Свободный порт не найден')

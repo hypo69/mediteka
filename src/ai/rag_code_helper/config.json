@@ -1,0 +1,8 @@
+{
+  "embedding_model": "gemini-embedding-2",
+  "chunk_size": 1000,
+  "chunk_overlap": 200,
+  "index_path": "rag_index/code_index.faiss",
+  "metadata_path": "rag_index/metadata.json",
+  "chunks_path": "rag_index/chunks.json"
+}
