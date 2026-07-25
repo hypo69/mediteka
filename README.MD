@@ -115,4 +115,4 @@ python main.py
 
 ## Лицензия
 
-MIT © 2026 hypo69
+MIT © 2026 hypo69\n[ci] trigger docs build
