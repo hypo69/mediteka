@@ -181,6 +181,16 @@ def run_rag_command(args):
     return 0
 
 
+def run_docs_command(args):
+    """Команды управления документацией."""
+    if args.subcommand == 'update':
+        cmd = [sys.executable, 'scripts/update_docs.py']
+        subprocess.run(cmd, check=True)
+    else:
+        print(f"Неизвестная команда: {args.subcommand}")
+        return 1
+    return 0
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -261,6 +271,10 @@ def main():
     rag_subparsers.add_parser('rebuild', help='Полное перестроение RAG-индекса')
     rag_subparsers.add_parser('status', help='Проверить статус RAG-индекса')
 
+    # --- Docs commands ---
+    docs_parser = subparsers.add_parser('docs', help='Управление документацией')
+    docs_subparsers = docs_parser.add_subparsers(dest='subcommand', help='Подкоманды')
+    docs_subparsers.add_parser('update', help='Проверить и актуализировать документацию')
 
     args = parser.parse_args()
 
@@ -283,6 +297,8 @@ def main():
         return run_knowledge_command(args)
     elif args.command == 'rag':
         return run_rag_command(args)
+    elif args.command == 'docs':
+        return run_docs_command(args)
     else:
         parser.print_help()
         return 1

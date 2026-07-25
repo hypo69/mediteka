@@ -66,6 +66,7 @@ def init_router(model, plugins: dict) -> APIRouter:
                 system_instruction = None
                 selected_model = None
                 user_identifier = None
+                settings = {}
 
                 # Извлечение данных пользователя / IP для User RAG
                 token = fastapi_req.cookies.get('auth_token')
@@ -128,6 +129,24 @@ def init_router(model, plugins: dict) -> APIRouter:
                     user_context_str = f"{user_context_str}\n\n[Профиль предпочтений пользователя]:\n{pref_context}".strip()
 
                 final_system_instruction = system_instruction or getattr(model, 'system_instruction', None)
+                
+                # Динамическая коррекция рода ответа под голос (если мужской -> женский род, если женский -> мужской род)
+                voice_gender_instruction = ""
+                tts_voice = settings.get('tts_voice', '') or os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")
+                voice_lower = tts_voice.lower()
+                is_male_voice = any(name in voice_lower for name in ("dmitry", "yaraslaus", "male", "bayan", "aidar", "eugene", "georgy"))
+                is_female_voice = any(name in voice_lower for name in ("svetlana", "elena", "female", "kseniya", "tanya", "aliona", "dariya"))
+                if is_male_voice:
+                    voice_gender_instruction = "IMPORTANT: Выбран мужской голос озвучки. Модель должна отвечать строго от женского лица (в женском роде, используя глаголы и местоимения женского рода: 'я пошла', 'я сделала' и т.д.)."
+                elif is_female_voice:
+                    voice_gender_instruction = "IMPORTANT: Выбран женский голос озвучки. Модель должна отвечать строго от мужского лица (в мужском роде, используя глаголы и местоимения мужского рода: 'я пошел', 'я сделал' и т.д.)."
+
+                if voice_gender_instruction:
+                    if final_system_instruction:
+                        final_system_instruction = f"{final_system_instruction}\n\n{voice_gender_instruction}"
+                    else:
+                        final_system_instruction = voice_gender_instruction
+
                 if user_context_str:
                     if final_system_instruction:
                         final_system_instruction = f"{final_system_instruction}\n\n{user_context_str}"

@@ -3,6 +3,28 @@
 
 window.chatService = {
   /**
+   * Stops any currently playing audio or speech synthesis.
+   */
+  stop() {
+    if (window.chatServiceAudio) {
+      try {
+        window.chatServiceAudio.pause();
+        window.chatServiceAudio.src = "";
+        window.chatServiceAudio = null;
+      } catch (e) {
+        console.error("Error stopping chatServiceAudio:", e);
+      }
+    }
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {
+        console.error("Error cancelling speechSynthesis:", e);
+      }
+    }
+  },
+
+  /**
    * Sends a chat message to the /api/chat backend.
    * Resolves to the text reply or throws the parsed error object/string.
    * 
@@ -10,6 +32,9 @@ window.chatService = {
    * @returns {Promise<any>}
    */
   async sendChatMessage(message, onChunk, history = [], generationConfig = {}) {
+    // Останавливаем любую активную озвучку перед отправкой нового сообщения
+    this.stop();
+
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,24 +113,37 @@ window.chatService = {
    */
   formatMessage(text) {
     if (typeof text === 'object' && text !== null) {
+      // Если это просто объект с ответом { text, voice }, отображаем только текст
+      if (text.text !== undefined) {
+        return text.text;
+      }
       return `<pre style="white-space: pre-wrap; background: #2b2b2b; color: #ff7070; padding: 10px; border-radius: 5px; margin: 5px 0; font-family: monospace;">${JSON.stringify(text, null, 2)}</pre>`;
     }
     return text;
   },
 
   /**
-   * Reads the given text aloud using the browser SpeechSynthesis API.
+   * Reads the given text aloud using the browser SpeechSynthesis API or backend TTS.
    * 
    * @param {string|object} text 
    */
   async speak(text) {
     if (!text) return;
     
+    // Останавливаем все предыдущие аудиопотоки
+    this.stop();
+
     let cleanText = '';
-    if (typeof text === 'object') {
-      const title = text.title_ru || text.title;
-      const rec = text.why_watch || text.plot || '';
-      cleanText = `Найдено: ${title}. ${rec}`;
+    if (typeof text === 'object' && text !== null) {
+      if (text.voice || text.text) {
+        // Если это объект { text, voice } из sendChatMessage
+        cleanText = text.voice || text.text;
+      } else {
+        // Если это карточка фильма
+        const title = text.title_ru || text.title;
+        const rec = text.why_watch || text.plot || '';
+        cleanText = `Найдено: ${title}. ${rec}`;
+      }
     } else {
       const trimmed = text.trim();
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
@@ -141,9 +179,7 @@ window.chatService = {
             voice: userSettings.tts_voice
           });
           const audioUrl = `/api/tts/synthesize?${queryParams.toString()}`;
-          if (window.chatServiceAudio) {
-            window.chatServiceAudio.pause();
-          }
+          
           window.chatServiceAudio = new Audio(audioUrl);
           await window.chatServiceAudio.play();
           return;
@@ -154,7 +190,6 @@ window.chatService = {
     }
 
     if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'ru-RU';
       

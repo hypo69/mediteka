@@ -105,7 +105,7 @@ $logFilePath = Join-Path $logsDir "cloudflared.log"
 $is_debug = ($mode -in ("dev","debug")) -or ($debug -in ("true","1","yes"))
 $logLevelArg = if ($is_debug) { "debug" } else { "info" }
 
-$argList = @("tunnel", "--no-autoupdate", "run", "--token", $token, "--loglevel", $logLevelArg, "--logfile", $logFilePath)
+$argList = @("--no-autoupdate", "--loglevel", $logLevelArg, "--logfile", $logFilePath, "tunnel", "run", "--token", $token)
 
 $cfProcess = Start-Process $localExePath -ArgumentList $argList -PassThru -WindowStyle Minimized
 

@@ -48,6 +48,41 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+
+# Auto login local user to user_id=1
+@app.middleware("http")
+async def auto_login_local_user(request: Request, call_next):
+    # Check if host is local loopback (127.0.0.1 or localhost)
+    if request.url.hostname in ('127.0.0.1', 'localhost'):
+        token = request.cookies.get('auth_token', '')
+        if not token:
+            from src.user_manager import user_manager
+            try:
+                db_user = user_manager.get_user_by_id(1)
+                if db_user:
+                    from src.fastapi.router_auth import TokenData, create_jwt_token
+                    token_data = TokenData(
+                        email=db_user['email'],
+                        name=db_user['name'],
+                        picture=db_user.get('picture', ''),
+                        id=db_user['id']
+                    )
+                    token = create_jwt_token(token_data)
+                    response = await call_next(request)
+                    response.set_cookie(
+                        'auth_token',
+                        token,
+                        httponly=True,
+                        secure=False,
+                        samesite='lax',
+                        max_age=3600 * 24 * 30  # 30 days
+                    )
+                    return response
+            except Exception as e:
+                logger.error(f"Error in auto_login_local_user middleware: {e}")
+    return await call_next(request)
+
+
 # Mount static files
 webinterface_dir = __root__ / 'webinterface'
 webinterface_dir.mkdir(parents=True, exist_ok=True)

@@ -125,6 +125,8 @@ class MediaDatabase:
                 conn.execute('ALTER TABLE media ADD COLUMN episode_scan_skipped INTEGER')
             if cols and 'plot_granularity' not in cols:
                 conn.execute('ALTER TABLE media ADD COLUMN plot_granularity TEXT')
+            if cols and 'torrent_source' not in cols:
+                conn.execute('ALTER TABLE media ADD COLUMN torrent_source TEXT')
 
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS media (
@@ -160,6 +162,7 @@ class MediaDatabase:
                     media_type TEXT,
                     episode_scan_skipped INTEGER,
                     plot_granularity TEXT,
+                    torrent_source TEXT,
                     UNIQUE(path)
                 )
             """)
@@ -227,24 +230,31 @@ class MediaDatabase:
             ).fetchone()
             return self._parse_row(row) if row else {}
 
-    def update_torrent_id(self, path: str, torrent_id: str) -> bool:
-        """Обновление torrent_id для записи по пути.
+    def update_torrent_id(self, path: str, torrent_id: str, torrent_source: str = "") -> bool:
+        """Обновление torrent_id и torrent_source для записи по пути.
 
         Args:
             path (str): Путь к медиа.
             torrent_id (str): Hash торрента.
+            torrent_source (str): Источник торрента (URL или комментарий).
 
         Returns:
             bool: True если обновление успешно.
 
         Examples:
-            >>> success = db.update_torrent_id('/path/to/file', 'abc123...')
+            >>> success = db.update_torrent_id('/path/to/file', 'abc123...', 'http://tracker...')
         """
         with sqlite3.connect(self.db_path) as conn:
-            result = conn.execute(
-                'UPDATE media SET torrent_id = ? WHERE path = ?',
-                (torrent_id, path)
-            ).rowcount
+            if torrent_source:
+                result = conn.execute(
+                    'UPDATE media SET torrent_id = ?, torrent_source = ? WHERE path = ?',
+                    (torrent_id, torrent_source, path)
+                ).rowcount
+            else:
+                result = conn.execute(
+                    'UPDATE media SET torrent_id = ? WHERE path = ?',
+                    (torrent_id, path)
+                ).rowcount
             return result > 0
 
     def _parse_row(self, row: sqlite3.Row) -> Dict:
@@ -349,7 +359,7 @@ class MediaDatabase:
             'num_of_seasons', 'num_episodes_per_season', 'status', 'rating', 'awards', 
             'plot', 'atmosphere', 'why_watch', 'mood', 'final_verdict', 'can_stop_at', 
             'quote', 'facts', 'similar', 'parent_id', 'media_size', 
-            'episode_scan_skipped', 'plot_granularity'
+            'episode_scan_skipped', 'plot_granularity', 'torrent_id', 'torrent_source'
         ]
         if has_id:
             fields_list.append('id')
@@ -389,6 +399,8 @@ class MediaDatabase:
             'media_size': data.get('media_size', 0),
             'episode_scan_skipped': 1 if save_data.get('episode_scan_skipped') else 0,
             'plot_granularity': save_data.get('plot_granularity'),
+            'torrent_id': data.get('torrent_id', ''),
+            'torrent_source': data.get('torrent_source', ''),
         }
         if has_id:
             params['id'] = data['id']

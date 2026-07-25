@@ -113,19 +113,21 @@ async def ask_ai_for_matching(ai_model, torrents_json: List[Dict], media_chunk: 
 # DATABASE UPDATES
 # =============================================================================
 
-def update_database(db: MediaDatabase, matching_result: Dict, qbt_client=None) -> Dict:
+def update_database(db: MediaDatabase, matching_result: Dict, qbt_client=None, torrents_sources: Dict = {}) -> Dict:
     """Обновляет базу данных и qBittorrent."""
     results = {'matched': 0, 'redirected': 0, 'started_downloads': 0, 'errors': []}
     
     for match in matching_result.get('matches', []):
         try:
-            db.update_torrent_id(match['media_path'], match['torrent_hash'])
+            torrent_hash = match['torrent_hash']
+            torrent_src = torrents_sources.get(torrent_hash, "")
+            db.update_torrent_id(match['media_path'], torrent_hash, torrent_src)
             results['matched'] += 1
             
             if qbt_client:
                 # Определяем новую папку как родительскую папку медиа-файла
                 new_location = str(Path(match['media_path']).parent)
-                qbt_client.set_location(match['torrent_hash'], new_location)
+                qbt_client.set_location(torrent_hash, new_location)
                 results['redirected'] += 1
                 
         except Exception as e:
@@ -143,6 +145,7 @@ async def assign_torrent_ids(ai_model, disk_paths: List[Path], db_path: Path = M
         torrents_data = json.load(f)
     
     # Инициализация qBittorrent
+    qbt_client = ""
     try:
         cfg = _load_cfg()
         qbt_client = QBittorrentClient(
@@ -153,7 +156,20 @@ async def assign_torrent_ids(ai_model, disk_paths: List[Path], db_path: Path = M
         )
     except Exception as e:
         logger.error(f"Не удалось инициализировать qBittorrent: {e}")
-        qbt_client = None
+    
+    # Собираем информацию об источниках торрентов
+    torrents_sources = {}
+    if qbt_client:
+        try:
+            for t in qbt_client.torrents():
+                h = t.get("hash", "")
+                if h:
+                    src = t.get("comment", "")
+                    if not src:
+                        src = t.get("tracker", "")
+                    torrents_sources[h] = src
+        except Exception as e:
+            logger.error(f"Не удалось получить информацию об источниках торрентов: {e}")
     
     media_files = fetch_media_from_db(db_path)
     torrents_json = build_torrents_json(torrents_data)
@@ -168,7 +184,7 @@ async def assign_torrent_ids(ai_model, disk_paths: List[Path], db_path: Path = M
         matching_result = await ask_ai_for_matching(ai_model, torrents_json, batch)
         
         # Обновление результатов
-        results = update_database(db, matching_result, qbt_client=qbt_client)
+        results = update_database(db, matching_result, qbt_client=qbt_client, torrents_sources=torrents_sources)
         
         for k in ['matched', 'redirected', 'started_downloads']:
             final_results[k] += results[k]

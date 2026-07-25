@@ -41,6 +41,7 @@ nav:
       - user/admin-panel.md
   - Руководство разработчика:
       - dev/getting-started.md
+      - dev/localhost_vs_tunnel.md
       - dev/architecture.md
       - dev/api-reference.md
       - dev/plugins.md
