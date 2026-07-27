@@ -47,6 +47,7 @@ nav:
       - dev/plugins.md
       - dev/development.md
       - dev/deployment.md
+      - skills.md
   - Модули:
       - modules/ai.md
       - modules/logger.md
@@ -61,7 +62,6 @@ nav:
       - integrations/rc.md
   - Руководство QA:
       - qa/index.md
-      - qa/README.md
       - qa/testing-strategy.md
       - qa/test-cases.md
       - qa/api-testing.md

@@ -2,7 +2,7 @@
 
 ## Обзор
 
-Проект ai-mediteka - это комплексное приложение с несколькими слоями:
+Проект mediteka - это комплексное приложение с несколькими слоями:
 1. Frontend Layer (HTML/CSS/JS)
 2. Backend Layer (FastAPI + Python)
 3. AI Layer (Google Gemini)
@@ -110,4 +110,4 @@ def test_post_chat():
 
 ---
 
-[← QA README](README.md) | [Тест-кейсы →](test-cases.md)
+[← QA README](index.md) | [Тест-кейсы →](test-cases.md)
