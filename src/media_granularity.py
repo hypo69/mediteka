@@ -13,7 +13,7 @@
 #   - overview: только общая история (долгие сериалы >15 сезонов)
 #
 # File: media_granularity.py
-# Project: ai-mediteka
+# Project: mediteka
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # =============================================================================

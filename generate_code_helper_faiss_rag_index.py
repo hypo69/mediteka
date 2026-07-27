@@ -17,6 +17,7 @@
 
 import sys
 import os
+import asyncio
 from pathlib import Path
 
 # Добавляем корневую директорию в path, чтобы импорты из plugins работали
@@ -25,10 +26,10 @@ sys.path.append(os.getcwd())
 from plugins.code_helper.rag.generate_index import generate
 from src.logger import logger
 
-def main() -> None:
+async def main() -> None:
     """Запуск индексации RAG."""
     logger.info("Запуск индексации RAG для code_helper...")
-    generate()
+    await generate()
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

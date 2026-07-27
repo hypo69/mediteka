@@ -158,7 +158,7 @@ async function initHelpContent() {
   // Overview
   window.HELP_CONTENT['overview'] = `
     <h4>📋 Обзор проекта</h4>
-    <p>ai-mediteka — это интегрированная среда разработки для работы с AI-моделями Gemini, управлением медиатекой и торрентами.</p>
+    <p>mediteka — это интегрированная среда разработки для работы с AI-моделями Gemini, управлением медиатекой и торрентами.</p>
     <h5>Основные возможности</h5>
     <ul>
       <li><strong>Чат</strong> — взаимодействие с AI через API Gemini</li>

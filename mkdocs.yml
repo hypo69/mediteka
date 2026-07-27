@@ -112,6 +112,9 @@ markdown_extensions:
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - js/chat.js
+
 # Site metadata
 extra:
   authors:

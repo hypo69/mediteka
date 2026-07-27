@@ -94,6 +94,39 @@ def init_router(prefix: str = '/api/media') -> APIRouter:
     router = APIRouter(prefix=prefix, tags=['media'])
 
     # ------------------------------------------------------------------
+    # Storage availability
+    # ------------------------------------------------------------------
+
+    @router.get('/storage/available')
+    async def get_available_storage() -> dict:
+        """Получение списка доступных хранилищ с их путями."""
+        from plugins.media_organizer.core.storage_manager import (
+            load_active_storage, STORAGE_CONFIG
+        )
+        import json as _json
+        active_paths = load_active_storage()
+        disk_map = {}
+        if STORAGE_CONFIG.exists():
+            disk_map = _json.loads(STORAGE_CONFIG.read_text(encoding='utf-8'))
+        return {
+            'active_paths': active_paths,
+            'all_configured': disk_map,
+            'connected_count': len(active_paths),
+            'total_count': len(disk_map),
+        }
+
+    @router.post('/storage/rescan')
+    async def rescan_storage() -> dict:
+        """Пересканирование доступных хранилищ и обновление списка активных путей."""
+        from plugins.media_organizer.core.storage_manager import scan_and_save_active_storage
+        active_paths = scan_and_save_active_storage()
+        return {
+            'status': 'ok',
+            'active_paths': active_paths,
+            'connected_count': len(active_paths),
+        }
+
+    # ------------------------------------------------------------------
     # User Profile / Watch Progress Endpoints
     # ------------------------------------------------------------------
 

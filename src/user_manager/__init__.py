@@ -9,7 +9,7 @@
 #   email и Telegram авторизацию, системы ролей и разрешений.
 #
 # File: user_manager.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: src.user_manager
 # Author: hypo69
 # Copyright: © 2026 hypo69

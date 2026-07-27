@@ -19,8 +19,8 @@
 
 import os
 import sys
+import json
 from pathlib import Path
-from dotenv import load_dotenv
 from typing import List, Dict
 
 # Добавляем корневую директорию проекта в sys.path
@@ -42,13 +42,24 @@ EXCLUDED_FILES = {
 }
 
 def get_api_key() -> str:
-    """Получение API ключа Gemini."""
-    load_dotenv()
-    key: str = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY') or ''
-    if not key:
-        logger.error("API Key не найден.")
+    """Получение API ключа Gemini из src/secrets/gemini_keys.json."""
+    keys_file = Path(r"C:\mediateka\src\secrets\gemini_keys.json")
+    if not keys_file.exists():
+        logger.error(f"Файл ключей {keys_file} не найден.")
         return ''
-    return key
+    
+    try:
+        with open(keys_file, 'r', encoding='utf-8') as f:
+            keys = json.load(f)
+            # Используем ключ для 'fmashulia' как было предложено
+            api_key = keys.get("fmashulia", {}).get("api_key")
+            if not api_key:
+                logger.error("API ключ для 'fmashulia' не найден.")
+                return ''
+            return api_key
+    except Exception as e:
+        logger.error(f"Ошибка при чтении файла ключей: {e}")
+        return ''
 
 def get_files_to_index() -> List[Path]:
     """Сбор списка файлов для индексации с учетом исключений."""
@@ -78,13 +89,12 @@ def get_files_to_index() -> List[Path]:
     
     return files_to_index
 
-def generate() -> bool:
+import asyncio
+# ... (остальные импорты)
+
+async def generate() -> bool:
     """Сбор и индексация документов для code_helper (без БД)."""
     rag_dir: Path = Path(__file__).parent
-
-    api_key: str = get_api_key()
-    if not api_key:
-        return False
 
     files = get_files_to_index()
     if not files:
@@ -109,7 +119,8 @@ def generate() -> bool:
             logger.error(f"Ошибка чтения {file_path}", e)
 
     if docs:
-        success: bool = engine.add_documents(docs, api_key=api_key)
+        # Теперь awaited
+        success: bool = await engine.add_documents(docs)
         if success:
             logger.info(f"Индекс успешно создан. Индексировано файлов: {len(docs)}")
             return True
@@ -119,5 +130,5 @@ def generate() -> bool:
         return False
 
 if __name__ == '__main__':
-    generate()
+    asyncio.run(generate())
 

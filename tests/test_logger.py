@@ -8,7 +8,7 @@
 #   Обеспечивает покрытие ключевых функций логирования для стабильности системы.
 #
 # File: tests/test_logger.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69

@@ -1,4 +1,4 @@
-# HTML Interface - ai-mediteka
+# HTML Interface - mediteka
 
 Директория с веб-интерфейсом для управления медиатекой и общением с AI.
 

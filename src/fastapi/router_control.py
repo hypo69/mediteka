@@ -8,7 +8,7 @@
 #   и обновления состояния воспроизведения в реальном времени.
 #
 # File: router_control.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: src.fastapi
 # Author: hypo69
 # Copyright: © 2026 hypo69
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 from typing import Dict, List, Optional
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Request
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, Request, HTTPException
 from src.logger import logger
 from src.fastapi.router_auth import verify_jwt_token
 
@@ -211,4 +211,12 @@ async def rescan_storage(request: Request):
     drives = update_environment_drives()
     
     return {"status": "success", "drives": drives}
+
+
+def init_router() -> APIRouter:
+    """Инициализация роутера управления.
+    Returns:
+        APIRouter: Настроенный роутер FastAPI.
+    """
+    return router
 

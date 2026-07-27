@@ -9,7 +9,7 @@
 #   покрытие основных сценариев использования API.
 #
 # File: tests/test_integration_api.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69

@@ -8,7 +8,7 @@
 #   прямой вызов AI-модели и автоматическая индексация диалога в User RAG.
 #
 # File: router_chat.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: src.fastapi
 # Author: hypo69
 # Copyright: © 2026 hypo69
@@ -54,6 +54,18 @@ def init_router(model, plugins: dict) -> APIRouter:
         else:
             from src.ai.gemini.generative_ai import _AVAILABLE_MODELS
             return {'models': _AVAILABLE_MODELS}
+
+    @router.post('/code-helper')
+    async def chat_code_helper(request: ChatRequest):
+        """Чат помощника кода (разработчика) с использованием FAISS RAG."""
+        try:
+            from plugins.code_helper.rag.chat_interface import CodeHelperChat
+            helper = CodeHelperChat()
+            response_text = await helper.chat(request.message)
+            return {"text": response_text}
+        except Exception as e:
+            logger.error("Ошибка чата Code Helper", e)
+            raise HTTPException(status_code=500, detail=str(e))
 
     @router.post('')
     async def chat(request: ChatRequest, fastapi_req: Request):

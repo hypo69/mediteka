@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Скрипт для запуска тестов ai-mediteka
+Скрипт для запуска тестов mediteka
 """
 
 import subprocess

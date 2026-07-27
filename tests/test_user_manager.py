@@ -9,7 +9,7 @@
 #   сценариев работы с пользовательскими данными.
 #
 # File: tests/test_user_manager.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69

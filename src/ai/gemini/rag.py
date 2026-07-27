@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
 # =============================================================================
-# Название процесса: RAG на базе Gemini Embedding API и SQLite
+# Название процесса: RAG на базе Gemini Embedding API и FAISS
 # =============================================================================
 # Описание:
-#   Векторизация документов через Gemini text-embedding-004,
-#   хранение эмбеддингов в SQLite, cosine similarity поиск через numpy.
-#   Не требует внешних векторных БД — только google-genai и numpy.
+#   Векторизация документов через Gemini text-embedding-004 / gemini-embedding-2,
+#   хранение эмбеддингов и поиск с использованием FAISS.
+#   Не требует внешних СУБД — только FAISS и JSON.
 #
 # File: rag.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: src.ai.gemini
 # Author: hypo69
 # Copyright: © 2026 hypo69
 # =============================================================================
 
 import json
-import sqlite3
 from pathlib import Path
-from typing import List
-
+from typing import List, Dict
 import numpy as np
+import faiss
 from google import genai
 from google.genai import types
 
@@ -30,88 +29,87 @@ _EMBED_DIM = 3072
 
 
 class GeminiRAG:
-    """RAG-индекс на базе Gemini Embedding API и SQLite.
+    """RAG-индекс на базе Gemini Embedding API и FAISS.
 
-    Векторизация произвольных текстовых документов, хранение в SQLite,
-    семантический поиск ближайших соседей через cosine similarity.
+    Векторизация произвольных текстовых документов, хранение в FAISS,
+    семантический поиск ближайших соседей.
 
     Attributes:
-        db_path (Path): Путь к SQLite-файлу индекса.
+        db_path (Path): Путь к файлу (мы заменяем .db на .faiss/.json).
         client: Клиент google.genai.
-
-    Examples:
-        >>> rag = GeminiRAG(api_key='...', db_path=Path('rag.db'))
-        >>> rag.add_documents([{'id': '1', 'text': 'Титаник — фильм 1997 года', 'meta': {}}])
-        >>> results = rag.search('фильм про корабль', top_k=3)
     """
 
     def __init__(self, api_key: str, db_path: Path) -> None:
-        """Инициализация RAG-индекса.
-
-        Args:
-            api_key (str): Ключ Gemini API.
-            db_path (Path): Путь к файлу SQLite для хранения эмбеддингов.
-
-        Examples:
-            >>> rag = GeminiRAG(api_key='key', db_path=Path('index.db'))
-        """
+        """Инициализация RAG-индекса."""
         self.db_path = db_path
+        self.index_file = db_path.with_suffix('.faiss')
+        self.meta_file = db_path.with_suffix('.json')
+        self.dimension = _EMBED_DIM
         self.client = genai.Client(api_key=api_key)
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._init_db()
+        
+        self.index_file.parent.mkdir(parents=True, exist_ok=True)
+        self.metadatas: List[Dict] = []
+        self._load()
 
-    # ------------------------------------------------------------------
-    # Инициализация схемы
-    # ------------------------------------------------------------------
+    def _load(self) -> None:
+        """Загрузка индекса и метаданных."""
+        if self.meta_file.exists():
+            try:
+                with open(self.meta_file, 'r', encoding='utf-8') as f:
+                    self.metadatas = json.load(f)
+            except Exception as e:
+                logger.error("Ошибка чтения метаданных пользователя", e)
+                self.metadatas = []
+        else:
+            self.metadatas = []
 
-    def _init_db(self) -> None:
-        """Создание таблицы rag_index если не существует."""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS rag_index (
-                    id TEXT PRIMARY KEY,
-                    text TEXT NOT NULL,
-                    meta TEXT NOT NULL DEFAULT '{}',
-                    embedding BLOB NOT NULL
-                )
-            """)
+        if self.index_file.exists() and self.metadatas:
+            try:
+                self.index = faiss.read_index(str(self.index_file))
+            except Exception as e:
+                logger.error("Ошибка чтения FAISS индекса, пересоздаем", e)
+                self._rebuild_index()
+        else:
+            self.index = faiss.IndexFlatL2(self.dimension)
 
-    # ------------------------------------------------------------------
-    # Векторизация
-    # ------------------------------------------------------------------
+    def _rebuild_index(self) -> None:
+        """Перестроение индекса из metadatas."""
+        self.index = faiss.IndexFlatL2(self.dimension)
+        if self.metadatas:
+            try:
+                vectors = np.array([m['vector'] for m in self.metadatas], dtype=np.float32)
+                self.index.add(vectors)
+            except Exception as e:
+                logger.error("Ошибка при добавлении векторов в FAISS индекс", e)
+
+    def _save(self) -> None:
+        """Сохранение индекса и метаданных."""
+        try:
+            faiss.write_index(self.index, str(self.index_file))
+            with open(self.meta_file, 'w', encoding='utf-8') as f:
+                json.dump(self.metadatas, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.error("Ошибка сохранения FAISS индекса/метаданных", e)
 
     def _embed(self, texts: List[str], task_type: str = 'RETRIEVAL_DOCUMENT') -> List[List[float]]:
-        """Получение эмбеддингов для списка текстов через Gemini API с обработкой 429 и ротацией ключей.
-
-        Args:
-            texts (List[str]): Список текстов для векторизации.
-            task_type (str): Тип задачи: 'RETRIEVAL_DOCUMENT' или 'RETRIEVAL_QUERY'.
-
-        Returns:
-            List[List[float]]: Список векторов.
-        """
+        """Получение эмбеддингов для списка текстов через Gemini API с обработкой 429 и ротацией ключей."""
         import time
         from google.genai.errors import APIError
         from src.secrets.api_key_state import load_api_keys, mark_exhausted
-        
         import random
-        # Выбираем случайную стартовую позицию для ротации
+        
         start_idx = random.randint(0, 100)
         max_retries = 10
-        base_delay = 1.0
         
         for attempt in range(max_retries):
-            # Загружаем доступные ключи
             api_keys, key_names, _ = load_api_keys()
             if not api_keys:
                 raise RuntimeError("Нет доступных ключей API Gemini")
             
-            # Ротируем ключи со случайным стартом
             key_idx = (start_idx + attempt) % len(api_keys)
             current_key = api_keys[key_idx]
             current_name = key_names[key_idx]
             
-            # Пересоздаем клиент с новым ключом
             client = genai.Client(api_key=current_key)
             try:
                 response = client.models.embed_content(
@@ -131,25 +129,8 @@ class GeminiRAG:
                 
         raise RuntimeError("Превышено количество попыток запроса эмбеддингов из-за ограничений скорости (429)")
 
-    # ------------------------------------------------------------------
-    # Запись
-    # ------------------------------------------------------------------
-
     def add_documents(self, docs: List[dict], batch_size: int = 50) -> int:
-        """Векторизация и сохранение документов в индекс.
-
-        Документы с существующим id перезаписываются.
-
-        Args:
-            docs (List[dict]): Список документов вида {'id': str, 'text': str, 'meta': dict}.
-            batch_size (int): Размер пакета документов для одного запроса векторизации.
-
-        Returns:
-            int: Количество добавленных/обновлённых документов.
-
-        Examples:
-            >>> rag.add_documents([{'id': 'titanic', 'text': 'Титаник 1997', 'meta': {'disk': 'ДИСК 1'}}])
-        """
+        """Векторизация и сохранение документов в индекс."""
         if not docs:
             return 0
         
@@ -159,97 +140,81 @@ class GeminiRAG:
             try:
                 vectors = self._embed(texts, task_type='RETRIEVAL_DOCUMENT')
             except Exception as e:
-                logger.error(f"Ошибка получения эмбеддингов для батча {i}-{i+len(batch)}: {e}")
+                logger.error(f"Ошибка получения эмбеддингов для батча: {e}")
                 raise e
-            with sqlite3.connect(self.db_path) as conn:
-                for doc, vec in zip(batch, vectors):
-                    conn.execute(
-                        'INSERT OR REPLACE INTO rag_index (id, text, meta, embedding) VALUES (?, ?, ?, ?)',
-                        (
-                            doc['id'],
-                            doc['text'],
-                            json.dumps(doc.get('meta', {}), ensure_ascii=False),
-                            np.array(vec, dtype=np.float32).tobytes(),
-                        )
-                    )
+            
+            # Заменяем старые документы с совпадающими ID
+            existing_ids = {doc['id'] for doc in batch}
+            self.metadatas = [m for m in self.metadatas if m['id'] not in existing_ids]
+            
+            for doc, vec in zip(batch, vectors):
+                self.metadatas.append({
+                    'id': doc['id'],
+                    'text': doc['text'],
+                    'meta': doc.get('meta', {}),
+                    'vector': vec
+                })
+                
+            self._rebuild_index()
+            self._save()
             import time
             time.sleep(1.0)
         return len(docs)
 
     def delete_document(self, doc_id: str) -> None:
-        """Удаление документа из индекса по id.
-
-        Args:
-            doc_id (str): Идентификатор документа.
-
-        Examples:
-            >>> rag.delete_document('titanic')
-        """
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('DELETE FROM rag_index WHERE id = ?', (doc_id,))
+        """Удаление документа из индекса по id."""
+        self.metadatas = [m for m in self.metadatas if m['id'] != doc_id]
+        self._rebuild_index()
+        self._save()
 
     def clear(self) -> None:
-        """Полная очистка индекса.
-
-        Examples:
-            >>> rag.clear()
-        """
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute('DELETE FROM rag_index')
-
-    # ------------------------------------------------------------------
-    # Поиск
-    # ------------------------------------------------------------------
+        """Полная очистка индекса."""
+        self.metadatas = []
+        self.index = faiss.IndexFlatL2(self.dimension)
+        self._save()
 
     def search(self, query: str, top_k: int = 5, threshold: float = 0.0) -> List[dict]:
-        """Семантический поиск ближайших документов по cosine similarity.
-
-        Args:
-            query (str): Поисковый запрос.
-            top_k (int): Максимальное количество результатов.
-            threshold (float): Минимальный порог схожести (0.0–1.0).
-
-        Returns:
-            List[dict]: Список {'id', 'text', 'meta', 'score'} отсортированный по убыванию score.
-
-        Examples:
-            >>> results = rag.search('фильм про любовь на корабле', top_k=3)
-        """
-        query_vec = np.array(self._embed([query], task_type='RETRIEVAL_QUERY')[0], dtype=np.float32)
-        query_norm = query_vec / (np.linalg.norm(query_vec) + 1e-10)
-
-        with sqlite3.connect(self.db_path) as conn:
-            rows = conn.execute('SELECT id, text, meta, embedding FROM rag_index').fetchall()
-
-        if not rows:
+        """Семантический поиск ближайших документов по cosine similarity с использованием FAISS L2."""
+        if not self.metadatas:
             return []
-
-        ids, texts, metas, scores = [], [], [], []
-        for row_id, text, meta_str, emb_bytes in rows:
-            vec = np.frombuffer(emb_bytes, dtype=np.float32)
-            norm = vec / (np.linalg.norm(vec) + 1e-10)
-            score = float(np.dot(query_norm, norm))
-            if score >= threshold:
-                ids.append(row_id)
-                texts.append(text)
-                metas.append(json.loads(meta_str))
-                scores.append(score)
-
-        # Сортировка по убыванию score, обрезка до top_k
-        order = np.argsort(scores)[::-1][:top_k]
-        return [
-            {'id': ids[i], 'text': texts[i], 'meta': metas[i], 'score': round(scores[i], 4)}
-            for i in order
-        ]
+            
+        query_vec = np.array(self._embed([query], task_type='RETRIEVAL_QUERY')[0], dtype=np.float32)
+        
+        # FAISS IndexFlatL2 выполняет поиск по L2 расстоянию.
+        # Для cosine similarity мы можем нормализовать вектора запроса и документов, 
+        # тогда L2 расстояние d^2 = 2 * (1 - cosine_similarity).
+        query_norm = query_vec / (np.linalg.norm(query_vec) + 1e-10)
+        
+        # Получаем нормализованную матрицу векторов документов
+        doc_vectors = np.array([m['vector'] for m in self.metadatas], dtype=np.float32)
+        doc_norms = np.linalg.norm(doc_vectors, axis=1, keepdims=True) + 1e-10
+        doc_vectors_normalized = doc_vectors / doc_norms
+        
+        # Создаем временный FlatL2 индекс для нормализованного поиска
+        temp_index = faiss.IndexFlatL2(self.dimension)
+        temp_index.add(doc_vectors_normalized)
+        
+        actual_k = min(top_k, len(self.metadatas))
+        distances, indices = temp_index.search(query_norm.reshape(1, -1), actual_k)
+        
+        results: List[dict] = []
+        for i in range(actual_k):
+            idx = int(indices[0][i])
+            if idx >= 0:
+                l2_dist = float(distances[0][i])
+                # Восстанавливаем cosine similarity из L2 расстояния нормализованных векторов
+                cosine_sim = 1.0 - (l2_dist / 2.0)
+                
+                if cosine_sim >= threshold:
+                    meta = self.metadatas[idx]
+                    results.append({
+                        'id': meta['id'],
+                        'text': meta['text'],
+                        'meta': meta['meta'],
+                        'score': round(cosine_sim, 4)
+                    })
+        return results
 
     def count(self) -> int:
-        """Количество документов в индексе.
-
-        Returns:
-            int: Число записей в rag_index.
-
-        Examples:
-            >>> n = rag.count()
-        """
-        with sqlite3.connect(self.db_path) as conn:
-            return conn.execute('SELECT COUNT(*) FROM rag_index').fetchone()[0]
+        """Количество документов в индексе."""
+        return len(self.metadatas)

@@ -8,7 +8,7 @@
 #   тегов и приоритетов файлов. Поддерживает загрузку торрентов по URL и файлу.
 #
 # File: qbittorrent.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: plugins.qbittorrent
 # Author: hypo69
 # Copyright: © 2026 hypo69

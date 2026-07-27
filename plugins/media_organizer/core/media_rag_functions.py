@@ -58,9 +58,31 @@ def _get_gemini_api_key() -> str:
     return ''
 
 def _get_active_paths() -> List[str]:
-    """Получает список актуальных путей дисков из переменных окружения."""
-    connected_drives_str = os.environ.get('CONNECTED_DRIVES', '')
-    return [d.strip().rstrip('\\') for d in connected_drives_str.split(',') if d.strip()]
+    """Получает список актуальных путей к доступным хранилищам.
+
+    Порядок приоритетов:
+    1. Переменная окружения CONNECTED_DRIVES (устанавливается при старте).
+    2. Файл active_storage.json (fallback, если переменная пуста).
+    3. Пустой список (все хранилища считаются недоступными).
+    """
+    connected_drives_str = os.environ.get('CONNECTED_DRIVES', '').strip()
+    if connected_drives_str:
+        return [d.strip().rstrip('\\') for d in connected_drives_str.split(',') if d.strip()]
+
+    # Fallback: читаем из файла active_storage.json
+    try:
+        from plugins.media_organizer.core.storage_manager import load_active_storage
+        paths = load_active_storage()
+        if paths:
+            # Обновляем переменную окружения для последующих вызовов
+            os.environ['CONNECTED_DRIVES'] = ','.join(p.rstrip('\\') for p in paths)
+            logger.info(f"CONNECTED_DRIVES восстановлен из файла: {paths}")
+            return [p.rstrip('\\') for p in paths]
+    except Exception as e:
+        logger.warning(f"Не удалось прочитать active_storage.json: {e}")
+
+    logger.warning("Нет данных о подключенных хранилищах — фильтрация по дискам отключена")
+    return []
 
 # =============================================================================
 # Инструменты Function Calling
@@ -306,4 +328,248 @@ def get_random_media(
         logger.error(f"Ошибка получения рекомендации: {e}", exc_info=True)
         return json.dumps({'error': str(e)}, ensure_ascii=False)
 
-# [.... ОСТАЛЬНЫЕ ФУНКЦИИ БЕЗ ИЗМЕНЕНИЙ ....]
+
+def rebuild_rag_index() -> str:
+    """Пересборка RAG-индекса из текущей базы данных медиатеки."""
+    try:
+        api_key = _get_gemini_api_key()
+        if not api_key:
+            return json.dumps({'error': 'GEMINI_API_KEY не найден'}, ensure_ascii=False)
+
+        from plugins.media_organizer.core.media_rag import build_media_rag
+        rag = build_media_rag(api_key)
+        count = rag.count()
+        return json.dumps({
+            'success': True,
+            'message': f'RAG-индекс перестроен, документов: {count}',
+            'documents': count
+        }, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Ошибка перестройки RAG-индекса: {e}", exc_info=True)
+        return json.dumps({'error': str(e)}, ensure_ascii=False)
+
+
+def get_rag_status() -> str:
+    """Получение статуса RAG-индекса."""
+    try:
+        api_key = _get_gemini_api_key()
+        if not api_key:
+            return json.dumps({'error': 'GEMINI_API_KEY не найден'}, ensure_ascii=False)
+
+        from plugins.media_organizer.core.media_rag import get_media_rag
+        rag = get_media_rag(api_key)
+        count = rag.count()
+        return json.dumps({
+            'documents': count,
+            'has_data': count > 0,
+            'status': 'ok' if count > 0 else 'empty',
+            'message': f'Документов в RAG-индексе: {count}'
+        }, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Ошибка получения статуса RAG-индекса: {e}", exc_info=True)
+        return json.dumps({'error': str(e)}, ensure_ascii=False)
+
+
+def get_media_tools() -> List[Dict[str, Any]]:
+    """Получение списка инструментов Function Calling для медиатеки."""
+    
+    search_media_schema = {
+        'name': 'search_media',
+        'description': 'Семантический поиск фильмов и сериалов по описанию',
+        'parameters': {
+            'type': types.SchemaType.OBJECT,
+            'properties': {
+                'query': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Поисковый запрос на естественном языке',
+                },
+                'top_k': {
+                    'type': types.SchemaType.NUMBER,
+                    'description': 'Количество результатов (по умолчанию 5)',
+                    'optional': True,
+                },
+                'category': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Категория (например, драма, комедия, экшн)',
+                    'optional': True,
+                },
+                'media_type': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Тип медиа (movie, series)',
+                    'optional': True,
+                },
+                'year_from': {
+                    'type': types.SchemaType.NUMBER,
+                    'description': 'Минимальный год',
+                    'optional': True,
+                },
+                'year_to': {
+                    'type': types.SchemaType.NUMBER,
+                    'description': 'Максимальный год',
+                    'optional': True,
+                },
+            },
+            'required': ['query'],
+        },
+    }
+
+    get_media_card_schema = {
+        'name': 'get_media_card',
+        'description': 'Получение полной карточки фильма/сериала',
+        'parameters': {
+            'type': types.SchemaType.OBJECT,
+            'properties': {
+                'disk_name': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Имя диска, на котором находится медиа',
+                },
+                'title': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Название фильма/сериала',
+                },
+                'media_type': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Тип медиа (movie или series)',
+                },
+            },
+            'required': ['disk_name', 'title', 'media_type'],
+        },
+    }
+
+    find_by_exact_title_schema = {
+        'name': 'find_by_exact_title',
+        'description': 'Точный поиск медиа по названию без семантического поиска',
+        'parameters': {
+            'type': types.SchemaType.OBJECT,
+            'properties': {
+                'title': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Название для поиска',
+                },
+                'media_type': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Тип медиа (movie или series)',
+                    'optional': True,
+                },
+            },
+            'required': ['title'],
+        },
+    }
+
+    get_random_media_schema = {
+        'name': 'get_random_media',
+        'description': 'Получение случайной рекомендации из медиатеки',
+        'parameters': {
+            'type': types.SchemaType.OBJECT,
+            'properties': {
+                'category': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Категория для фильтрации',
+                    'optional': True,
+                },
+                'media_type': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Тип медиа (movie или series)',
+                    'optional': True,
+                },
+                'mood': {
+                    'type': types.SchemaType.STRING,
+                    'description': 'Настроение для фильтрации',
+                    'optional': True,
+                },
+            },
+        },
+    }
+
+    rebuild_rag_index_schema = {
+        'name': 'rebuild_rag_index',
+        'description': 'Пересборка RAG-индекса из текущей базы данных',
+        'parameters': {
+            'type': types.SchemaType.OBJECT,
+            'properties': {},
+        },
+    }
+
+    get_rag_status_schema = {
+        'name': 'get_rag_status',
+        'description': 'Получение статуса RAG-индекса',
+        'parameters': {
+            'type': types.SchemaType.OBJECT,
+            'properties': {},
+        },
+    }
+
+    return [
+        {
+            'function_declarations': [search_media_schema],
+            'tool_config': {'function_calling_config': {'mode': 'ANY'}},
+        },
+        {
+            'function_declarations': [get_media_card_schema],
+            'tool_config': {'function_calling_config': {'mode': 'ANY'}},
+        },
+        {
+            'function_declarations': [find_by_exact_title_schema],
+            'tool_config': {'function_calling_config': {'mode': 'ANY'}},
+        },
+        {
+            'function_declarations': [get_random_media_schema],
+            'tool_config': {'function_calling_config': {'mode': 'ANY'}},
+        },
+        {
+            'function_declarations': [rebuild_rag_index_schema],
+            'tool_config': {'function_calling_config': {'mode': 'ANY'}},
+        },
+        {
+            'function_declarations': [get_rag_status_schema],
+            'tool_config': {'function_calling_config': {'mode': 'ANY'}},
+        },
+    ]
+
+
+def dispatch_media_tool_call(tool_name: str, args: Dict[str, Any]) -> str:
+    """Диспетчер вызовов инструментов медиатеки."""
+    
+    functions = {
+        'search_media': search_media,
+        'get_media_card': get_media_card,
+        'find_by_exact_title': find_by_exact_title,
+        'get_random_media': get_random_media,
+        'rebuild_rag_index': rebuild_rag_index,
+        'get_rag_status': get_rag_status,
+    }
+    
+    func = functions.get(tool_name)
+    if not func:
+        return json.dumps({'error': f'Неизвестный инструмент: {tool_name}'}, ensure_ascii=False)
+    
+    try:
+        # Вызов функции с переданными аргументами
+        result = func(**args)
+        return result
+    except TypeError as e:
+        logger.error(f"Ошибка аргументов для {tool_name}: {e}", exc_info=True)
+        return json.dumps({'error': f'Неверные аргументы для {tool_name}: {str(e)}'}, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"Ошибка выполнения {tool_name}: {e}", exc_info=True)
+        return json.dumps({'error': str(e)}, ensure_ascii=False)
+
+
+def ask_with_media_rag(question: str, api_key: str = '') -> str:
+    """Интеграция ИИ с инструментами медиатеки для ответов на вопросы."""
+    try:
+        if not api_key:
+            api_key = _get_gemini_api_key()
+            if not api_key:
+                return json.dumps({'error': 'GEMINI_API_KEY не найден'}, ensure_ascii=False)
+
+        # Здесь должна быть логика интеграции с Gemini AI
+        # Пока просто возвращаем сообщение, что функция доступна
+        return json.dumps({
+            'message': 'Функция ask_with_media_rag доступна. Используйте инструменты медиатеки через dispatch_media_tool_call.',
+            'question': question,
+            'available_tools': list(dispatch_media_tool_call.__annotations__.keys())
+        }, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Ошибка в ask_with_media_rag: {e}", exc_info=True)
+        return json.dumps({'error': str(e)}, ensure_ascii=False)

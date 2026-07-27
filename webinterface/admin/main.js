@@ -181,7 +181,7 @@ async function loadTabContent(tabName, url) {
 // Initialize HELP content
 function initHelpContent() {
   window.HELP_CONTENT = {
-    'overview': `<h4>📋 Обзор проекта</h4><p>ai-mediteka — интегрированная среда для AI и медиатеки.</p>`,
+    'overview': `<h4>📋 Обзор проекта</h4><p>mediteka — интегрированная среда для AI и медиатеки.</p>`,
     'scan': `<h4>🔍 Сканирование</h4><p>Полное сканирование медиатеки с классификацией.</p>`,
     'audit': `<h4>🗂 Аудит БД</h4><p>Сверка таблицы media с файлами на диске.</p>`,
     'rebuild': `<h4>🔧 Восстановление</h4><p>Восстановление БД из JSON.</p>`,

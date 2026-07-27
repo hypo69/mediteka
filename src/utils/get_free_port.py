@@ -24,6 +24,33 @@ from typing import List, Tuple, Union
 
 from src.logger import logger
 
+def _is_port_in_use(host: str, port: int) -> bool:
+    """Проверка занятости порта на хосте."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind((host, port))
+            return False  # Порт свободен
+        except OSError:
+            return True  # Порт занят
+
+def _parse_port_range(port_range_str: str) -> Tuple[int, int]:
+    """Парсинг строки диапазона портов 'min-max'."""
+    try:
+        parts = port_range_str.split('-')
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise ValueError(f'Некорректный формат диапазона: {port_range_str}')
+        
+        min_port = int(parts[0])
+        max_port = int(parts[1])
+
+        if min_port >= max_port:
+            raise ValueError(f'Некорректный диапазон: {port_range_str}')
+        return min_port, max_port
+
+    except ValueError as e:
+        logger.error(f'Ошибка парсинга диапазона: {port_range_str}')
+        raise ValueError(f'Ошибка парсинга диапазона: {port_range_str}') from e
+
 def get_free_port(host: str, port_range: Union[str, List[str]] = '') -> int:
     """
     Поиск и выделение свободного TCP-порта.
@@ -44,34 +71,6 @@ def get_free_port(host: str, port_range: Union[str, List[str]] = '') -> int:
     Examples:
         >>> port = get_free_port(host='localhost', port_range='3000-3005')
     """
-
-    def _is_port_in_use(host: str, port: int) -> bool:
-        """Проверка занятости порта на хосте."""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            try:
-                sock.bind((host, port))
-                return False  # Порт свободен
-            except OSError:
-                return True  # Порт занят
-
-    def _parse_port_range(port_range_str: str) -> Tuple[int, int]:
-        """Парсинг строки диапазона портов 'min-max'."""
-        try:
-            parts = port_range_str.split('-')
-            if len(parts) != 2 or not parts[0] or not parts[1]:
-                raise ValueError(f'Некорректный формат диапазона: {port_range_str}')
-            
-            min_port = int(parts[0])
-            max_port = int(parts[1])
-
-            if min_port >= max_port:
-                raise ValueError(f'Некорректный диапазон: {port_range_str}')
-            return min_port, max_port
-
-        except ValueError as e:
-            logger.error(f'Ошибка парсинга диапазона: {port_range_str}')
-            raise ValueError(f'Ошибка парсинга диапазона: {port_range_str}') from e
-
     if port_range:
         if isinstance(port_range, str):
             min_port, max_port = _parse_port_range(port_range)

@@ -8,7 +8,7 @@
 #   на путях, указанных в базе данных медиатеки.
 #
 # File: update_torrents_path.py
-# Project: ai-mediteka
+# Project: mediteka
 # =============================================================================
 
 import sys

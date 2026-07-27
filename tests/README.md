@@ -1,4 +1,4 @@
-# Тесты ai-mediteka
+# Тесты mediteka
 
 ## Структура
 

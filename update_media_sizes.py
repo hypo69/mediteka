@@ -11,7 +11,7 @@
 #   Пример: python update_media_sizes.py E: L:
 #
 # File: update_media_sizes.py
-# Project: ai-mediteka
+# Project: mediteka
 # =============================================================================
 
 import sqlite3

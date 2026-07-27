@@ -8,7 +8,7 @@
 #   запросов. Обеспечивает покрытие основных endpoint-ов API-сервера.
 #
 # File: tests/test_fastapi.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69

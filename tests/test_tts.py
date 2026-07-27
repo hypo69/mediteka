@@ -8,7 +8,7 @@
 #   основных сценариев использования и проверку существования необходимых функций.
 #
 # File: tests/test_tts.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69

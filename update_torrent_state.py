@@ -8,7 +8,7 @@
 #   торрентов, у которых установлен torrent_id в базе данных медиатеки.
 #
 # File: update_torrent_state.py
-# Project: ai-mediteka
+# Project: mediteka
 # =============================================================================
 
 import sys

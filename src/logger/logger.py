@@ -9,7 +9,7 @@
 #   паттерн Singleton для единого экземпляра логгера по всему приложению.
 #
 # File: src/logger/logger.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: src.logger
 # Author: hypo69
 # Copyright: © 2026 hypo69

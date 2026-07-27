@@ -1,4 +1,4 @@
-# PowerShell скрипт для запуска тестов ai-mediteka
+# PowerShell скрипт для запуска тестов mediteka
 
 param(
     [switch]$Coverage,

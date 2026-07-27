@@ -8,7 +8,7 @@
 #   синхронные запросы, потоковую генерацию и работу с моками.
 #
 # File: tests/test_ai.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: tests
 # Author: hypo69
 # Copyright: © 2026 hypo69

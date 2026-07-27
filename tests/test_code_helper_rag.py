@@ -31,10 +31,11 @@ def test_faiss_engine_init(rag_dir):
     """Проверка инициализации движка."""
     engine = FaissEngine(rag_dir)
     assert engine.index_dir == rag_dir
-    assert engine.dimension == 3072
+    assert engine.dimension == 768
     assert len(engine.metadatas) == 0
 
-def test_faiss_engine_add_and_search(rag_dir):
+@pytest.mark.anyio
+async def test_faiss_engine_add_and_search(rag_dir):
     """Проверка индексации и поиска (мокируем API-ключ)."""
     # ВНИМАНИЕ: Для реального теста нужен API-ключ Gemini,
     # который не должен храниться в коде. Предполагаем, что он есть в ENV.
@@ -49,17 +50,18 @@ def test_faiss_engine_add_and_search(rag_dir):
         {'text': 'Gemini RAG testing', 'meta': {'path': 'test2.txt'}}
     ]
     
-    success = engine.add_documents(docs, api_key=api_key)
+    success = await engine.add_documents(docs, api_key=api_key)
     assert success is True
     assert len(engine.metadatas) == 2
     
     # Поиск
-    results = engine.search('Hello', api_key=api_key, top_k=1)
+    results = await engine.search('Hello', api_key=api_key, top_k=1)
     assert len(results) == 1
     assert results[0]['data']['text'] == 'Hello world'
     assert results[0]['score'] >= 0.0
 
-def test_faiss_engine_save_load(rag_dir):
+@pytest.mark.anyio
+async def test_faiss_engine_save_load(rag_dir):
     """Проверка сохранения и загрузки индекса."""
     api_key = os.getenv('GEMINI_API_KEY') or ''
     if not api_key:
@@ -68,7 +70,7 @@ def test_faiss_engine_save_load(rag_dir):
     # Создаем и сохраняем
     engine1 = FaissEngine(rag_dir)
     docs = [{'text': 'Persistent data', 'meta': {'path': 'pers.txt'}}]
-    engine1.add_documents(docs, api_key=api_key)
+    await engine1.add_documents(docs, api_key=api_key)
     
     # Загружаем новый экземпляр
     engine2 = FaissEngine(rag_dir)

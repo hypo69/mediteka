@@ -860,7 +860,7 @@
 
 **Изменен:** 2026-07-20 20:04  
 
-**Назначение:** DB_PATH = Path(r'D:\repos\public_repositories\ai-mediteka\plugins\media_organizer\data\media.db')
+**Назначение:** DB_PATH = Path(r'D:\repos\public_repositories\mediteka\plugins\media_organizer\data\media.db')
 
 
 ## 🚀 Статистика и подсчет
@@ -946,7 +946,7 @@
 
 **Изменен:** 2026-07-22 07:08  
 
-**Назначение:** DB_PATH = Path(r'd:\repos\public_repositories\ai-mediteka\plugins\media_organizer\media.db')
+**Назначение:** DB_PATH = Path(r'd:\repos\public_repositories\mediteka\plugins\media_organizer\media.db')
 
 
 ### **update_db_schema.py**

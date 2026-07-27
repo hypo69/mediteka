@@ -7,7 +7,7 @@
 #   Supports: list, add, remove, toggle status, get status.
 #
 # File: router_keys.py
-# Project: ai-mediteka
+# Project: mediteka
 # Package: src.fastapi
 # Author: hypo69
 # Copyright: © 2026 hypo69

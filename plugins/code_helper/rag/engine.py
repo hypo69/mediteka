@@ -24,10 +24,9 @@ import json
 import numpy as np
 from pathlib import Path
 from typing import List, Dict
-from google import genai
-from google.genai import types
 
 from src.logger import logger
+from src.ai.gemini.generative_ai import GoogleGenerativeAI
 
 class FaissEngine:
     """Движок для управления FAISS-индексом.
@@ -41,18 +40,17 @@ class FaissEngine:
     """
 
     def __init__(self, index_dir: Path) -> None:
-        """Инициализация FAISS-движка.
-
-        Args:
-            index_dir (Path): Директория для файлов индекса.
-        """
+        """Инициализация FAISS-движка."""
         self.index_dir: Path = index_dir
         self.index_dir.mkdir(parents=True, exist_ok=True)
         self.index_file: Path = self.index_dir / "index.faiss"
         self.meta_file: Path = self.index_dir / "index.json"
-        self.dimension: int = 3072
+        self.dimension: int = 768  # text-embedding-004 dimensionality
         self.index = self._load_or_create_index()
         self.metadatas: List[Dict] = self._load_metadatas()
+        
+        # Инициализация нашего проверенного оберточного класса
+        self.ai_model = GoogleGenerativeAI(api_key_names=['fmashulia'])
 
     def _load_or_create_index(self):
         """Загрузка или создание нового индекса FAISS."""
@@ -82,56 +80,35 @@ class FaissEngine:
             logger.error("Ошибка сохранения индекса", e)
             return False
 
-    def _embed(self, api_key: str, texts: List[str], task_type: str = 'RETRIEVAL_DOCUMENT') -> np.ndarray:
-        """Получение эмбеддингов для списка текстов через Gemini API.
+    async def _embed_batch(self, texts: List[str]) -> np.ndarray:
+        """Генерация эмбеддингов с автоматической обработкой квот."""
+        vectors = []
+        for text in texts:
+            # Используем встроенный метод эмбеддинга из GoogleGenerativeAI, он асинхронный
+            vec = await self.ai_model.embed(text)
+            if vec is not None:
+                vectors.append(vec)
+            else:
+                # В случае неудачи заполняем заглушкой
+                vectors.append(np.zeros(self.dimension, dtype=np.float32))
+        return np.array(vectors, dtype=np.float32)
 
-        Args:
-            api_key (str): API-ключ Gemini.
-            texts (List[str]): Список текстов для векторизации.
-            task_type (str): Тип задачи.
-
-        Returns:
-            np.ndarray: Векторы эмбеддингов.
-        """
-        client = genai.Client(api_key=api_key)
-        response = client.models.embed_content(
-            model='models/gemini-embedding-2',
-            contents=[types.Content(parts=[types.Part.from_text(text=t)]) for t in texts],
-            config=types.EmbedContentConfig(task_type=task_type),
-        )
-        return np.array([e.values for e in response.embeddings], dtype=np.float32)
-
-    def add_documents(self, docs: List[Dict], api_key: str) -> bool:
-        """Векторизация и добавление документов в индекс FAISS.
-
-        Args:
-            docs (List[Dict]): Список документов.
-            api_key (str): API-ключ для Gemini.
-
-        Returns:
-            bool: Успешность операции.
-        """
+    async def add_documents(self, docs: List[Dict], api_key: str = None) -> bool:
+        """Векторизация и добавление документов в индекс FAISS."""
         texts = [d['text'] for d in docs]
-        vectors = self._embed(api_key, texts, task_type='RETRIEVAL_DOCUMENT')
+        vectors = await self._embed_batch(texts)
         
         self.index.add(vectors)
         self.metadatas.extend([{'meta': d.get('meta', {}), 'text': d['text']} for d in docs])
         return self.save()
 
-    def search(self, query: str, api_key: str, top_k: int = 5) -> List[Dict]:
-        """Поиск по индексу FAISS.
-
-        Args:
-            query (str): Запрос пользователя.
-            api_key (str): API-ключ Gemini.
-            top_k (int): Количество результатов.
-
-        Returns:
-            List[Dict]: Список результатов поиска.
-        """
-        query_vec = self._embed(api_key, [query], task_type='RETRIEVAL_QUERY')
-        
-        scores, indices = self.index.search(query_vec, top_k)
+    async def search(self, query: str, api_key: str = None, top_k: int = 5) -> List[Dict]:
+        """Поиск по индексу FAISS."""
+        query_vec = await self.ai_model.embed(query)
+        if query_vec is None:
+            return []
+            
+        scores, indices = self.index.search(query_vec.reshape(1, -1), top_k)
         
         results: List[Dict] = []
         for i in range(top_k):
