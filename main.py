@@ -55,7 +55,15 @@ async def auto_login_local_user(request: Request, call_next):
     # Check if host is local loopback (127.0.0.1 or localhost)
     if request.url.hostname in ('127.0.0.1', 'localhost'):
         token = request.cookies.get('auth_token', '')
-        if not token:
+        from src.fastapi.router_auth import verify_jwt_token
+        is_token_valid = False
+        if token:
+            try:
+                is_token_valid = verify_jwt_token(token) is not None
+            except Exception:
+                pass
+
+        if not token or not is_token_valid:
             from src.user_manager import user_manager
             try:
                 db_user = user_manager.get_user_by_id(1)
@@ -110,7 +118,7 @@ else:
 plugins = load_plugins(model)
 
 app.include_router(init_chat_router(model, plugins))
-app.include_router(init_qbt_router())
+app.include_router(init_qbt_router(model))
 app.include_router(init_media_router(prefix='/api/media-admin'))
 app.include_router(init_media_router(prefix='/api/media'))
 app.include_router(init_auth_router())
@@ -442,17 +450,17 @@ async def admin_interface_post(request: Request):
     # First ensure user has valid auth token and role
     token = request.cookies.get('auth_token')
     if not token:
-        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+        return RedirectResponse(url='/', status_code=303)
         
     from src.fastapi.router_auth import verify_jwt_token
     user_data = verify_jwt_token(token)
     if not user_data:
-        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+        return RedirectResponse(url='/', status_code=303)
         
     from src.user_manager import user_manager
     db_user = user_manager.get_user_by_email(user_data.email)
     if not db_user or (not db_user.get('is_admin', 0) and db_user.get('role') != 'admin'):
-        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+        return RedirectResponse(url='/', status_code=303)
 
     form = await request.form()
     password = form.get('password')
@@ -461,7 +469,8 @@ async def admin_interface_post(request: Request):
         response.set_cookie(key='admin_password_verified', value='true', max_age=86400 * 30, httponly=True)
         return response
     else:
-        return RedirectResponse(url='https://kino.davidka.net', status_code=303)
+        return RedirectResponse(url='/', status_code=303)
+
 
 
 @app.get('/admin/{full_path:path}')

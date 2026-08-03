@@ -5,7 +5,6 @@ Unified interface for all TTS systems (Microsoft Edge, Google, Silero).
 from __future__ import annotations
 
 from pathlib import Path
-from src.tts import edge, gtts, silero
 from src.logger import logger
 
 async def synthesize_speech(text: str, file_path: Path, tts_system: str = "edge-tts", voice: str = "ru-RU-DmitryNeural"):
@@ -13,9 +12,18 @@ async def synthesize_speech(text: str, file_path: Path, tts_system: str = "edge-
     logger.info(f"Synthesizing using system: {tts_system}, voice/speaker: {voice}")
     
     if tts_system == "gtts":
+        from src.tts import gtts
         await gtts.synthesize(text, file_path, voice)
     elif tts_system == "silero":
-        await silero.synthesize(text, file_path, voice)
+        try:
+            from src.tts import silero
+            await silero.synthesize(text, file_path, voice)
+        except ImportError as e:
+            logger.warning(f"Could not load Silero TTS (missing dependencies like torch/soundfile): {e}. Falling back to edge-tts.")
+            from src.tts import edge
+            await edge.synthesize(text, file_path, voice)
     else:
         # Fallback to edge-tts
+        from src.tts import edge
         await edge.synthesize(text, file_path, voice)
+

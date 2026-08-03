@@ -144,13 +144,26 @@ class RAGPlugin(BasePlugin):
 
             results = results_data.get("results", [])
 
+            # Поиск в интернете через Playwright, если локально ничего не найдено или запрошен интернет-поиск
+            web_context = ""
+            if not results or any(x in low_message for x in ["интернет", "форум", "гугл", "поищи", "ddg"]):
+                yield {"status": "🌐 Поиск информации в интернете через Playwright..."}
+                try:
+                    from plugins.web_search.playwright_searcher import PlaywrightWebSearcher
+                    web_searcher = PlaywrightWebSearcher()
+                    web_context = await web_searcher.search_and_extract(message)
+                except Exception as playwright_err:
+                    logger.error(f"Ошибка при работе PlaywrightWebSearcher: {playwright_err}")
+                    web_context = "Не удалось выполнить поиск в интернете через Playwright."
+
             # Определяем, нужен ли вызов Gemini для генерации естественного ответа
             conversational_keywords = ["посоветуй", "рекомендуй", "расскажи", "кто", "как", "почему", "о чём", "какой", "что", "где", "когда", "чей", "какие", "подробнее"]
             is_conversational = (
                 "?" in message or 
                 any(w in low_message for w in conversational_keywords) or
                 not results or
-                kwargs.get("history")
+                kwargs.get("history") or
+                web_context
             )
 
             if is_conversational:
@@ -180,11 +193,13 @@ class RAGPlugin(BasePlugin):
                 context_str = "\n\n".join(context_parts)
                 
                 system_prompt = (
-                    f"Ты — AI Assistant домашней медиатеки кино.davidka.net. Тебе предоставлены результаты локального RAG-поиска по запросу пользователя.\n"
-                    f"Используй эти результаты для построения подробного, вежливого и структурированного ответа.\n"
+                    f"Ты — AI Assistant домашней медиатеки кино.davidka.net. Тебе предоставлены результаты локального RAG-поиска и внешнего веб-поиска по запросу пользователя.\n"
+                    f"Используй эти результаты для построения подробного, вежливого и структурированного ответа на русском языке.\n"
                     f"Если фильм/сериал найден, обязательно используй тег <film>Название на русском</film> при его упоминании, чтобы система плеера могла автоматически запустить его.\n"
-                    f"Если информации в результатах RAG недостаточно для ответа, ответь на основе своих общих знаний, но вежливо предупреди пользователя, что в его локальной медиатеке этого нет.\n\n"
-                    f"Результаты поиска в локальной медиатеке:\n{context_str}"
+                    f"Если информация взята из интернета, вежливо упомяни, что в локальной медиатеке этого фильма/сериала или таких подробностей нет.\n"
+                    f"В случае запроса подробного сюжета по сериям, перескажи его максимально детально на основе найденного контекста, без использования местоимения «это» в начале абзацев.\n\n"
+                    f"Результаты поиска в локальной медиатеке:\n{context_str}\n\n"
+                    f"{web_context}"
                 )
 
                 answer = await self.ai.chat(

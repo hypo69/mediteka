@@ -1,5 +1,10 @@
 $scriptDir = Split-Path $MyInvocation.MyCommand.Path
 $venvActivate = Join-Path $scriptDir "venv\Scripts\Activate.ps1"
+$env:PYTHONUTF8 = "1"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+
 
 Write-Host ""
 Write-Host "╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -46,7 +51,7 @@ Write-Host ""
 Write-Host "[3/6] Загрузка конфигурации..." -ForegroundColor Cyan
 $configPath = Join-Path $scriptDir "src\fastapi\config.json"
 $envFile = Join-Path $scriptDir ".env"
-$host_ = "127.0.0.1"
+$host_ = "0.0.0.0"
 $port  = "3000"
 $useSsl = $true
 

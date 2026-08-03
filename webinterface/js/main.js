@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadTabContent('chat', '/html/chat/index.html'),
     loadTabContent('torrents', '/html/torrents/index.html'),
     loadTabContent('media', '/html/media/index.html'),
+    loadTabContent('movie-search', '/html/movie-search/index.html'),
     loadTabContent('admin', '/html/admin/index.html'),
     loadTabContent('help', '/html/help/index.html'),
   ]);

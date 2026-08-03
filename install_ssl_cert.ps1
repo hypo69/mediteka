@@ -1,8 +1,9 @@
 # Установка SSL-сертификата в хранилище Windows
 
-$certPath = "C:\Users\onela\.certs\localhost+2.pem"
-$keyPath = "C:\Users\onela\.certs\localhost+2-key.pem"
-$pfxPath = "C:\Users\onela\.certs\localhost+2.pfx"
+$certsDir = Join-Path $env:USERPROFILE ".certs"
+$certPath = Join-Path $certsDir "localhost+2.pem"
+$keyPath = Join-Path $certsDir "localhost+2-key.pem"
+$pfxPath = Join-Path $certsDir "localhost+2.pfx"
 
 Write-Host "-Conвертация PEM в PFX..." -ForegroundColor Cyan
 

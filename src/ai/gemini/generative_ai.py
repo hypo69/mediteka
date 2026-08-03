@@ -31,6 +31,7 @@ from google.auth.exceptions import DefaultCredentialsError, RefreshError
 
 import os
 from dotenv import load_dotenv, set_key
+import numpy as np
 
 import header
 from header import __root__
@@ -175,8 +176,11 @@ class GoogleGenerativeAI:
             )
             inst += format_rule
             cfg_kwargs['system_instruction'] = inst
-        if tools:
-            cfg_kwargs['tools'] = tools
+        all_tools = list(tools) if tools else []
+        has_search = any(hasattr(t, 'google_search') or (isinstance(t, dict) and 'google_search' in t) for t in all_tools)
+        if not has_search:
+            all_tools.append(types.Tool(google_search=types.GoogleSearch()))
+        cfg_kwargs['tools'] = all_tools
         
         gen_cfg = {}
         if isinstance(self.generation_config, dict):

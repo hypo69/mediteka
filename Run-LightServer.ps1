@@ -47,6 +47,7 @@ if (Test-Path $envFile) {
         if ($line -and -not $line.StartsWith('#') -and $line -match "^([^=]+)=(.*)$") {
             $key = $Matches[1].Trim()
             $val = $Matches[2].Trim().Trim('"').Trim("'")
+            if ($key -eq "USE_SSL") { $useSsl = $val -in ("true","1","yes") }
             if ($key -eq "MODE") { $mode = $val.ToLower() }
             if ($key -eq "DEBUG") { $debug = $val.ToLower() }
         }
@@ -98,8 +99,9 @@ if ($is_debug) {
 
 # SSL
 if ($useSsl) {
-    $certFile = "C:\Users\onela\.certs\localhost+2.pem"
-    $keyFile  = "C:\Users\onela\.certs\localhost+2-key.pem"
+    $certsDir = Join-Path $env:USERPROFILE ".certs"
+    $certFile = Join-Path $certsDir "localhost+2.pem"
+    $keyFile  = Join-Path $certsDir "localhost+2-key.pem"
     if ((Test-Path $certFile) -and (Test-Path $keyFile)) {
         $uvicornArgs += "--ssl-certfile", $certFile, "--ssl-keyfile", $keyFile
         Write-Host "    SSL: включён ($certFile)" -ForegroundColor Green

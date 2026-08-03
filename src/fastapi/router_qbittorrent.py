@@ -28,7 +28,7 @@ def _save_dirs(dirs: list[str]):
     _DIRS_FILE.write_text(json.dumps(dirs, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def init_router() -> APIRouter:
+def init_router(ai_model=None) -> APIRouter:
     router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 
     from src.utils.jjson import j_loads_ns
@@ -45,6 +45,21 @@ def init_router() -> APIRouter:
                 password=_qbt_cfg.password,
             )
         return _client
+
+    # ── search ────────────────────────────────────────────────────────────────
+
+    @router.get("/search")
+    async def search_torrents(query: str):
+        if not query:
+            raise HTTPException(status_code=400, detail="Query is empty")
+        try:
+            from plugins.torrent_playwright.playwright_searcher import PlaywrightTorrentSearcher
+            searcher = PlaywrightTorrentSearcher(ai_model)
+            results = await searcher.search(query)
+            return results
+        except Exception as ex:
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=str(ex))
 
     # ── dirs ──────────────────────────────────────────────────────────────────
 

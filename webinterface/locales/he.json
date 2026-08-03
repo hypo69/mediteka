@@ -3,12 +3,27 @@
     "chat": "צ'אט",
     "torrents": "טורנטים",
     "media": "ספריית медиיה",
+    "movieSearch": "חיפוש סרטים",
     "admin": "ניהול",
     "help": "ה-reference",
     "remote": "שלט רחוק",
     "player": "נגן מקומי",
-    "cabinet": "ממשק משתמש",
+    "cabinet": "ממשк משתמש",
     "settings": "הגדרות"
+  },
+  "movieSearch": {
+    "title": "🔍 חיפוש סרטים בטורנט",
+    "placeholder": "הקלד שם סרט או סדרה...",
+    "btnSearch": "חפש",
+    "sourceFilter": "סנן לפי מקור:",
+    "allTrackers": "כל הטראקרים",
+    "sortTitle": "מיון לפי:",
+    "sortSeeds": "סידרס (הורדה מהירה)",
+    "sortSizeDesc": "גודל (מהגדול לקטן)",
+    "sortSizeAsc": "גודל (מהקטן לגדול)",
+    "welcomeText": "הזן שאילתא למעלה כדי להתחיל בחיפוש.",
+    "activeDownloads": "📥 הורדות פעילות ב-qBittorrent",
+    "noDownloads": "אין הורדות פעילות כרגע"
   },
   "chat": {
     "placeholder": "הקלידו הודעה...",

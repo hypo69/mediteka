@@ -284,6 +284,13 @@ class UserManager:
                     (perm_name, perm_desc, perm_cat)
                 )
 
+            # Вставка администратора по умолчанию (ID: 1) для локального обхода
+            conn.execute("""
+                INSERT OR IGNORE INTO users (id, email, name, is_admin, role)
+                VALUES (1, 'admin@localhost', 'Admin', 1, 'admin')
+            """)
+
+
     def _get_connection(self) -> sqlite3.Connection:
         """Получение подключения к базе данных.
 

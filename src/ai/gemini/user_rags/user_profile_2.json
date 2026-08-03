@@ -1,10 +1,51 @@
 {
   "user_id": "2",
   "created_at": 1784708469.367987,
-  "updated_at": 1784708469.367995,
+  "updated_at": 1785687911.5613399,
   "watch_history": {},
   "last_watched": null,
-  "search_history": [],
+  "search_history": [
+    {
+      "query": "Полицейская история",
+      "timestamp": 1785686423.520155
+    },
+    {
+      "query": "Полицейская история",
+      "timestamp": 1785686470.8867297
+    },
+    {
+      "query": "Полицейскую историю",
+      "timestamp": 1785687003.6377573
+    },
+    {
+      "query": "Полицейскую историю",
+      "timestamp": 1785687010.7538593
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785687216.9772067
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785687728.7310748
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785687757.195014
+    },
+    {
+      "query": "Во все тяжкие",
+      "timestamp": 1785687830.6626575
+    },
+    {
+      "query": "Во все тяжкие",
+      "timestamp": 1785687875.745639
+    },
+    {
+      "query": "Во все тяжкие",
+      "timestamp": 1785687911.5613332
+    }
+  ],
   "preferences": {
     "liked_titles": [],
     "disliked_titles": [],

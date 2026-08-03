@@ -132,8 +132,9 @@ catch {
 #
 # Запуск нового туннеля
 #
-$certFile = "C:\Users\onela\.certs\localhost+2.pem"
-$keyFile = "C:\Users\onela\.certs\localhost+2-key.pem"
+$certsDir = Join-Path $env:USERPROFILE ".certs"
+$certFile = Join-Path $certsDir "localhost+2.pem"
+$keyFile = Join-Path $certsDir "localhost+2-key.pem"
 $protocol = "http"
 $extraArgs = @()
 

@@ -3,8 +3,23 @@
     "chat": "Chat",
     "torrents": "Torrents",
     "media": "Media Library",
+    "movieSearch": "Movie Search",
     "admin": "Admin",
     "help": "Reference"
+  },
+  "movieSearch": {
+    "title": "🔍 Search Movies on Trackers",
+    "placeholder": "Enter movie or series name (e.g. Matrix 1080p)...",
+    "btnSearch": "Search",
+    "sourceFilter": "Source Filter:",
+    "allTrackers": "All Trackers",
+    "sortTitle": "Sort by:",
+    "sortSeeds": "Seeds (desc)",
+    "sortSizeDesc": "Size (desc)",
+    "sortSizeAsc": "Size (asc)",
+    "welcomeText": "Enter query above to search torrents.",
+    "activeDownloads": "📥 Active Downloads in qBittorrent",
+    "noDownloads": "No active downloads currently"
   },
   "chat": {
     "placeholder": "Type a message...",

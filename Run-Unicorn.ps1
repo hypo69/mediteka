@@ -1,6 +1,11 @@
 $scriptDir = Split-Path $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
 $venvActivate = Join-Path $scriptDir "venv\Scripts\Activate.ps1"
+$env:PYTHONUTF8 = "1"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
+
 
 Write-Host ""
 Write-Host "╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -107,8 +112,9 @@ if ($is_debug) {
 
 # SSL
 if ($useSsl) {
-    $certFile = "C:\Users\onela\.certs\localhost+2.pem"
-    $keyFile  = "C:\Users\onela\.certs\localhost+2-key.pem"
+    $certsDir = Join-Path $env:USERPROFILE ".certs"
+    $certFile = Join-Path $certsDir "localhost+2.pem"
+    $keyFile  = Join-Path $certsDir "localhost+2-key.pem"
     if ((Test-Path $certFile) -and (Test-Path $keyFile)) {
         $uvicornArgs += "--ssl-certfile", $certFile, "--ssl-keyfile", $keyFile
         Write-Host "    SSL: включён ($certFile)" -ForegroundColor Green
