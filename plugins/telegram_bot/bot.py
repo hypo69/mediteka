@@ -32,6 +32,9 @@ class TelegramBotPlugin(BasePlugin):
         """Передача всех загруженных плагинов для роутинга сообщений."""
         self._plugins = plugins
 
+    def can_handle(self, message: str) -> bool:
+        return False
+
     async def _handle(self, message: str) -> str | None:
         """Плагин не перехватывает веб-запросы — только Telegram."""
         return None

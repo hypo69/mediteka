@@ -106,7 +106,9 @@ async function loadTabContent(tabName, url) {
     // Загрузка JS файла вкладки
     const script = document.createElement('script');
     script.src = `/html/${tabName}/main.js?v=20260725`;
-    // Don't use type="module" - files don't use ES6 modules
+    if (tabName === 'admin') {
+      script.type = 'module';
+    }
     script.onload = () => {
       console.log(`✓ Загружен JS вкладки: ${tabName}`);
       // Call init function if exists

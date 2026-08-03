@@ -1,4 +1,4 @@
-$scriptDir = Split-Path $MyInvocation.MyCommand.Path
+﻿$scriptDir = Split-Path $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
 $venvActivate = Join-Path $scriptDir "venv\Scripts\Activate.ps1"
 $env:PYTHONUTF8 = "1"

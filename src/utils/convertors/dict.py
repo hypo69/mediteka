@@ -75,17 +75,21 @@ def replace_key_in_dict(data, old_key, new_key) -> dict:
     """
     if isinstance(data, dict):
         for key in list(data.keys()):
+            new_k = key
             if key == old_key:
                 data[new_key] = data.pop(old_key)
-            if isinstance(data[key], (dict, list)):
-                replace_key_in_json(data[key], old_key, new_key)
+                new_k = new_key
+            
+            if isinstance(data[new_k], (dict, list)):
+                replace_key_in_dict(data[new_k], old_key, new_key)
     elif isinstance(data, list):
         for item in data:
-            replace_key_in_json(item, old_key, new_key)
+            replace_key_in_dict(item, old_key, new_key)
     
     return data
 
 
+def dict2pdf(data: dict | SimpleNamespace, file_path: str | Path) -> None:
     """
     Save dictionary data to a PDF file.
 

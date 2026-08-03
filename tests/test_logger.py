@@ -38,6 +38,11 @@ class TestJsonFormatter:
         record.pathname = "/test/path.py"
         record.lineno = 123
         record.funcName = "test_func"
+        record.created = 1722687000.0 # float
+        record.msecs = 123.0 # float для форматирования мс
+        record.exc_info = None # Добавлено: чтобы форматтер не падал
+
+
         
         result = formatter.format(record)
         

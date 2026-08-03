@@ -11,6 +11,10 @@ class UserManagerTool(BasePlugin):
         super().__init__(ai_model)
         self.user_manager = UserManager(__root__ / 'src' / 'user_manager' / 'users.db')
 
+    def can_handle(self, message: str) -> bool:
+        msg = message.lower().strip()
+        return msg.startswith('!list_users') or msg.startswith('!user_activity')
+
     async def _handle(self, message: str, **kwargs) -> str:
         message = message.lower().strip()
         

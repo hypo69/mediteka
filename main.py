@@ -30,7 +30,7 @@ from fastapi.staticfiles import StaticFiles
 import header
 from header import __root__
 from src.ai import GoogleGenerativeAI
-from src.fastapi import init_auth_router, init_chat_router, init_control_router, init_media_router, init_qbt_router, init_tts_router
+from src.fastapi import init_auth_router, init_chat_router, init_control_router, init_media_router, init_qbt_router, init_tts_router, init_logs_router, init_keys_router
 from src.logger import logger
 from src.utils.file import read_text_file
 from src.utils.jjson import j_loads_ns
@@ -114,6 +114,7 @@ else:
     model: GoogleGenerativeAI = GoogleGenerativeAI(
         api_key_names=_api_key_names,
         system_instruction=_system_instruction,
+        sleep_on_exhausted=False,
     )
 plugins = load_plugins(model)
 
@@ -124,6 +125,8 @@ app.include_router(init_media_router(prefix='/api/media'))
 app.include_router(init_auth_router())
 app.include_router(init_control_router())
 app.include_router(init_tts_router())
+app.include_router(init_logs_router())
+app.include_router(init_keys_router())
 
 
 @app.on_event("startup")
@@ -501,6 +504,51 @@ async def tv_static(full_path: str) -> HTMLResponse:
     if not content:
         raise HTTPException(status_code=404, detail='File not found')
     return HTMLResponse(content=content)
+
+
+@app.get('/logs')
+async def logs_interface():
+    """Redirect to admin dashboard logs tab."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url='/admin#tab-logs', status_code=303)
+
+
+from pydantic import BaseModel
+
+class FoundryConfigRequest(BaseModel):
+    enabled: bool
+    url: str
+    key: str
+    model: str
+
+@app.get('/api/foundry/config')
+async def get_foundry_config():
+    import os
+    return {
+        "enabled": os.getenv("USE_FOUNDRY", "false").lower() in ("true", "1", "yes"),
+        "url": os.getenv("FOUNDRY_BASE_URL", "http://localhost:3000"),
+        "key": os.getenv("FOUNDRY_API_KEY", ""),
+        "model": os.getenv("FOUNDRY_MODEL_ID", "qwen3-0.6b-generic-cpu:4")
+    }
+
+@app.post('/api/foundry/config')
+async def save_foundry_config(data: FoundryConfigRequest):
+    from dotenv import set_key
+    import os
+    env_path = str(__root__ / '.env')
+    
+    set_key(env_path, "USE_FOUNDRY", "true" if data.enabled else "false")
+    set_key(env_path, "FOUNDRY_BASE_URL", data.url)
+    set_key(env_path, "FOUNDRY_API_KEY", data.key)
+    set_key(env_path, "FOUNDRY_MODEL_ID", data.model)
+    
+    # Update current process environment
+    os.environ["USE_FOUNDRY"] = "true" if data.enabled else "false"
+    os.environ["FOUNDRY_BASE_URL"] = data.url
+    os.environ["FOUNDRY_API_KEY"] = data.key
+    os.environ["FOUNDRY_MODEL_ID"] = data.model
+    
+    return {"status": "ok"}
 
 
 

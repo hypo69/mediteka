@@ -94,11 +94,39 @@ class GoogleGenerativeAI:
     _all_keys_exhausted: bool = field(default=False, init=False)
     _unavailable_attempts: int = field(default=0, init=False)
     save_history_chat: bool = field(default_factory=lambda: _DEFAULT_SAVE_HISTORY)
+    sleep_on_exhausted: bool = True
+
+    _last_exception: Optional[str] = field(default=None, init=False)
+    _key_errors: Dict[str, str] = field(default_factory=dict, init=False)
 
     MODELS: List[str] = field(default_factory=lambda: _AVAILABLE_MODELS, init=False)
 
+    def _get_exhausted_error_msg(self) -> str:
+        msg = "Ошибка: Все API ключи исчерпаны."
+        import os
+        if os.getenv("MODE", "DEV").upper() == "DEV":
+            if getattr(self, '_key_errors', None):
+                msg += "\n[DEV Детали по ключам]:"
+                for kname, kerr in self._key_errors.items():
+                    msg += f"\n- {kname}: {kerr}"
+            else:
+                last_err = getattr(self, '_last_exception', None)
+                if last_err:
+                    msg += f"\n[DEV Детали]: {last_err}"
+        return msg
+
+    def _record_error(self, ex: Exception | str) -> None:
+        ex_str = str(ex)
+        self._last_exception = ex_str
+        if not hasattr(self, '_key_errors') or self._key_errors is None:
+            self._key_errors = {}
+        key_name = self._key_names_active[0] if self._key_names_active else '?'
+        self._key_errors[key_name] = ex_str
+
     def __post_init__(self):
         """Инициализация модели GoogleGenerativeAI с дополнительными настройками."""
+        self._last_exception = None
+        self._key_errors = {}
         # Сброс счётчика неудачных 503 при новом запуске
         self._unavailable_attempts = 0
         self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
@@ -144,13 +172,17 @@ class GoogleGenerativeAI:
                 m = rem // 60
                 print(f"[!] All API keys exhausted. Waiting {h}h {m}m for next key...")
                 logger.warning(f"All keys exhausted. Sleeping {h}h {m}m", None, False)
-                time.sleep(wait_sec + 5)
-                # Перезагружаем ключи после ожидания
-                self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
-                if not self.api_keys:
+                if self.sleep_on_exhausted:
+                    time.sleep(wait_sec + 5)
+                    # Перезагружаем ключи после ожидания
+                    self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
+                    if not self.api_keys:
+                        self._all_keys_exhausted = True
+                        return False
+                    self._all_keys_exhausted = False
+                else:
                     self._all_keys_exhausted = True
                     return False
-                self._all_keys_exhausted = False
             else:
                 self._all_keys_exhausted = True
                 print("[!] All API keys exhausted and no recovery time available.")
@@ -331,10 +363,11 @@ class GoogleGenerativeAI:
         Returns:
             Optional[str]: Ответ модели.
         """
+        self._key_errors = {}
         if self._all_keys_exhausted:
             if not self._switch_api_key():
                 print("[!] All API keys exhausted. Aborting.")
-                return None
+                return self._get_exhausted_error_msg()
             self._all_keys_exhausted = False
 
         for attempt in range(attempts):
@@ -386,6 +419,7 @@ class GoogleGenerativeAI:
                     continue
 
             except Exception as ex:
+                self._record_error(ex)
                 ex_str = str(ex)
                 logger.error(f"Ошибка чата (attempt {attempt}):\n {response=}", ex, False)
                 
@@ -414,7 +448,7 @@ class GoogleGenerativeAI:
                         self._mark_key_exhausted(self.api_key)
                         if not self._switch_api_key():
                             if not self._switch_model():
-                                return None
+                                return self._get_exhausted_error_msg()
                         continue
                     m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
                     base_wait = int(float(m.group(1))) + 2 if m else 5
@@ -424,20 +458,21 @@ class GoogleGenerativeAI:
                     continue
                 
                 if attempt >= attempts - 1:
-                    return None
+                    return f"Ошибка модели после {attempts} попыток: {ex_str}"
                 time.sleep(2 ** attempt)
                 continue
 
-        return None
+        return self._get_exhausted_error_msg()
 
     async def chat_stream(self, q: str, history: Optional[List[Dict]] = None, flag: str = "save_chat", system_instruction: Optional[str] = None, attempts: int = 15, model_name: Optional[str] = None, generation_config: dict = {}):
         """
         Асинхронный генератор ответов модели.
         """
+        self._key_errors = {}
         if self._all_keys_exhausted:
             if not self._switch_api_key():
                 print("[!] All API keys exhausted. Aborting.")
-                yield "Ошибка: Все API ключи исчерпаны."
+                yield self._get_exhausted_error_msg()
                 return
             self._all_keys_exhausted = False
 
@@ -507,6 +542,7 @@ class GoogleGenerativeAI:
                     continue
 
             except Exception as ex:
+                self._record_error(ex)
                 ex_str = str(ex)
                 logger.error(f"Ошибка чата-стриминга (attempt {attempt}):", ex, False)
                 
@@ -532,11 +568,11 @@ class GoogleGenerativeAI:
                         continue
 
                 if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
+                    if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or 'exceeded your current quota' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
                         self._mark_key_exhausted(self.api_key)
                         if not self._switch_api_key():
                             if not self._switch_model():
-                                yield "Ошибка: Лимиты исчерпаны (429)."
+                                yield self._get_exhausted_error_msg()
                                 return
                         continue
                     m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
@@ -546,20 +582,19 @@ class GoogleGenerativeAI:
                     await asyncio.sleep(wait)
                     continue
 
-                if attempt >= attempts - 1:
-                    yield f"Ошибка: {ex_str}"
-                    return
-                await asyncio.sleep(2 ** attempt)
-                continue
+                # Любая другая ошибка модели (например, 404 Not Found, 400 Invalid Argument) выводится в чат сразу без повторов
+                yield f"Ошибка: {ex_str}"
+                return
 
     async def ask(self, q: str, attempts: int = 15, generation_config: dict = {}) -> Optional[str]:
         """
         Метод отправляет текстовый запрос модели и возвращает ответ.
         """
+        self._key_errors = {}
         if self._all_keys_exhausted:
             if not self._switch_api_key():
                 print("[!] All API keys exhausted. Aborting.")
-                return None
+                return self._get_exhausted_error_msg()
             self._all_keys_exhausted = False
         for attempt in range(attempts):
             try:
@@ -587,6 +622,7 @@ class GoogleGenerativeAI:
                 return response_text
 
             except requests.exceptions.RequestException as ex:
+                self._record_error(ex)
                 max_attempts = 5
                 if attempt > max_attempts:
                     break
@@ -598,6 +634,7 @@ class GoogleGenerativeAI:
                 time.sleep(1200)
                 continue  # Повторить попытку
             except (GatewayTimeout, ServiceUnavailable) as ex:
+                self._record_error(ex)
                 # Модель недоступна — переключаемся на следующую из model_choices в config.json.
                 # Если все модели исчерпаны (_switch_model вернул False) — ждём и повторяем.
                 logger.error("Service unavailable:", ex, False)
@@ -615,12 +652,13 @@ class GoogleGenerativeAI:
                     self._unavailable_attempts = 0
                     continue
             except ResourceExhausted as ex:
+                self._record_error(ex)
                 ex_str = str(ex)
                 if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or 'quota_limit_value.*0' in ex_str or "quota_limit_value': '0'" in ex_str:
                     self._mark_key_exhausted(self.api_key)
                     if not self._switch_api_key():
                         if not self._switch_model():
-                            return
+                            return self._get_exhausted_error_msg()
                     continue
                 # Короткий таймаут (retry_after) — не является исчерпанием квоты
                 m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
@@ -631,12 +669,14 @@ class GoogleGenerativeAI:
                 time.sleep(wait)
                 continue
             except (DefaultCredentialsError, RefreshError) as ex:
+                self._record_error(ex)
                 logger.error("Authentication error:", ex, False)
                 self._invalidate_api_key(self.api_key)
                 if not self._switch_api_key():
-                    return
+                    return "Ошибка авторизации."
                 continue
             except (ValueError, TypeError) as ex:
+                self._record_error(ex)
                 max_attempts = 3
                 if attempt > max_attempts:
                     break
@@ -649,15 +689,17 @@ class GoogleGenerativeAI:
                 time.sleep(timeout)
                 continue
             except (InvalidArgument, RpcError) as ex:
+                self._record_error(ex)
                 logger.error("API error:", ex, False)
-                return
+                return f"Ошибка API: {ex}"
             except Exception as ex:
+                self._record_error(ex)
                 ex_str = str(ex)
                 logger.error(f"Unexpected error: {ex_str}", ex, False)
                 if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
                     self._invalidate_api_key(self.api_key)
                     if not self._switch_api_key():
-                        return
+                        return f"Ошибка авторизации: {ex_str}"
                     continue
                 if '503' in ex_str or 'UNAVAILABLE' in ex_str:
                     self._unavailable_attempts += 1
@@ -670,27 +712,27 @@ class GoogleGenerativeAI:
                     else:
                         # После 6 попыток — переключаемся на модель НЕ выше текущей
                         if not self._switch_model_down():
-                            return
+                            return f"Ошибка: Модель недоступна (503) и переключение не удалось: {ex_str}"
                         self._unavailable_attempts = 0
                         continue
                 if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
                     # Проверяем, это дневная квота или короткий retry_after
-                    if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if not self._switch_api_key():
-                            if not self._switch_model():
-                                return
-                        continue
-                    # Короткий таймаут — retry_after
-                    m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
-                    base_wait = int(float(m.group(1))) + 2 if m else 5
-                    wait = min(base_wait * (2 ** min(attempt, 3)), 60)
-                    logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
-                    time.sleep(wait)
-                    continue
-                return
+                     if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
+                         self._mark_key_exhausted(self.api_key)
+                         if not self._switch_api_key():
+                             if not self._switch_model():
+                                 return "Ошибка: Все модели и API ключи исчерпаны."
+                         continue
+                     # Короткий таймаут — retry_after
+                     m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
+                     base_wait = int(float(m.group(1))) + 2 if m else 5
+                     wait = min(base_wait * (2 ** min(attempt, 3)), 60)
+                     logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
+                     time.sleep(wait)
+                     continue
+                return f"Ошибка: {ex_str}"
 
-        return
+        return self._get_exhausted_error_msg()
 
 
     async def ask_with_tools(self, q: str, tools: list, tool_dispatcher, system_instruction: Optional[str] = None, model_name: Optional[str] = None) -> str:

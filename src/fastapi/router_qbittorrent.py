@@ -99,11 +99,12 @@ def init_router(ai_model=None) -> APIRouter:
                 }
                 for t in torrents
             ]
-        except ConnectionError as ex:
-            global _client
-            _client = None  # сбросить чтобы следующий запрос попробовал снова
-            raise HTTPException(status_code=503, detail=f"qBittorrent недоступен ({qbt_cfg.host}:{qbt_cfg.port}). Запустите qBittorrent и включите веб-интерфейс.")
         except Exception as ex:
+            import requests
+            if isinstance(ex, (ConnectionError, requests.exceptions.RequestException)):
+                global _client
+                _client = None  # сбросить чтобы следующий запрос попробовал снова
+                raise HTTPException(status_code=503, detail=f"qBittorrent недоступен ({_qbt_cfg.host}:{_qbt_cfg.port}). Запустите qBittorrent и включите веб-интерфейс.")
             traceback.print_exc()
             raise HTTPException(status_code=500, detail=str(ex))
 

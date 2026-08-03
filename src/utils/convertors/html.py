@@ -17,19 +17,20 @@ https://chatgpt.com/share/672266a3-0048-800d-a97b-c38f647d496b
 """
 
 import re
+import html
 from typing import Dict
 from pathlib import Path
-from venv import logger
-
 from src.logger.logger import logger
 from types import SimpleNamespace
 from html.parser import HTMLParser
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+except Exception as ex:
+    logger.error(ex)
 try:
     from weasyprint import HTML
 except Exception as ex:
     logger.error(ex)
-    ...
 
 def html2escape(input_str: str) -> str:
     """
@@ -47,7 +48,7 @@ def html2escape(input_str: str) -> str:
         >>> print(result)
         &lt;p&gt;Hello, world!&lt;/p&gt;
     """
-    return StringFormatter.escape_html_tags(input_str)
+    return html.escape(input_str)
 
 def escape2html(input_str: str) -> str:
     """
@@ -65,7 +66,7 @@ def escape2html(input_str: str) -> str:
         >>> print(result)
         <p>Hello, world!</p>
     """
-    return StringFormatter.unescape_html_tags(input_str)
+    return html.unescape(input_str)
 
 def html2dict(html_str: str) -> Dict[str, str]:
     """

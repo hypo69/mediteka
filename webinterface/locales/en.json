@@ -5,6 +5,8 @@
     "media": "Media Library",
     "movieSearch": "Movie Search",
     "admin": "Admin",
+    "models": "Models & APIs",
+    "logs": "Logs",
     "help": "Reference"
   },
   "movieSearch": {
@@ -113,7 +115,9 @@
     "rebuildHint": "Restore DB from JSON",
     "ragIndex": "RAG Index",
     "semanticSearch": "Semantic search",
-    "searchPlaceholder": "Search..."
+    "searchPlaceholder": "Search...",
+    "aiModelTitle": "🤖 AI Model",
+    "aiModelHint": "Select default model for chat assistant"
   },
   "help": {
     "title": "Reference",

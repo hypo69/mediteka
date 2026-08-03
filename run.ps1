@@ -154,8 +154,8 @@ if ($useFoundry) {
 # ============================================
 Write-Host ""
 Write-Host "[4.3] Сканирование подключенных дисков..." -ForegroundColor Cyan
-python -m plugins.media_organizer.core.drive_scanner
-$env:CONNECTED_DRIVES = python -c "import os; print(os.environ.get('CONNECTED_DRIVES', ''))"
+& $pythonPath -m plugins.media_organizer.core.drive_scanner
+$env:CONNECTED_DRIVES = & $pythonPath -c "import os; print(os.environ.get('CONNECTED_DRIVES', ''))"
 Write-Host "    Подключенные диски: $env:CONNECTED_DRIVES" -ForegroundColor Gray
 
 # ============================================
@@ -167,6 +167,10 @@ Write-Host "[SUCCESS] Настройка завершена. Сервер буд
 Write-Host "        https://kino.davidka.net (через Cloudflare Tunnel)" -ForegroundColor Green
 Write-Host "        Локальный адрес: $url" -ForegroundColor Cyan
 Write-Host ""
+
+# Ожидание инициализации туннеля
+Write-Host "[INFO] Ожидание 5 секунд для инициализации туннеля..." -ForegroundColor Cyan
+Start-Sleep -Seconds 5
 
 # Открываем браузер на внешнем домене заранее
 Start-Process "https://kino.davidka.net"

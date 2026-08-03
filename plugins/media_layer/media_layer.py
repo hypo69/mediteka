@@ -42,7 +42,10 @@ class MediaLayerPlugin(BasePlugin):
         low = message.lower()
         return any(kw in low for kw in _MEDIA_KEYWORDS)
 
+    def can_handle(self, message: str) -> bool:
+        return bool(self._instruction) and self._is_media_query(message)
+
     async def _handle(self, message: str) -> str | None:
-        if not self._instruction or not self._is_media_query(message):
+        if not self.can_handle(message):
             return None
         return await self.ai.ask(f"{self._instruction}\n\n=== ВОПРОС ===\n{message}")

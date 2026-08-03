@@ -218,7 +218,19 @@ class Logger(metaclass=SingletonMeta):
         return f"\nFile: {file_name}, \n |\n  -Function: {function_name}, \n   |\n    --Line: {line_number}\n{ex_str}"
 
     def log(self, level, message, ex=None, exc_info=False, color: Optional[Tuple[str, str]] = None):
-        """ General method to log messages at specified level with optional color."""
+        """
+        Логирует сообщение с заданным уровнем, опциональным цветом и информацией об исключении.
+
+        Args:
+            level (int): Уровень логирования (например, logging.INFO).
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение для записи.
+            exc_info (bool, optional): Включить информацию об исключении в вывод.
+            color (tuple, optional): Кортеж (текст, фон) для раскраски сообщения.
+
+        Returns:
+            None
+        """
         # In PROD mode (not self.is_debug_mode), do not log DEBUG events
         if level == logging.DEBUG and not self.is_debug_mode:
             return
@@ -243,32 +255,104 @@ class Logger(metaclass=SingletonMeta):
             self.logger_file_errors.log(level, formatted_message)
 
     def info(self, message, ex=None, exc_info=False, text_color: str = "green", bg_color: str = ""):
-        """ Logs an info message with optional text and background colors."""
+        """
+        Логирует сообщение уровня INFO.
+
+        Args:
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение.
+            exc_info (bool, optional): Включить инфо об исключении.
+            text_color (str): Цвет текста.
+            bg_color (str): Цвет фона.
+
+        Returns:
+            None
+        """
         color = (text_color, bg_color)
         self.log(logging.INFO, message, ex, exc_info, color)
 
     def success(self, message, ex=None, exc_info=False, text_color: str = "yellow", bg_color: str = ""):
-        """ Logs a success message with optional text and background colors."""
+        """
+        Логирует сообщение об успешной операции.
+
+        Args:
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение.
+            exc_info (bool, optional): Включить инфо об исключении.
+            text_color (str): Цвет текста.
+            bg_color (str): Цвет фона.
+
+        Returns:
+            None
+        """
         color = (text_color, bg_color)
         self.log(logging.INFO, message, ex, exc_info, color)
 
     def warning(self, message, ex=None, exc_info=False, text_color: str = "black", bg_color: str = "yellow"):
-        """ Logs a warning message with optional text and background colors."""
+        """
+        Логирует сообщение уровня WARNING.
+
+        Args:
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение.
+            exc_info (bool, optional): Включить инфо об исключении.
+            text_color (str): Цвет текста.
+            bg_color (str): Цвет фона.
+
+        Returns:
+            None
+        """
         color = (text_color, bg_color)
         self.log(logging.WARNING, message, ex, exc_info, color)
 
     def debug(self, message, ex=None, exc_info=True, text_color: str = "cyan", bg_color: str = ""):
-        """ Logs a debug message with optional text and background colors."""
+        """
+        Логирует сообщение уровня DEBUG.
+
+        Args:
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение.
+            exc_info (bool, optional): Включить инфо об исключении.
+            text_color (str): Цвет текста.
+            bg_color (str): Цвет фона.
+
+        Returns:
+            None
+        """
         color = (text_color, bg_color)
         self.log(logging.DEBUG, message, ex, exc_info, color)
 
     def error(self, message, ex=None, exc_info=True, text_color: str = "red", bg_color: str = ""):
-        """ Logs an error message with optional text and background colors."""
+        """
+        Логирует сообщение уровня ERROR.
+
+        Args:
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение.
+            exc_info (bool, optional): Включить инфо об исключении.
+            text_color (str): Цвет текста.
+            bg_color (str): Цвет фона.
+
+        Returns:
+            None
+        """
         color = (text_color, bg_color)
         self.log(logging.ERROR, message, ex, exc_info, color)
 
     def critical(self, message, ex=None, exc_info=True, text_color: str = "red", bg_color: str = "white"):
-        """ Logs a critical message with optional text and background colors."""
+        """
+        Логирует сообщение уровня CRITICAL.
+
+        Args:
+            message (str): Текстовое сообщение.
+            ex (Exception, optional): Исключение.
+            exc_info (bool, optional): Включить инфо об исключении.
+            text_color (str): Цвет текста.
+            bg_color (str): Цвет фона.
+
+        Returns:
+            None
+        """
         color = (text_color, bg_color)
         self.log(logging.CRITICAL, message, ex, exc_info, color)
 

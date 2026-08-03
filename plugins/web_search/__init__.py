@@ -19,6 +19,9 @@ class WebSearchPlugin(BasePlugin):
         ]
         return any(kw in low for kw in web_keywords)
 
+    def can_handle(self, message: str) -> bool:
+        return self._is_web_query(message)
+
     async def _handle(self, message: str, **kwargs) -> str:
         if not self._is_web_query(message):
             return

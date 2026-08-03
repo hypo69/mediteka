@@ -91,6 +91,8 @@ async function initInterface() {
     loadTabContent('torrents', '/html/torrents/index.html'),
     loadTabContent('media', '/html/media/index.html'),
     loadTabContent('admin', '/html/admin_tab/index.html'),
+    loadTabContent('models', '/html/models_tab/index.html'),
+    loadTabContent('logs', '/html/logs/index.html'),
     loadTabContent('help', '/html/help/index.html'),
   ]);
   
@@ -162,7 +164,10 @@ async function loadTabContent(tabName, url) {
     
     // Load JS for the tab
     const script = document.createElement('script');
-    script.src = `/html/${tabName}/main.js?v=20260725`;
+    script.src = `/html/${tabName}/main.js?v=20260803`;
+    if (tabName === 'admin') {
+      script.type = 'module';
+    }
     script.onload = () => {
       if (window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]) {
         window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]();
@@ -233,3 +238,75 @@ function showNotification(message, type = 'info') {
     notification.remove();
   }, 5000);
 }
+
+async function initAdminTab() {
+  const modelSelect = document.getElementById('admin-model-select');
+  const saveBtn = document.getElementById('btn-admin-save-model');
+  
+  if (!modelSelect || !saveBtn) return;
+  
+  // 1. Очищаем селект
+  modelSelect.innerHTML = '';
+  
+  let models = [];
+  // 2. Загружаем доступные модели
+  try {
+    const modelsData = await window.api.fetch('/api/chat/models');
+    models = modelsData.models || [];
+  } catch (err) {
+    console.error('Ошибка загрузки моделей:', err);
+    showNotification('Ошибка загрузки моделей AI: ' + err.message, 'danger');
+  }
+  
+  // 3. Заполняем селект моделями
+  if (models.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Нет доступных моделей';
+    modelSelect.appendChild(option);
+    saveBtn.disabled = true;
+  } else {
+    models.forEach(modelName => {
+      const option = document.createElement('option');
+      option.value = modelName;
+      option.textContent = modelName;
+      modelSelect.appendChild(option);
+    });
+    saveBtn.disabled = false;
+  }
+  
+  // 4. Загружаем текущие настройки пользователя (выбранную модель)
+  try {
+    const settingsData = await window.api.fetch('/auth/settings');
+    if (settingsData && settingsData.model) {
+      modelSelect.value = settingsData.model;
+    }
+  } catch (err) {
+    console.error('Ошибка загрузки настроек AI пользователя:', err);
+  }
+  
+  // 5. Навешиваем обработчик сохранения
+  saveBtn.onclick = async () => {
+    const selectedModel = modelSelect.value;
+    saveBtn.disabled = true;
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = 'Сохранение...';
+    
+    try {
+      await window.api.fetch('/auth/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: selectedModel })
+      });
+      showNotification('Модель успешно обновлена на: ' + selectedModel, 'success');
+    } catch (err) {
+      console.error('Ошибка сохранения модели:', err);
+      showNotification('Ошибка сохранения: ' + err.message, 'danger');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalText;
+    }
+  };
+}
+
+window.initAdminTab = initAdminTab;

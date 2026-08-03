@@ -41,6 +41,14 @@ class BasePlugin(ABC):
         """
         self.ai = ai_model
 
+    def can_handle(self, message: str) -> bool:
+        """Проверяет, может ли плагин обработать сообщение.
+
+        По умолчанию возвращает True. Плагины могут переопределить этот метод,
+        чтобы избежать холостых вызовов в чат-роутере.
+        """
+        return True
+
     async def handle(self, message: str, **kwargs) -> str:
         """Обработка входящего сообщения с перехватом исключений.
 

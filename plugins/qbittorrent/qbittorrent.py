@@ -674,10 +674,14 @@ class QBittorrentPlugin(BasePlugin):
             )
         return self.client
 
+    def can_handle(self, message: str) -> bool:
+        msg = message.lower()
+        return "торрент" in msg or "qbit" in msg or "сериал" in msg
+
     async def _handle(self, message: str) -> str | None:
         msg = message.lower()
 
-        if "торрент" not in msg and "qbit" not in msg and "сериал" not in msg:
+        if not self.can_handle(message):
             return None
 
         client = self._get_client()

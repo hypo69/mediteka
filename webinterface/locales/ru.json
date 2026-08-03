@@ -5,6 +5,8 @@
     "media": "Медиатека",
     "movieSearch": "Поиск фильмов",
     "admin": "Управление",
+    "models": "Модели и API",
+    "logs": "Логи",
     "help": "Справочник"
   },
   "movieSearch": {
@@ -113,7 +115,9 @@
     "rebuildHint": "Восстанавливает БД из JSON",
     "ragIndex": "RAG-индекс",
     "semanticSearch": "Семантический поиск",
-    "searchPlaceholder": "Поиск..."
+    "searchPlaceholder": "Поиск...",
+    "aiModelTitle": "🤖 AI Модель",
+    "aiModelHint": "Выберите модель по умолчанию для общения с ассистентом"
   },
   "help": {
     "title": "Справочник",

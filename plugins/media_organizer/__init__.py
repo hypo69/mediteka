@@ -59,6 +59,9 @@ class MediaOrganizerPlugin(BasePlugin):
     """
     
     name = 'media_organizer'
+
+    def can_handle(self, message: str) -> bool:
+        return False
     
     async def _handle(self, message: str) -> str | None:
         """Плагин не перехватывает веб-запросы."""

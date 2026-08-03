@@ -315,6 +315,33 @@ class FoundryChatBase:
 
         return None
 
+    async def chat_stream(
+        self,
+        q: str,
+        history: Optional[List[Dict]] = None,
+        save_history: bool = True,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        system_instruction: Optional[str] = None,
+        attempts: int = 15,
+        model_name: Optional[str] = None,
+        generation_config: dict = {},
+    ):
+        """
+        Стриминговый интерфейс для чата (возвращает генератор с чанк-ответом).
+        """
+        response = await self.chat(
+            q=q,
+            history=history,
+            save_history=save_history,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            system_instruction=system_instruction,
+            attempts=attempts,
+        )
+        if response:
+            yield response
+
     # ── Свойства ───────────────────────────────────────────────────────────────
 
     @property

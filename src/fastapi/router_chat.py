@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import os
 import asyncio
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -38,6 +39,27 @@ class ChatRequest(BaseModel):
     message: str
     history: list[dict] = []
     generation_config: dict = {}
+
+
+def get_chat_model(selected_model_name: str, system_instruction: str = None):
+    """Dynamically construct/retrieve the appropriate AI model instance."""
+    is_gemini = selected_model_name.startswith('gemini-') or 'gemini' in selected_model_name.lower()
+    
+    if not is_gemini:
+        from src.ai.foundry_chat import FoundryChatBase
+        return FoundryChatBase(
+            model_id=selected_model_name,
+            system_prompt=system_instruction or "You are a helpful AI assistant.",
+        )
+    else:
+        from src.ai.gemini.generative_ai import GoogleGenerativeAI
+        _api_key_names = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
+        return GoogleGenerativeAI(
+            model_name=selected_model_name,
+            api_key_names=_api_key_names,
+            system_instruction=system_instruction,
+            sleep_on_exhausted=False,
+        )
 
 
 def init_router(model, plugins: dict) -> APIRouter:
@@ -103,6 +125,8 @@ def init_router(model, plugins: dict) -> APIRouter:
                     user_identifier = f"anon_{client_ip}"
 
                 api_key = getattr(model, 'api_key', '') or ''
+                # Default to model for fallback if no active_model set yet
+                active_model = model
                 if not api_key:
                     from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
                     api_key = _get_gemini_api_key()
@@ -172,13 +196,14 @@ def init_router(model, plugins: dict) -> APIRouter:
                     'history': request.history,
                     'room_id': room_id,
                 }
+                # Determine which model instance to use
                 if selected_model:
-                    import inspect
-                    sig = inspect.signature(model.chat)
-                    if 'model_name' in sig.parameters:
-                        kwargs['model_name'] = selected_model
-                    elif hasattr(model, 'model_id'):
-                        model.model_id = selected_model
+                    active_model = get_chat_model(selected_model, final_system_instruction)
+                    api_key = getattr(active_model, 'api_key', '') or getattr(model, 'api_key', '') or ''
+                else:
+                    active_model = model
+                    if hasattr(active_model, 'system_instruction'):
+                        active_model.system_instruction = final_system_instruction
 
                 yield f"data: {json.dumps({'status': 'Проверка плагинов...'})}\n\n"
 
@@ -210,13 +235,19 @@ def init_router(model, plugins: dict) -> APIRouter:
                     if is_media and plugin.name != 'rag':
                         continue
 
+                    # Проверяем, может ли плагин обработать сообщение
+                    if hasattr(plugin, 'can_handle') and not plugin.can_handle(request.message):
+                        continue
+
                     plugin_name = plugin.__class__.__name__
                     yield f"data: {json.dumps({'status': f'Вызов плагина {plugin_name}...'})}\n\n"
                     response = await plugin.handle(request.message, **kwargs)
 
                     import inspect
                     if inspect.isasyncgen(response):
+                        yielded_any = False
                         async for chunk in response:
+                            yielded_any = True
                             if 'status' in chunk:
                                 yield f"data: {json.dumps({'status': chunk['status']})}\n\n"
                             if 'text' in chunk:
@@ -225,12 +256,13 @@ def init_router(model, plugins: dict) -> APIRouter:
                             if 'voice' in chunk:
                                 yield f"data: {json.dumps({'voice': chunk['voice']})}\n\n"
 
-                        if full_response_text and api_key and user_identifier:
-                            # Fire-and-forget: index in background, don't block the response
-                            asyncio.ensure_future(asyncio.to_thread(
-                                index_user_query, user_identifier, api_key, request.message, full_response_text
-                            ))
-                        return
+                        if yielded_any:
+                            if full_response_text and api_key and user_identifier:
+                                # Fire-and-forget: index in background, don't block the response
+                                asyncio.ensure_future(asyncio.to_thread(
+                                    index_user_query, user_identifier, api_key, request.message, full_response_text
+                                ))
+                            return
                     elif response:
                         full_response_text = str(response)
                         yield f"data: {json.dumps({'status': f'{plugin_name} вернул ответ', 'text': full_response_text})}\n\n"
@@ -249,7 +281,7 @@ def init_router(model, plugins: dict) -> APIRouter:
                 chat_kwargs.pop('room_id', None)
                 chat_kwargs['generation_config'] = request.generation_config
                 
-                stream_generator = model.chat_stream(request.message, **chat_kwargs)
+                stream_generator = active_model.chat_stream(request.message, **chat_kwargs)
                 buffer = ""
                 current_channel = "text"
                 

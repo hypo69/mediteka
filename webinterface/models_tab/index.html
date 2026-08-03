@@ -1,0 +1,112 @@
+<!-- Models & APIs Management Tab -->
+<div class="container-fluid">
+  <div class="alert alert-info">
+    <h5>🤖 Gemini Models & APIs</h5>
+    <p>Управление API-ключами, квотами и доступными моделями Gemini.</p>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: Default Model settings -->
+    <div class="col-md-4">
+      <div class="card mb-3">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+          <span>🤖 Выбор модели по умолчанию</span>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">Эта модель будет использоваться ассистентом для ответов в чате по умолчанию.</p>
+          <div class="mb-3">
+            <label for="models-tab-select" class="form-label small fw-bold">Активная модель:</label>
+            <select class="form-select form-select-sm" id="models-tab-select">
+              <option value="">Загрузка...</option>
+            </select>
+          </div>
+          <div class="d-grid">
+            <button class="btn btn-primary btn-sm" id="btn-models-tab-save">Сохранить выбор</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add API Key Card -->
+      <div class="card mb-3">
+        <div class="card-header bg-dark text-white">
+          <span>🔑 Добавить API-ключ Gemini</span>
+        </div>
+        <div class="card-body">
+          <form id="form-add-key" onsubmit="event.preventDefault();">
+            <div class="mb-2">
+              <label for="new-key-name" class="form-label small fw-bold">Имя владельца / Название:</label>
+              <input type="text" class="form-control form-control-sm" id="new-key-name" placeholder="Например: primary_key" required>
+            </div>
+            <div class="mb-3">
+              <label for="new-key-value" class="form-label small fw-bold">API-ключ (AIzaSy...):</label>
+              <input type="password" class="form-control form-control-sm" id="new-key-value" placeholder="Введите ключ" required>
+            </div>
+            <div class="d-grid">
+              <button type="button" class="btn btn-success btn-sm" id="btn-add-key">Добавить ключ</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Microsoft Foundry Settings Card -->
+      <div class="card">
+        <div class="card-header bg-dark text-white">
+          <span>⚙️ Настройки Microsoft Foundry</span>
+        </div>
+        <div class="card-body">
+          <form id="form-foundry-config" onsubmit="event.preventDefault();">
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="foundry-enabled">
+              <label class="form-check-label small fw-bold" for="foundry-enabled">Использовать Foundry</label>
+            </div>
+            <div class="mb-2">
+              <label for="foundry-url" class="form-label small fw-bold">Base URL API:</label>
+              <input type="text" class="form-control form-control-sm" id="foundry-url" placeholder="http://localhost:3000">
+            </div>
+            <div class="mb-2">
+              <label for="foundry-key" class="form-label small fw-bold">API Key (опционально):</label>
+              <input type="password" class="form-control form-control-sm" id="foundry-key" placeholder="Введите ключ">
+            </div>
+            <div class="mb-3">
+              <label for="foundry-model" class="form-label small fw-bold">ID модели по умолчанию:</label>
+              <input type="text" class="form-control form-control-sm" id="foundry-model" placeholder="qwen3-0.6b-generic-cpu:4">
+            </div>
+            <div class="d-grid">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-save-foundry">Сохранить настройки Foundry</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: API Keys List -->
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+          <span>🔑 Активные ключи в пуле ротации</span>
+          <button class="btn btn-xs btn-outline-light btn-sm" id="btn-refresh-keys"><i class="bi bi-arrow-clockwise"></i> Обновить</button>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0" id="keys-table">
+              <thead class="table-dark">
+                <tr>
+                  <th scope="col" style="width: 20%;">Название</th>
+                  <th scope="col" style="width: 30%;">Ключ</th>
+                  <th scope="col" style="width: 15%;">Статус</th>
+                  <th scope="col" style="width: 15%;">Квота</th>
+                  <th scope="col" style="width: 20%;" class="text-end">Действия</th>
+                </tr>
+              </thead>
+              <tbody id="keys-list-body">
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">Загрузка ключей...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

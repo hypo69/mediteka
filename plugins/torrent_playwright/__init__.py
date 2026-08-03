@@ -12,12 +12,16 @@ class TorrentPlaywrightPlugin(BasePlugin):
         super().__init__(ai_model)
         self.searcher = PlaywrightTorrentSearcher(ai_model)
 
+    def can_handle(self, message: str) -> bool:
+        msg = message.lower()
+        torrent_keywords = ["торрент", "torrent", "скачать", "tracker", "раздач", "qbittorrent"]
+        return any(kw in msg for kw in torrent_keywords)
+
     async def _handle(self, message: str) -> str:
         msg = message.lower()
 
         # Check if the user is looking for torrents
-        torrent_keywords = ["торрент", "torrent", "скачать", "tracker", "раздач", "qbittorrent"]
-        if not any(kw in msg for kw in torrent_keywords):
+        if not self.can_handle(message):
             return ""
 
         # Step 1: Use Gemini to extract search query and params

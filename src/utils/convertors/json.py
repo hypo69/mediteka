@@ -127,5 +127,5 @@ def json2xls(json_data: str | list | dict | Path, xls_file_path: str | Path) -> 
         ValueError: If unsupported type for json_data.
         Exception: If unable to parse JSON or write XLS.
     """
-    return save_xls_file(json_data, file_path)
+    return save_xls_file(json_data, xls_file_path)
         

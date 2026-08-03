@@ -1,0 +1,23 @@
+{
+  "user_id": "anon_testclient",
+  "created_at": 1785758927.1008117,
+  "updated_at": 1785765588.0223932,
+  "watch_history": {},
+  "last_watched": null,
+  "search_history": [
+    {
+      "query": "Титаник",
+      "timestamp": 1785758927.1011662
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1785765588.0223694
+    }
+  ],
+  "preferences": {
+    "liked_titles": [],
+    "disliked_titles": [],
+    "favorite_genres": {},
+    "favorite_categories": {}
+  }
+}
