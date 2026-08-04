@@ -16,6 +16,7 @@ import asyncio
 from typing import Optional, List, Dict, Any
 from src.ai.gemini import GoogleGenerativeAI
 from src.ai.foundry_chat import FoundryChatBase
+from src.logger import logger
 
 class UnifiedChatModel:
     """
@@ -36,6 +37,16 @@ class UnifiedChatModel:
         self.foundry_model = None
         self.use_foundry = use_foundry
         self.foundry_model_id = foundry_model_id
+        
+        if use_foundry:
+            self.foundry_model = FoundryChatBase(
+                model_id=foundry_model_id,
+                system_prompt=system_instruction,
+            )
+            
+        from src.ai.gemini.generative_ai import _DEFAULT_MODEL
+        self.default_model = foundry_model_id if use_foundry else _DEFAULT_MODEL
+        self._model_name = self.default_model
         
         if use_foundry:
             self.foundry_model = FoundryChatBase(
@@ -95,6 +106,7 @@ class UnifiedChatModel:
         **kwargs
     ) -> Optional[str]:
         model_instance, active_name = self._get_active_model(model_name)
+        logger.info(f"[UnifiedChatModel] chat: prompt={repr(q[:100])}... using model={active_name}")
         
         sig = inspect.signature(model_instance.chat)
         call_kwargs = {
@@ -112,7 +124,49 @@ class UnifiedChatModel:
             if k in sig.parameters:
                 call_kwargs[k] = v
                 
-        return await model_instance.chat(**call_kwargs)
+        try:
+            res = await model_instance.chat(**call_kwargs)
+            logger.info(f"[UnifiedChatModel] chat success: response={repr(res[:100]) if res else 'None'}...")
+            return res
+        except Exception as ex:
+            logger.error(f"[UnifiedChatModel] chat error with model={active_name}", ex)
+            raise
+
+    async def ask(
+        self,
+        q: str,
+        attempts: int = 15,
+        generation_config: dict = {},
+        model_name: Optional[str] = None,
+        **kwargs
+    ) -> Optional[str]:
+        model_instance, active_name = self._get_active_model(model_name)
+        logger.info(f"[UnifiedChatModel] ask: prompt={repr(q[:100])}... using model={active_name}")
+        
+        sig = inspect.signature(model_instance.ask)
+        call_kwargs = {
+            "q": q,
+            "attempts": attempts,
+        }
+        if "model_name" in sig.parameters:
+            call_kwargs["model_name"] = active_name
+        elif hasattr(model_instance, "model_id"):
+            model_instance.model_id = active_name
+            
+        if "generation_config" in sig.parameters:
+            call_kwargs["generation_config"] = generation_config
+            
+        for k, v in kwargs.items():
+            if k in sig.parameters:
+                call_kwargs[k] = v
+                
+        try:
+            res = await model_instance.ask(**call_kwargs)
+            logger.info(f"[UnifiedChatModel] ask success: response={repr(res[:100]) if res else 'None'}...")
+            return res
+        except Exception as ex:
+            logger.error(f"[UnifiedChatModel] ask error with model={active_name}", ex)
+            raise
 
     async def chat_stream(
         self,
@@ -125,6 +179,7 @@ class UnifiedChatModel:
         **kwargs
     ):
         model_instance, active_name = self._get_active_model(model_name)
+        logger.info(f"[UnifiedChatModel] chat_stream: prompt={repr(q[:100])}... using model={active_name}")
         
         sig = inspect.signature(model_instance.chat_stream)
         call_kwargs = {
@@ -145,5 +200,10 @@ class UnifiedChatModel:
             if k in sig.parameters:
                 call_kwargs[k] = v
 
-        async for chunk in model_instance.chat_stream(**call_kwargs):
-            yield chunk
+        try:
+            async for chunk in model_instance.chat_stream(**call_kwargs):
+                yield chunk
+        except Exception as ex:
+            logger.error(f"[UnifiedChatModel] chat_stream error with model={active_name}", ex)
+            raise
+

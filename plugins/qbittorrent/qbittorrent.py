@@ -676,7 +676,13 @@ class QBittorrentPlugin(BasePlugin):
 
     def can_handle(self, message: str) -> bool:
         msg = message.lower()
-        return "торрент" in msg or "qbit" in msg or "сериал" in msg
+        if "торрент" in msg or "qbit" in msg:
+            return True
+        if "relocate" in msg or "найди файлы" in msg or "найти файлы" in msg:
+            return True
+        if any(w in msg for w in ("проверить", "целостность", "recheck", "проверка")) and any(w in msg for w in ("сери", "эпизод")):
+            return True
+        return False
 
     async def _handle(self, message: str) -> str | None:
         msg = message.lower()

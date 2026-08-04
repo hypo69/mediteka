@@ -12,6 +12,26 @@ _DIRS_FILE = Path(__file__).parent / "search_dirs.json"
 _DB_FILE = Path(__file__).parent.parent.parent / "plugins" / "media_organizer" / "media.db"
 
 
+class DirsRequest(BaseModel):
+    dirs: list[str]
+
+
+class RelocateRequest(BaseModel):
+    dirs: list[str]
+
+
+class SetLocationRequest(BaseModel):
+    hash: str
+    location: str
+
+
+class DownloadRequest(BaseModel):
+    url: str
+    title: str
+    source: str
+
+
+
 def _reset_client():
     global _client
     _client = None
@@ -67,9 +87,6 @@ def init_router(ai_model=None) -> APIRouter:
     def get_dirs():
         return _load_dirs()
 
-    class DirsRequest(BaseModel):
-        dirs: list[str]
-
     @router.post("/dirs")
     def save_dirs(req: DirsRequest):
         dirs = [d.strip() for d in req.dirs if d.strip()]
@@ -117,9 +134,6 @@ def init_router(ai_model=None) -> APIRouter:
             traceback.print_exc()
             raise HTTPException(status_code=500, detail=str(ex))
 
-    class RelocateRequest(BaseModel):
-        dirs: list[str]
-
     @router.post("/relocate")
     def relocate(req: RelocateRequest):
         try:
@@ -128,10 +142,6 @@ def init_router(ai_model=None) -> APIRouter:
         except Exception as ex:
             traceback.print_exc()
             raise HTTPException(status_code=500, detail=str(ex))
-
-    class SetLocationRequest(BaseModel):
-        hash: str
-        location: str
 
     @router.post("/set-location")
     def set_location(req: SetLocationRequest):
@@ -152,11 +162,6 @@ def init_router(ai_model=None) -> APIRouter:
         except Exception as ex:
             traceback.print_exc()
             raise HTTPException(status_code=500, detail=str(ex))
-
-    class DownloadRequest(BaseModel):
-        url: str
-        title: str
-        source: str
 
     @router.post("/download")
     async def download(req: DownloadRequest):

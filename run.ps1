@@ -169,8 +169,8 @@ Write-Host "        Локальный адрес: $url" -ForegroundColor Cyan
 Write-Host ""
 
 # Ожидание инициализации туннеля
-Write-Host "[INFO] Ожидание 5 секунд для инициализации туннеля..." -ForegroundColor Cyan
-Start-Sleep -Seconds 5
+Write-Host "[INFO] Ожидание 10 секунд для инициализации туннеля..." -ForegroundColor Cyan
+Start-Sleep -Seconds 10
 
 # Открываем браузер на внешнем домене заранее
 Start-Process "https://kino.davidka.net"
