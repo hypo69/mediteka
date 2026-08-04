@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Nama ekstensi"
+  },
+  "extensionDescription": {
+    "message": "Membuat deskripsi komponen komputer yang jelas dan terstruktur",
+    "description": "Deskripsi ekstensi"
+  },
+  "contextMenuTitle": {
+    "message": "Buat penawaran harga",
+    "description": "Nama item menu konteks"
+  },
+  "apiKeyLabel": {
+    "message": "Kunci API Google Gemini",
+    "description": "Label untuk bidang input kunci API"
+  },
+  "modelLabel": {
+    "message": "Model",
+    "description": "Label untuk pemilihan model"
+  },
+  "saveButton": {
+    "message": "Simpan",
+    "description": "Teks tombol simpan"
+  },
+  "statusNoApiKey": {
+    "message": "Silakan masukkan kunci API Anda",
+    "description": "Pesan ketika kunci API tidak dimasukkan"
+  },
+  "indicatorAnalyzing": {
+    "message": "Menghasilkan penawaran harga Anda…",
+    "description": "Pesan selama analisis"
+  },
+  "errorFetchContent": {
+    "message": "Gagal mengambil konten halaman",
+    "description": "Kesalahan saat mengambil konten halaman"
+  },
+  "errorPageTooShort": {
+    "message": "Halaman berisi terlalu sedikit konten",
+    "description": "Kesalahan ketika halaman terlalu pendek"
+  },
+  "errorApi": {
+    "message": "Kesalahan API: $error$",
+    "description": "Pesan kesalahan API umum",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Kunci API tidak valid"
+      }
+    }
+  },
+  "price": {
+    "message": "Harga",
+    "description": "Harga perakitan"
+  },
+  "totalPriceLabel": {
+    "message": "Total harga:",
+    "description": "Label untuk total harga dalam penawaran"
+  },
+  "saveOfferButton": {
+    "message": "Simpan penawaran",
+    "description": "Teks tombol 'Simpan penawaran'"
+  },
+  "changeImageButton": {
+    "message": "Ubah gambar",
+    "description": "Teks tombol 'Ubah gambar' di footer"
+  }
+}

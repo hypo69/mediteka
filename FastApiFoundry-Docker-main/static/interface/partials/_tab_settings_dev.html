@@ -1,0 +1,103 @@
+<!-- ── DEVELOPMENT ─────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--dev">
+    <div class="settings-section-header" style="color:#6f42c1">
+        <i class="bi bi-book"></i> <span data-i18n="settings.documentation">Documentation</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                MkDocs <span data-i18n="settings.port">Port</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_docs_port"></i>
+            </label>
+            <input type="number" id="config-docs-port" class="form-control" placeholder="9697">
+        </div>
+        <div class="col-md-8 d-flex align-items-end gap-4">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-docs-enabled">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-docs-enabled">
+                    <span data-i18n="settings.enable_docs">Enable MkDocs on startup</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_docs_enabled"></i>
+                </label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-dev-debug">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-dev-debug">
+                    <span data-i18n="settings.debug_mode">Debug Mode</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_debug"></i>
+                </label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-dev-verbose">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-dev-verbose">
+                    <span data-i18n="settings.verbose_logging">Verbose</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_verbose"></i>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── LANGUAGE ───────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--lang">
+    <div class="settings-section-header text-secondary">
+        <i class="bi bi-translate"></i> <span data-i18n="settings.language">Language</span>
+    </div>
+    <select class="form-select" style="max-width:200px" onchange="switchLang(this.value)" id="lang-selector-settings">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+        <option value="he">עברית</option>
+    </select>
+</div>
+
+<!-- ── TRANSLATOR ─────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--translator">
+    <div class="settings-section-header text-primary">
+        <i class="bi bi-globe2"></i> <span data-i18n="settings.translator">Translator</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.translator_provider">Default Provider</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_translator_provider"></i>
+            </label>
+            <select id="config-translator-provider" class="form-select">
+                <option value="mymemory">MyMemory (free, no key)</option>
+                <option value="libretranslate">LibreTranslate (free, no key)</option>
+                <option value="deepl">DeepL (DEEPL_API_KEY)</option>
+                <option value="google">Google Translate (GOOGLE_TRANSLATE_API_KEY)</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.translator_timeout">Request Timeout (sec)</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_translator_timeout"></i>
+            </label>
+            <input type="number" id="config-translator-timeout" class="form-control" min="5" max="120" placeholder="30">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.translator_mymemory_email">MyMemory Email</span>
+                <small class="text-muted" data-i18n="settings.translator_mymemory_email_hint">(raises limit to 50K words/day)</small>
+            </label>
+            <input type="email" id="config-translator-mymemory-email" class="form-control" placeholder="your@email.com">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.translator_libre_url">LibreTranslate URL</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_translator_libre_url"></i>
+            </label>
+            <input type="url" id="config-translator-libre-url" class="form-control" placeholder="https://libretranslate.com">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label" data-i18n="settings.translator_libre_fallback">LibreTranslate Fallback URL</label>
+            <input type="url" id="config-translator-libre-fallback" class="form-control" placeholder="https://translate.argosopentech.com">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.translator_libre_key">LibreTranslate API Key</span>
+                <small class="text-muted" data-i18n="settings.translator_libre_key_hint">(optional, for private instances)</small>
+            </label>
+            <input type="password" id="config-translator-libre-key" class="form-control" placeholder="optional">
+        </div>
+    </div>
+</div>

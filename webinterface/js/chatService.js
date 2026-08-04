@@ -211,3 +211,30 @@ window.chatService = {
     }
   }
 };
+
+// Автоматически загружаем настройки и обновляем бейджи модели при загрузке страницы
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const response = await fetch('/auth/settings');
+    if (response.ok) {
+      const settings = await response.json();
+      const modelName = settings.model || '';
+      window.activeModelName = modelName;
+      
+      const updateBadges = () => {
+        const badges = document.querySelectorAll('#chat-model-badge, #chat-popup-model-badge');
+        badges.forEach(badge => {
+          badge.textContent = modelName;
+          badge.style.display = 'inline-block';
+        });
+      };
+      
+      updateBadges();
+      // На случай если DOM элементы добавились/отрендерились позже
+      setTimeout(updateBadges, 500);
+      setTimeout(updateBadges, 1500);
+    }
+  } catch (e) {
+    console.error('Failed to load active model badge:', e);
+  }
+});

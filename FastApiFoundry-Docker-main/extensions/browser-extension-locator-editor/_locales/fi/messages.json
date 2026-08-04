@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Laajennuksen nimi"
+  },
+  "extensionDescription": {
+    "message": "Luo selkeitä ja jäsenneltyjä kuvauksia tietokonekomponenteista",
+    "description": "Laajennuksen kuvaus"
+  },
+  "contextMenuTitle": {
+    "message": "Muodosta hintatarjous",
+    "description": "Kontekstivalikon kohteen nimi"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API-avain",
+    "description": "API-avaimen syöttökentän otsikko"
+  },
+  "modelLabel": {
+    "message": "Malli",
+    "description": "Mallin valinnan otsikko"
+  },
+  "saveButton": {
+    "message": "Tallenna",
+    "description": "Tallennuspainikkeen teksti"
+  },
+  "statusNoApiKey": {
+    "message": "Syötä API-avaimesi",
+    "description": "Viesti, kun API-avainta ei ole syötetty"
+  },
+  "indicatorAnalyzing": {
+    "message": "Hintatarjoustasi muodostetaan…",
+    "description": "Viesti analyysin aikana"
+  },
+  "errorFetchContent": {
+    "message": "Sivun sisällön hakeminen epäonnistui",
+    "description": "Virhe sivun sisällön hakemisessa"
+  },
+  "errorPageTooShort": {
+    "message": "Sivu sisältää liian vähän sisältöä",
+    "description": "Virhe, kun sivu on liian lyhyt"
+  },
+  "errorApi": {
+    "message": "API-virhe: $error$",
+    "description": "Yleinen API-virheviesti",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Virheellinen API-avain"
+      }
+    }
+  },
+  "price": {
+    "message": "Hinta",
+    "description": "Kokonpanon hinta"
+  },
+  "totalPriceLabel": {
+    "message": "Kokonaishinta:",
+    "description": "Hintatarjouksen kokonaishinnan otsikko"
+  },
+  "saveOfferButton": {
+    "message": "Tallenna tarjous",
+    "description": "Painikkeen teksti 'Tallenna tarjous'"
+  },
+  "changeImageButton": {
+    "message": "Vaihda kuva",
+    "description": "Painikkeen teksti 'Vaihda kuva' alatunnisteessa"
+  }
+}

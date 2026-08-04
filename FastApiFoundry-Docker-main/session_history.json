@@ -1,0 +1,15 @@
+{
+  "session_id": "default",
+  "chat_type": "fastapi",
+  "timestamp": 323096.171,
+  "messages": [
+    {
+      "role": "user",
+      "content": "hi"
+    },
+    {
+      "role": "assistant",
+      "content": "\n\n\n\nHello! How can I assist you today? 😊"
+    }
+  ]
+}

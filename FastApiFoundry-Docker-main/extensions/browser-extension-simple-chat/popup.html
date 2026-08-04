@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Assistant — Chat</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <style>
+        html, body {
+            width: 480px;
+            height: 600px;
+            margin: 0;
+            overflow: hidden;
+        }
+        .chat-wrap {
+            width: 480px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-wrap">
+
+    <!-- Navbar -->
+    <div class="ext-navbar">
+        <div class="brand">🤖 AI Assistant</div>
+        <select id="model-select" class="form-select form-select-sm"
+                style="width:auto;max-width:200px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">
+            <option value="">Loading…</option>
+        </select>
+        <button class="btn btn-sm btn-outline-light ms-2" id="clear-btn">Clear</button>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages-area" id="messages">
+        <div class="empty-state" id="empty-state">
+            <div class="icon">🤖</div>
+            <div>Start a conversation</div>
+        </div>
+    </div>
+
+    <div id="error-banner" class="alert alert-danger m-2 py-2 small" style="display:none"></div>
+
+    <!-- Input -->
+    <div class="input-area">
+        <div class="input-group">
+            <textarea id="user-input" class="form-control form-control-sm" rows="1"
+                placeholder="Type a message…"></textarea>
+            <button id="send-btn" class="btn btn-primary btn-sm">Send</button>
+        </div>
+        <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+    </div>
+
+</div>
+
+<script src="chat.js"></script>
+</body>
+</html>

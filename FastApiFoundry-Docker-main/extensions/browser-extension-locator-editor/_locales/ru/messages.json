@@ -1,0 +1,168 @@
+{
+  "appName": {
+    "message": "Редактор Локаторов",
+    "description": "The name of the extension."
+  },
+  "appDescription": {
+    "message": "Расширение для Chrome для создания, редактирования и управления локаторами элементов на веб-страницах в формате JSON.",
+    "description": "The description of the extension."
+  },
+  "popupTitle": {
+    "message": "Редактор Локаторов",
+    "description": "Title for the popup window."
+  },
+  "openEditorBtn": {
+    "message": "Открыть редактор",
+    "description": "Button text in the popup to open the main editor UI."
+  },
+  "headerImportBtn": {
+    "message": "Импорт",
+    "description": "Button text for importing a JSON file."
+  },
+  "headerImportTitle": {
+    "message": "Импортировать JSON",
+    "description": "Tooltip for the import button."
+  },
+  "headerExportBtn": {
+    "message": "Экспорт",
+    "description": "Button text for exporting a JSON file."
+  },
+  "headerExportTitle": {
+    "message": "Экспортировать JSON",
+    "description": "Tooltip for the export button."
+  },
+  "sidebarSupplierPrefix": {
+    "message": "Префикс поставщика",
+    "description": "Label for the supplier prefix input field."
+  },
+  "sidebarNewLocatorBtn": {
+    "message": "Новый локатор",
+    "description": "Button text to create a new locator."
+  },
+  "sidebarLocatorsHeading": {
+    "message": "Локаторы",
+    "description": "Heading for the list of locators."
+  },
+  "sidebarDeleteLocatorTitle": {
+    "message": "Удалить $key$",
+    "description": "Tooltip for the delete locator button.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "product_name"
+      }
+    }
+  },
+  "formCreateTitle": {
+    "message": "Создать новый локатор",
+    "description": "Title of the form when creating a new locator."
+  },
+  "formEditTitle": {
+    "message": "Редактирование: $key$",
+    "description": "Title of the form when editing an existing locator.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "product_name"
+      }
+    }
+  },
+  "formSaveChangesBtn": {
+    "message": "Сохранить изменения",
+    "description": "Button text to save the locator form."
+  },
+  "formLabelKey": {
+    "message": "Ключ локатора",
+    "description": "Label for the locator key input field."
+  },
+  "formLabelSelector": {
+    "message": "Селектор",
+    "description": "Label for the selector textarea field."
+  },
+  "formLabelDescription": {
+    "message": "Описание",
+    "description": "Label for the locator description field."
+  },
+  "formLabelFindBy": {
+    "message": "Метод поиска",
+    "description": "Label for the 'Find By' strategy dropdown."
+  },
+  "formLabelAttribute": {
+    "message": "Атрибут для извлечения",
+    "description": "Label for the 'Attribute to Get' input field."
+  },
+  "formLabelIfList": {
+    "message": "При нахождении списка",
+    "description": "Label for the 'If List Found' strategy dropdown."
+  },
+  "formLabelMultiSelectorStrategy": {
+    "message": "Стратегия для нескольких селекторов",
+    "description": "Label for the multiple selector strategy input field."
+  },
+  "formLabelTimeout": {
+    "message": "Тайм-аут (мс)",
+    "description": "Label for the timeout input field."
+  },
+  "formLabelTimeoutEvent": {
+    "message": "Тип события для тайм-аута",
+    "description": "Label for the timeout event type input field."
+  },
+  "formLabelMandatory": {
+    "message": "Обязательный",
+    "description": "Label for the 'Mandatory' checkbox."
+  },
+  "formLabelIsEvent": {
+    "message": "Событие?",
+    "description": "Label for the 'Is Event?' checkbox."
+  },
+  "formPlaceholderKey": {
+    "message": "например, product_name",
+    "description": "Placeholder text for the locator key input."
+  },
+  "formPlaceholderDescription": {
+    "message": "Краткое описание этого локатора",
+    "description": "Placeholder text for the locator description."
+  },
+  "formErrorKeyEmpty": {
+    "message": "Ключ локатора не может быть пустым.",
+    "description": "Error message when the locator key is left empty."
+  },
+  "formCopyTooltip": {
+    "message": "Копировать селектор в буфер обмена",
+    "description": "Tooltip for the copy button next to the selector field."
+  },
+  "emptyStateSelectLocatorTitle": {
+    "message": "Выберите локатор для редактирования",
+    "description": "Main title in the empty state view."
+  },
+  "emptyStateSelectLocatorSubtitle": {
+    "message": "или создайте новый.",
+    "description": "Subtitle in the empty state view."
+  },
+  "emptyStateNoLocatorsTitle": {
+    "message": "Локаторы не найдены",
+    "description": "Title when the list of locators is completely empty."
+  },
+  "emptyStateNoLocatorsSubtitle": {
+    "message": "Нажмите \"Новый локатор\", чтобы начать.",
+    "description": "Subtitle when the list of locators is completely empty."
+  },
+  "alertInvalidJson": {
+    "message": "Неверный JSON файл.",
+    "description": "Alert message shown when a user uploads a malformed JSON file."
+  },
+  "alertImportSuccess": {
+    "message": "Файл успешно импортирован!",
+    "description": "Alert message shown after a successful JSON file import."
+  },
+  "confirmDeleteLocator": {
+    "message": "Вы уверены, что хотите удалить локатор \"$key$\"?",
+    "description": "Confirmation message before deleting a locator.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "product_name"
+      }
+    }
+  }
+}

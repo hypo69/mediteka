@@ -1,0 +1,48 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # Триггер при пуше тегов, например, v1.0.0, v0.8.1
+
+jobs:
+  build-release:
+    runs-on: windows-latest # Используем Windows, так как скрипты PowerShell ориентированы на неё
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Необходимо для git-операций, если они будут в Build-Release.ps1
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' # Укажите используемую версию Python
+
+    - name: Install PowerShell 7
+      shell: pwsh
+      run: |
+        # Проверяем, установлен ли PowerShell 7, и устанавливаем, если нет
+        if (-not (Get-Command pwsh -ErrorAction SilentlyContinue)) {
+          Write-Host "PowerShell 7 not found, installing..."
+          Invoke-WebRequest -Uri "https://github.com/PowerShell/PowerShell/releases/download/v7.4.2/PowerShell-7.4.2-win-x64.msi" -OutFile "$env:TEMP\PowerShell.msi"
+          Start-Process msiexec.exe -ArgumentList "/i `"$env:TEMP\PowerShell.msi`" /quiet /norestart" -Wait
+          Remove-Item "$env:TEMP\PowerShell.msi"
+        }
+        Write-Host "PowerShell 7 is ready."
+
+    - name: Run Build-Release.ps1
+      shell: pwsh # Указываем, что шаг должен выполняться в PowerShell
+      run: |
+        .\scripts\Build-Release.ps1
+      # Если Build-Release.ps1 возвращает ненулевой код выхода при ошибке,
+      # GitHub Actions автоматически пометит job как неудачный.
+
+    - name: Upload Release Asset
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-assistant-release
+        path: release/*.zip # Путь к сгенерированному ZIP-архиву
+        # Можно также использовать actions/create-release для создания GitHub Release
+        # и прикрепления артефакта непосредственно к нему.

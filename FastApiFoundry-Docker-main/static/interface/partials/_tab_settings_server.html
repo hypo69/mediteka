@@ -1,0 +1,48 @@
+<!-- ── SERVER ─────────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--server">
+    <div class="settings-section-header text-primary">
+        <i class="bi bi-server"></i> <span data-i18n="settings.section_server">Server</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                FastAPI <span data-i18n="settings.port">Port</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_api_port"></i>
+            </label>
+            <input type="number" id="config-api-port" class="form-control" placeholder="9696">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.host">Host</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_host"></i>
+            </label>
+            <input type="text" id="config-api-host" class="form-control" placeholder="0.0.0.0">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.workers">Workers</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_workers"></i>
+            </label>
+            <input type="number" id="config-api-workers" class="form-control" placeholder="1">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.mode">Mode</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_mode"></i>
+            </label>
+            <select id="config-api-mode" class="form-select">
+                <option value="dev" data-i18n="settings.mode_dev">Development</option>
+                <option value="prod" data-i18n="settings.mode_prod">Production</option>
+            </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-api-auto-port">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-api-auto-port">
+                    <span data-i18n="settings.auto_port">Auto-find free port</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_auto_port"></i>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>

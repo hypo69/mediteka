@@ -1,7 +1,7 @@
 {
   "user_id": "2",
   "created_at": 1784708469.367987,
-  "updated_at": 1785687911.5613399,
+  "updated_at": 1785823686.0700498,
   "watch_history": {},
   "last_watched": null,
   "search_history": [
@@ -44,6 +44,18 @@
     {
       "query": "Во все тяжкие",
       "timestamp": 1785687911.5613332
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785823610.7885497
+    },
+    {
+      "query": "Сватами",
+      "timestamp": 1785823623.9457846
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785823686.0700388
     }
   ],
   "preferences": {

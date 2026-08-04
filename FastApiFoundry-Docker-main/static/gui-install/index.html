@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+===============================================================================
+Process Name: GUI Installer — Step-by-step installation wizard
+===============================================================================
+Description:
+    SPA installer served at /install after pip install completes.
+    Continues the installation process: Tesseract, Foundry, .env, models.
+
+File: static/gui-install/index.html
+Project: AI Assistant (ai_assist)
+Version: 0.7.1
+Author: hypo69
+Copyright: © 2026 hypo69
+===============================================================================
+-->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant — Installation</title>
+  <link rel="stylesheet" href="/static/gui-install/install.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="logo">
+        <img src="/static/interface/assets/icons/icon48.png" alt="AI Assistant" onerror="this.style.display='none'">
+        <span>AI Assistant</span>
+      </div>
+      <div class="version">v0.7.1</div>
+    </header>
+
+    <main>
+      <div class="wizard">
+        <!-- Step indicators -->
+        <div class="steps" id="steps"></div>
+
+        <!-- Step content -->
+        <div class="step-content" id="step-content"></div>
+
+        <!-- Navigation -->
+        <div class="nav-buttons">
+          <button id="btn-back" onclick="prevStep()" style="display:none">← Назад</button>
+          <button id="btn-next" onclick="nextStep()">Далее →</button>
+          <button id="btn-finish" onclick="finish()" style="display:none">✅ Завершить</button>
+        </div>
+      </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="/static/gui-install/install.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+/* ── Nav: section headings highlight ── */
+.md-nav--secondary .md-nav__title,
+.md-nav__item--section > .md-nav__link {
+    color: var(--md-primary-fg-color) !important;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+[data-md-color-scheme="slate"] .md-nav__item--section > .md-nav__link {
+    color: var(--md-accent-fg-color) !important;
+}
+
+/* ── Utility: .red-bold — red bold inline text ── */
+.red-bold {
+    color: #d32f2f;
+    font-weight: 700;
+}
+
+[data-md-color-scheme="slate"] .red-bold {
+    color: #ff6b6b;
+}
+
+/* ── Utility: .badge-red — red pill badge ── */
+.badge-red {
+    display: inline-block;
+    background-color: #d32f2f;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.82em;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+[data-md-color-scheme="slate"] .badge-red {
+    background-color: #b71c1c;
+    color: #fff !important;
+}
+
+/* ── Utility: .badge-light-green — light green pill badge ── */
+.badge-light-green {
+    display: inline-block;
+    background-color: #e8f5e9;
+    color: #2e7d32 !important;
+    font-weight: 700;
+    font-size: 0.82em;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    border: 1px solid #a5d6a7;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+[data-md-color-scheme="slate"] .badge-light-green {
+    background-color: #1b5e20;
+    color: #a5d6a7 !important;
+    border-color: #2e7d32;
+}
+
+/* ── Utility: .badge-green — green pill badge ── */
+.badge-green {
+    display: inline-block;
+    background-color: #2e7d32;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.82em;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+[data-md-color-scheme="slate"] .badge-green {
+    background-color: #1b5e20;
+}
+
+/* ── Custom admonition: danger (❗) ── */
+:root {
+    --md-admonition-icon--danger: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>');
+}
+
+.md-typeset .admonition.danger,
+.md-typeset details.danger {
+    border-color: #d32f2f;
+    background-color: #fff5f5;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .admonition.danger,
+[data-md-color-scheme="slate"] .md-typeset details.danger {
+    background-color: #2a0a0a;
+}
+
+.md-typeset .danger > .admonition-title,
+.md-typeset .danger > summary {
+    background-color: #ffebee;
+    border-color: #d32f2f;
+    color: #b71c1c;
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .danger > .admonition-title,
+[data-md-color-scheme="slate"] .md-typeset .danger > summary {
+    background-color: #3a0a0a;
+    color: #ff6b6b;
+}
+
+.md-typeset .danger > .admonition-title::before,
+.md-typeset .danger > summary::before {
+    content: "\2757";  /* ❗ */
+    background-image: none !important;
+    font-style: normal;
+    margin-right: 0.4em;
+}
+
+/* ── warning admonition: — — */
+.md-typeset .warning > .admonition-title::before,
+.md-typeset .warning > summary::before {
+    content: "\26A0\FE0F";  /* ⚠️ */
+    background-image: none !important;
+    font-style: normal;
+    margin-right: 0.4em;
+}
+
+/* ── mkdocstrings: separators between methods/functions ── */
+.doc-function,
+.doc-method,
+.doc-attribute {
+    border-top: 2px solid var(--md-default-fg-color--lighter);
+    margin-top: 1.6rem !important;
+    padding-top: 1rem;
+    padding-bottom: 0.4rem;
+}
+
+/* ── mkdocstrings: tighter vertical spacing ── */
+.doc-function p,
+.doc-method p,
+.doc-attribute p,
+.doc-function li,
+.doc-method li {
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.5;
+}
+
+.doc-function h2,
+.doc-function h3,
+.doc-function h4,
+.doc-method h2,
+.doc-method h3,
+.doc-method h4 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.3rem;
+}
+
+/* ── mkdocstrings: "Source code in ..." — dark burgundy ── */
+details.mkdocstrings-source > summary {
+    color: #8b1a2e !important;
+    font-weight: 600;
+}
+
+details.mkdocstrings-source > summary code {
+    background-color: #f5d0d8 !important;
+    color: #6b1a2a !important;
+    border: 1px solid #c4607a !important;
+    padding: 1px 5px;
+    border-radius: 3px;
+}

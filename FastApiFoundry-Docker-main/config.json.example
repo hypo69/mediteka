@@ -1,0 +1,144 @@
+{
+  "fastapi_server": {
+    "host": "0.0.0.0",
+    "port": 9696,
+    "auto_find_free_port": false,
+    "mode": "dev",
+    "workers": 1
+  },
+  "foundry_ai": {
+    "base_url": "",
+    "default_model": "llama::llama-server",
+    "temperature": 0.7,
+    "max_tokens": 2048,
+    "auto_start": true,
+    "auto_load_default": false,
+    "startup_models": [],
+    "startup_model_mode": "active",
+    "startup_custom_model": ""
+  },
+  "rag_system": {
+    "enabled": false,
+    "index_dir": "~/.aiassistant/rag/default_index",
+    "chunk_size": 1000
+  },
+  "security": {
+    "api_key": "",
+    "https_enabled": false
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "",
+    "max_bytes_mb": 10,
+    "backup_count": 5,
+    "structured_file": "",
+    "retention_hours": 24,
+    "log_dir": "",
+    "max_lines_per_file": 5000,
+    "retention_days": 7,
+    "suppress_loggers": [],
+    "console": true,
+    "file_handler": true,
+    "errors_file": true,
+    "structured": true
+  },
+  "development": {
+    "debug": false,
+    "verbose": false
+  },
+  "translator": {
+    "enabled": false,
+    "default_provider": "mymemory",
+    "request_timeout_sec": 30,
+    "mymemory_email": "",
+    "libretranslate_url": "https://libretranslate.com",
+    "libretranslate_fallback_url": "https://translate.argosopentech.com",
+    "libretranslate_api_key": ""
+  },
+  "docs_server": {
+    "enabled": false,
+    "port": 9697
+  },
+  "llama_cpp": {
+    "port": 9780,
+    "host": "127.0.0.1",
+    "server_path": "",
+    "model_path": "",
+    "default_model": "",
+    "auto_start": false,
+    "models": []
+  },
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": 50,
+    "max_tokens": 2048
+  },
+  "opencode": {
+    "enabled": true,
+    "target_version": "1.15.3",
+    "auto_start": true,
+    "host": "127.0.0.1",
+    "port": 4096,
+    "base_url": "http://127.0.0.1:4096",
+    "command": "opencode",
+    "provider_id": "ai_assist",
+    "provider_name": "FastAPI Foundry",
+    "runtime_config_home": ".opencode-runtime",
+    "username": "opencode",
+    "password": "",
+    "cors": [
+      "http://localhost:9696",
+      "http://127.0.0.1:9696"
+    ]
+  },
+  "directories": {
+    "models": "~/.models",
+    "rag": "~/.aiassistant/rag",
+    "hf_models": "~/.cache/huggingface/hub"
+  },
+  "dialogs": {
+    "dir": "~/.aiassistant/dialogs",
+    "retention_days": 30,
+    "max_size_mb": 100
+  },
+  "text_extractor": {
+    "max_file_size_mb": 20,
+    "processing_timeout_seconds": 300,
+    "ocr_languages": "rus+eng",
+    "web_page_timeout": 30,
+    "max_images_per_page": 20,
+    "enable_javascript": false,
+    "enable_resource_limits": true
+  },
+  "huggingface": {
+    "models_dir": "~/.cache/huggingface/hub",
+    "device": "auto",
+    "default_max_new_tokens": 512,
+    "default_temperature": 0.7
+  },
+  "app": {
+    "language": "en"
+  },
+  "ftp": {
+    "host": "",
+    "user": "",
+    "port": 21,
+    "docs_dir": ""
+  },
+  "lmstudio": {
+    "base_url": "http://localhost:1234",
+    "api_key": "",
+    "default_model": "",
+    "request_timeout_sec": 300
+  },
+  "custom": {
+    "base_url": "",
+    "api_key": ""
+  },
+  "browser": {
+    "chromium_path": "",
+    "channel": "stable"
+  }
+}

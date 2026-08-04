@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Foundry - AI Interface</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        textarea { min-height: 100px; resize: vertical; }
+        button { background: #667eea; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #5a6fd8; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 15px; margin-top: 15px; white-space: pre-wrap; }
+        .status { padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .status.healthy { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.unhealthy { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .model-card { border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-bottom: 10px; }
+        .model-card.selected { border-color: #667eea; background: #f0f4ff; }
+        .capabilities { display: flex; gap: 5px; margin-top: 5px; }
+        .capability { background: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+        .performance { font-size: 12px; color: #666; margin-top: 10px; }
+        .streaming { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 FastAPI Foundry - AI Interface</h1>
+            <p>Интерфейс для работы с локальными AI моделями через Foundry</p>
+        </div>
+
+        <!-- Статус системы -->
+        <div class="card">
+            <h2>📊 Статус системы</h2>
+            <div id="status" class="status">Проверка...</div>
+            <button onclick="checkHealth()">Обновить статус</button>
+        </div>
+
+        <div class="grid">
+            <!-- Генерация текста -->
+            <div class="card">
+                <h2>✨ Генерация текста</h2>
+                <div class="form-group">
+                    <label for="prompt">Промпт:</label>
+                    <textarea id="prompt" placeholder="Введите ваш запрос...">Объясни квантовую физику простыми словами</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="model">Модель:</label>
+                    <select id="model">
+                        <option value="">Автовыбор</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="temperature">Temperature: <span id="tempValue">0.7</span></label>
+                    <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7" oninput="document.getElementById('tempValue').textContent = this.value">
+                </div>
+                <div class="form-group">
+                    <label for="maxTokens">Max Tokens:</label>
+                    <input type="number" id="maxTokens" value="2048" min="100" max="8192">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="useRag"> Использовать RAG
+                    </label>
+                </div>
+                <button onclick="generateText()">Генерировать</button>
+                <button onclick="generateStream()">Стриминг</button>
+                <div id="generateResult" class="result" style="display: none;"></div>
+                <div id="streamResult" class="streaming" style="display: none;"></div>
+            </div>
+
+            <!-- Управление моделями -->
+            <div class="card">
+                <h2>🤖 Доступные модели</h2>
+                <button onclick="loadModels()">Обновить список</button>
+                <div id="modelsList"></div>
+            </div>
+        </div>
+
+        <!-- Чат -->
+        <div class="card">
+            <h2>💬 Чат</h2>
+            <div id="chatHistory" style="height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #fafafa;"></div>
+            <div class="form-group">
+                <input type="text" id="chatInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+            </div>
+            <button onclick="sendMessage()">Отправить</button>
+            <button onclick="clearChat()">Очистить</button>
+        </div>
+
+        <!-- Оптимизация -->
+        <div class="card">
+            <h2>⚡ Оптимизация</h2>
+            <div class="form-group">
+                <label for="taskType">Тип задачи:</label>
+                <select id="taskType">
+                    <option value="general">Общие задачи</option>
+                    <option value="coding">Программирование</option>
+                    <option value="reasoning">Рассуждения</option>
+                    <option value="creative">Творчество</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="modelPreference">Приоритет:</label>
+                <select id="modelPreference">
+                    <option value="fast">Скорость</option>
+                    <option value="balanced">Баланс</option>
+                    <option value="quality">Качество</option>
+                </select>
+            </div>
+            <button onclick="optimizeSettings()">Оптимизировать</button>
+            <div id="optimizeResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let chatMessages = [];
+
+        // Проверка здоровья системы
+        async function checkHealth() {
+            try {
+                const response = await fetch('/api/v1/ai/health');
+                const data = await response.json();
+                const statusDiv = document.getElementById('status');
+                
+                if (data.status === 'healthy') {
+                    statusDiv.className = 'status healthy';
+                    statusDiv.innerHTML = `✅ Foundry работает<br>Моделей: ${data.models_count}<br>Время отклика: ${data.response_time_ms}ms`;
+                } else {
+                    statusDiv.className = 'status unhealthy';
+                    statusDiv.innerHTML = `❌ Foundry недоступен<br>Ошибка: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Ошибка подключения: ${error.message}`;
+            }
+        }
+
+        // Загрузка списка моделей
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/v1/ai/models');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const modelSelect = document.getElementById('model');
+                    const modelsList = document.getElementById('modelsList');
+                    
+                    // Обновляем селект
+                    modelSelect.innerHTML = '<option value="">Автовыбор</option>';
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = `${model.name} (${model.size})`;
+                        modelSelect.appendChild(option);
+                    });
+                    
+                    // Обновляем список
+                    modelsList.innerHTML = data.models.map(model => `
+                        <div class="model-card">
+                            <strong>${model.name}</strong> (${model.size})
+                            <div class="capabilities">
+                                ${model.capabilities.map(cap => `<span class="capability">${cap}</span>`).join('')}
+                            </div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                Тип: ${model.type} | Рекомендуемая температура: ${model.recommended_settings.temperature}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки моделей:', error);
+            }
+        }
+
+        // Генерация текста
+        async function generateText() {
+            const prompt = document.getElementById('prompt').value;
+            const model = document.getElementById('model').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const maxTokens = parseInt(document.getElementById('maxTokens').value);
+            const useRag = document.getElementById('useRag').checked;
+            
+            if (!prompt) {
+                alert('Введите промпт');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('generateResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Генерация...';
+            
+            try {
+                const response = await fetch('/api/v1/ai/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        model: model || undefined,
+                        temperature,
+                        max_tokens: maxTokens,
+                        use_rag: useRag
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<strong>Результат:</strong>\n${data.content}\n\n<div class="performance">Модель: ${data.model} | Токенов: ${data.usage?.total_tokens || 'N/A'} | Время: ${data.performance?.generation_time_s || 'N/A'}s | Скорость: ${data.performance?.tokens_per_second || 'N/A'} tok/s</div>`;
+                } else {
+                    resultDiv.textContent = `Ошибка: ${data.error}`;
+                }
+            } catch (error) {
+                resultDiv.textContent = `Ошибка: ${error.message}`;
+            }
+        }
+
+        // Стриминговая генерация
+        async function generateStream() {
+            const prompt = document.getElementById('prompt').value;
+            const model = document.getElementById('model').value;
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            
+            if (!prompt) {
+                alert('Введите промпт');
+                return;
+            }
+            
+            const streamDiv = document.getElementById('streamResult');
+            streamDiv.style.display = 'block';
+            streamDiv.innerHTML = '<strong>Стриминг:</strong><br>';
+            
+            try {
+                const response = await fetch('/api/v1/ai/generate/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt,
+                        model: model || undefined,
+                        temperature
+                    })
+                });
+                
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.success && data.content) {
+                                    streamDiv.innerHTML += data.content;
+                                }
+                            } catch (e) {
+                                // Игнорируем ошибки парсинга
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                streamDiv.innerHTML += `\nОшибка: ${error.message}`;
+            }
+        }
+
+        // Чат
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            chatMessages.push({ role: 'user', content: message });
+            updateChatHistory();
+            input.value = '';
+            
+            try {
+                const response = await fetch('/api/v1/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: chatMessages,
+                        temperature: 0.7
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.choices && data.choices[0]) {
+                    chatMessages.push({
+                        role: 'assistant',
+                        content: data.choices[0].message.content
+                    });
+                    updateChatHistory();
+                }
+            } catch (error) {
+                console.error('Ошибка чата:', error);
+            }
+        }
+
+        function updateChatHistory() {
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.innerHTML = chatMessages.map(msg => 
+                `<div style="margin-bottom: 10px;"><strong>${msg.role === 'user' ? 'Вы' : 'AI'}:</strong> ${msg.content}</div>`
+            ).join('');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function clearChat() {
+            chatMessages = [];
+            updateChatHistory();
+        }
+
+        // Оптимизация настроек
+        async function optimizeSettings() {
+            const taskType = document.getElementById('taskType').value;
+            const modelPreference = document.getElementById('modelPreference').value;
+            
+            try {
+                const response = await fetch('/api/v1/ai/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_type: taskType,
+                        model_preference: modelPreference
+                    })
+                });
+                
+                const data = await response.json();
+                const resultDiv = document.getElementById('optimizeResult');
+                resultDiv.style.display = 'block';
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <strong>Рекомендации:</strong><br>
+                        Модель: ${data.optimal_model}<br>
+                        Temperature: ${data.recommended_settings.temperature}<br>
+                        Max Tokens: ${data.recommended_settings.max_tokens}<br>
+                        Top P: ${data.recommended_settings.top_p}<br><br>
+                        <em>${data.explanation}</em>
+                    `;
+                    
+                    // Применяем настройки
+                    document.getElementById('model').value = data.optimal_model;
+                    document.getElementById('temperature').value = data.recommended_settings.temperature;
+                    document.getElementById('tempValue').textContent = data.recommended_settings.temperature;
+                    document.getElementById('maxTokens').value = data.recommended_settings.max_tokens;
+                } else {
+                    resultDiv.textContent = `Ошибка: ${data.error}`;
+                }
+            } catch (error) {
+                document.getElementById('optimizeResult').textContent = `Ошибка: ${error.message}`;
+            }
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            checkHealth();
+            loadModels();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<div class="tab-pane fade" id="editor" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-shield-lock"></i>
+                                    <span data-i18n="editor.env_title">.env</span>
+                                    <small class="text-muted">(<span data-i18n="editor.env_subtitle">secrets</span>)</small>
+                                </h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="loadEnv()">
+                                        <i class="bi bi-arrow-clockwise"></i> <span data-i18n="editor.reload">Reload</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="saveEnv()">
+                                        <i class="bi bi-check-lg"></i> <span data-i18n="editor.save">Save</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <textarea id="env-editor" class="form-control flex-grow-1"
+                                          style="font-family:monospace;"
+                                          placeholder="# OPENAI_API_KEY=sk-..."></textarea>
+                                <div id="env-status" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gear"></i>
+                                    <span data-i18n="editor.config_title">config.json</span>
+                                    <small class="text-muted">(<span data-i18n="editor.config_subtitle">settings</span>)</small>
+                                </h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="loadConfigJson()">
+                                        <i class="bi bi-arrow-clockwise"></i> <span data-i18n="editor.reload">Reload</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="saveConfigJson()">
+                                        <i class="bi bi-check-lg"></i> <span data-i18n="editor.save">Save</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <textarea id="config-json-editor" class="form-control flex-grow-1"
+                                          style="font-family:monospace;"
+                                          placeholder="// Edit your config.json here"></textarea>
+                                <div id="config-json-status" class="mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>

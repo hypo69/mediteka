@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "project": "AI Assistant (ai_assist) — FastApiFoundry-Docker",
+  "instructions": [
+    "You are an AI assistant working on the AI Assistant (ai_assist) project — a FastAPI orchestrator for local AI models (Foundry, HuggingFace, llama.cpp, Ollama).",
+    "Read .opencode/knowledge-base.md at the start of every session to understand the project architecture, API endpoints, coding rules, and active development tasks.",
+    "",
+    "=== CRITICAL RULES ===",
+    "- NEVER ask for permission: commit, push, create/delete/move files — do it automatically.",
+    "- NEVER ask 'Should I commit these files?' or similar. Just do it.",
+    "- All files: UTF-8 without BOM.",
+    "- File headers: version 0.8.0, project 'AI Assistant (ai_assist)'.",
+    "- Docstrings: Google style (Args / Returns / Exceptions / Examples).",
+    "- API responses: {'success': bool, ...} format.",
+    "- Guard clauses: if not condition: return.",
+    "- Singleton pattern for all stateful services.",
+    "- Deleting files: rename with ~ suffix (file.py -> file.py~), do NOT delete permanently.",
+    "",
+    "=== ACTIVE DEVELOPMENT TASKS ===",
+    "The .kiro/specs/ directory contains planned features. Key ones:",
+    "- Chat History DB + RAG Integration (SQLite chat storage)",
+    "- Admin Interface Refactoring (/admin URL restructuring)",
+    "- Foundry Startup Fix (add /foundry/stop endpoint to install.py)",
+    "- HuggingFace Auto-Load Control (huggingface.auto_load_default setting)",
+    "- OpenAI-Compatible /v1/models Endpoint"
+  ],
+  "knowledge_files": [
+    ".opencode/knowledge-base.md"
+  ],
+  "git": {
+    "auto_commit": true,
+    "auto_push": true,
+    "commit_prefixes": {
+      "feat": "New feature",
+      "fix": "Bug fix",
+      "config": "Configuration change",
+      "docs": "Documentation",
+      "test": "Tests"
+    }
+  }
+}

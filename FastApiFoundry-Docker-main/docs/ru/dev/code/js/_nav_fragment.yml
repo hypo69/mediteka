@@ -1,0 +1,22 @@
+- js/:
+  - Обзор: dev/code/js/index.md
+  - Agent: dev/code/js/agent.md
+  - Chat: dev/code/js/chat.md
+  - Chat Component: dev/code/js/chat_component.md
+  - Config: dev/code/js/config.md
+  - Editor: dev/code/js/editor.md
+  - Foundry: dev/code/js/foundry.md
+  - Hf: dev/code/js/hf.md
+  - I18N: dev/code/js/i18n.md
+  - Llama: dev/code/js/llama.md
+  - Mcp: dev/code/js/mcp.md
+  - Model Badge: dev/code/js/model-badge.md
+  - Models: dev/code/js/models.md
+  - Ollama: dev/code/js/ollama.md
+  - Opencode: dev/code/js/opencode.md
+  - Providers Registry: dev/code/js/providers-registry.md
+  - Providers: dev/code/js/providers.md
+  - Rag: dev/code/js/rag.md
+  - Sdk: dev/code/js/sdk.md
+  - Support: dev/code/js/support.md
+  - Ui: dev/code/js/ui.md

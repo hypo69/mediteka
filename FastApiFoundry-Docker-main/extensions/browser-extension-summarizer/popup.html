@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Assistant</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <style>
+        body { width: 300px; padding: 0; }
+        .popup-body { padding: 14px; }
+        .btn-gap { margin-top: 6px; }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="ext-navbar">
+    <div class="brand">🤖 <span data-i18n="popup.title">AI Assistant</span></div>
+    <select class="lang-select lang-select" id="lang-select">
+        <option value="en">EN</option>
+        <option value="ru">RU</option>
+        <option value="he">HE</option>
+    </select>
+</div>
+
+<div class="popup-body">
+    <div class="info-block" id="active-info">
+        <span class="label" data-i18n="common.loading">Loading…</span>
+    </div>
+
+    <p class="text-muted small mb-3" data-i18n="popup.hint">
+        Right-click any page → <strong>Summarise</strong> → choose mode.
+    </p>
+
+    <div class="d-grid gap-2">
+        <button class="btn btn-primary btn-sm" id="open-chat" data-i18n="popup.open_chat">💬 Chat</button>
+        <button class="btn btn-secondary btn-sm" id="open-providers" data-i18n="popup.open_providers">⚙️ Providers &amp; Models</button>
+        <button class="btn btn-success btn-sm" id="open-rag" data-i18n="rag.title">📚 RAG Storage</button>
+        <button class="btn btn-outline-secondary btn-sm" id="open-debug" data-i18n="debug.title">🔧 Server Debug</button>
+    </div>
+</div>
+
+<script src="popup.js" type="module"></script>
+</body>
+</html>

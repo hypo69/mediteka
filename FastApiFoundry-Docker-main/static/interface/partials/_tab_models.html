@@ -1,0 +1,55 @@
+<div class="tab-pane fade show active" id="models" role="tabpanel">
+    <div class="row mt-3">
+
+        <!-- ── Server Status ── -->
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" data-i18n="settings.system_status">System Status</h5>
+                </div>
+                <div class="card-body" id="system-status"></div>
+            </div>
+        </div>
+
+        <!-- ── Active / loaded models ── -->
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cpu text-success me-1"></i>
+                        <span data-i18n="models.title">Active Models</span>
+                    </h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="refreshModels()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span data-i18n="models.refresh">Refresh</span>
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="models-container" class="row g-0 p-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Available models by provider ── -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-collection me-1"></i>
+                        <span data-i18n="models.available">Available Models</span>
+                    </h5>
+                    <div class="d-flex gap-2 align-items-center">
+                        <span class="text-muted small" data-i18n="models.grouped_hint">Grouped by provider</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshModels()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="models-list" style="max-height:520px;overflow-y:auto"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,389 @@
+<div class="tab-pane fade" id="rag" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-5">
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-activity"></i> <span data-i18n="rag.active_base">Active RAG Base</span></h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshRAGStatus()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <div class="card-body" id="rag-status">
+                                <div class="text-muted text-center"><small data-i18n="common.loading">Loading...</small></div>
+                            </div>
+                        </div>
+
+                        <!-- ── Index from ZIP / Directory ── -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-cloud-upload"></i> <span data-i18n="rag.ingest_title">Index Documents</span></h6>
+                            </div>
+                            <div class="card-body p-2">
+                                <ul class="nav nav-tabs nav-sm mb-2" id="ragIngestTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#rag-ingest-zip" type="button">
+                                            <i class="bi bi-file-zip"></i> <span data-i18n="rag.ingest_zip">ZIP / Files</span>
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rag-ingest-dir" type="button">
+                                            <i class="bi bi-folder2-open"></i> <span data-i18n="rag.ingest_dir">Directory</span>
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content">
+                                    <!-- ZIP / files tab -->
+                                    <div class="tab-pane fade show active" id="rag-ingest-zip">
+                                        <div class="input-group input-group-sm mb-1">
+                                            <input type="file" id="rag-upload-archive" class="form-control form-control-sm"
+                                                   accept=".zip,.tar,.gz,.tgz,.7z,.rar,.pdf,.docx,.doc,.txt,.md,.html,.xlsx,.pptx"
+                                                   multiple>
+                                            <button class="btn btn-sm btn-primary" onclick="ragUploadArchive()" id="rag-upload-btn">
+                                                <i class="bi bi-cloud-upload"></i> <span data-i18n="rag.upload_index">Upload &amp; Index</span>
+                                            </button>
+                                        </div>
+                                        <div class="text-muted" style="font-size:.75rem" data-i18n="rag.ingest_zip_hint">zip, 7z, rar, tar, pdf, docx, md…</div>
+                                        <div id="rag-upload-status" class="mt-2"></div>
+                                    </div>
+                                    <!-- Directory tab -->
+                                    <div class="tab-pane fade" id="rag-ingest-dir">
+                                        <div class="input-group input-group-sm mb-1">
+                                            <input type="file" id="rag-dir-input" class="form-control form-control-sm"
+                                                   webkitdirectory directory multiple>
+                                            <button class="btn btn-sm btn-success" onclick="ragIndexDirectoryFiles()" id="rag-dir-index-btn">
+                                                <i class="bi bi-database-add"></i> <span data-i18n="rag.ingest_dir_btn">Index Directory</span>
+                                            </button>
+                                        </div>
+                                        <div class="text-muted" style="font-size:.75rem">Выберите папку — все файлы внутри будут проиндексированы</div>
+                                        <div id="rag-dir-index-status" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-collection"></i> <span data-i18n="rag.bases">RAG Bases (~/.ai-assist/rag)</span></h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="ragLoadProfiles()">
+                                    <i class="bi bi-arrow-clockwise"></i> <span data-i18n="rag.refresh">Refresh</span>
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="rag-profiles-list" style="max-height:300px;overflow-y:auto">
+                                    <div class="text-muted text-center p-3"><small data-i18n="rag.no_bases">No RAG bases yet.</small></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <!-- Google Colab info panel -->
+                        <div class="alert alert-warning d-flex align-items-start gap-2 mb-3" style="font-size:.85rem">
+                            <i class="bi bi-gpu-card flex-shrink-0 mt-1" style="font-size:1.1rem"></i>
+                            <div>
+                                <strong>Слабый компьютер?</strong> Постройте индекс бесплатно на GPU в Google Colab.<br>
+                                <span class="text-muted">NVIDIA Tesla T4 (16 ГБ) ускоряет индексацию в 10–30× по сравнению с CPU.</span>
+                                <div class="mt-2">
+                                    <a href="https://colab.research.google.com/drive/11ibP2Ys2eIbjb51t6ZXNyL0BKqy8sGQ_"
+                                       target="_blank" rel="noopener">
+                                        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" style="height:20px">
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-database-add"></i> <span data-i18n="rag.build_title">Build New RAG Base</span></h6>
+                                <a href="https://colab.research.google.com/github/hypo69/FastApiFoundry-Docker/blob/master/notebooks%5Crag_colab.ipynb"
+                                   target="_blank" rel="noopener"
+                                   class="btn btn-sm btn-warning"
+                                   title="Build index on Google Colab GPU (free T4)">
+                                    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" style="height:18px;vertical-align:middle">
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label d-flex justify-content-between align-items-center">
+                                        <span data-i18n="rag.source_dirs">Source Directories</span>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="ragAddDirectory()" type="button">
+                                            <i class="bi bi-folder-plus"></i> <span data-i18n="rag.add_dir">Add Directory</span>
+                                        </button>
+                                    </label>
+                                    <div id="rag-dirs-list" class="d-flex flex-column gap-2">
+                                        <!-- Directory entries added dynamically -->
+                                    </div>
+                                    <div id="rag-dir-status" class="mt-1" style="display:none"></div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label" data-i18n="rag.chunk_size">Chunk size</label>
+                                        <input type="number" id="rag-build-chunk" class="form-control" value="1000">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label" data-i18n="rag.overlap">Overlap</label>
+                                        <input type="number" id="rag-build-overlap" class="form-control" value="50">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="rag.embedding_model">Embedding model</label>
+                                    <select id="rag-build-model" class="form-select">
+                                        <option value="sentence-transformers/all-mpnet-base-v2">all-mpnet-base-v2 (recommended)</option>
+                                        <option value="sentence-transformers/all-MiniLM-L6-v2">all-MiniLM-L6-v2 (fast)</option>
+                                        <option value="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2">paraphrase-multilingual</option>
+                                    </select>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success" id="rag-build-btn" onclick="ragBuildIndex()">
+                                        <i class="bi bi-database-add"></i> <span data-i18n="rag.build">Build Index</span>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="ragBuildIndex(true)">
+                                        <i class="bi bi-arrow-repeat"></i> <span data-i18n="rag.rebuild">Rebuild (force)</span>
+                                    </button>
+                                    <a href="https://colab.research.google.com/drive/11ibP2Ys2eIbjb51t6ZXNyL0BKqy8sGQ_"
+                                       target="_blank" rel="noopener"
+                                       class="btn btn-outline-warning">
+                                        <i class="bi bi-gpu-card"></i> Создать индекс в Colab
+                                    </a>
+                                </div>
+
+                                <!-- Colab info block -->
+                                <div class="alert alert-info mt-3 mb-0" style="font-size:.85rem">
+                                    <div class="d-flex align-items-start gap-2">
+                                        <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+                                        <div>
+                                            <strong>Зачем использовать Google Colab?</strong><br>
+                                            Построение RAG-индекса требует вычисления эмбеддингов для тысяч текстовых чанков — это CPU/GPU-интенсивная задача.
+                                            На слабом ПК индексация большой базы документов может занять <strong>часы</strong>.
+                                            <hr class="my-2">
+                                            <strong><i class="bi bi-nvidia"></i> Режим T4 GPU (бесплатно)</strong><br>
+                                            Google Colab предоставляет бесплатный доступ к GPU <strong>NVIDIA Tesla T4</strong> (16 ГБ VRAM).
+                                            В режиме T4 индексация ускоряется в <strong>10–30×</strong> по сравнению с CPU.
+                                            Чтобы включить: <em>Runtime → Change runtime type → T4 GPU</em>.
+                                            Готовый индекс скачивается и подключается к AI Assistant локально.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="rag-build-status" class="mt-3" style="display:none"></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-search"></i> <span data-i18n="rag.test_search">Test Search</span></h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group mb-2">
+                                    <input type="text" id="rag-test-query" class="form-control"
+                                           data-i18n-placeholder="rag.search_placeholder"
+                                           placeholder="Enter test query...">
+                                    <button class="btn btn-info" onclick="testRAGSearch()">
+                                        <i class="bi bi-search"></i> <span data-i18n="rag.search_btn">Search</span>
+                                    </button>
+                                </div>
+                                <div id="rag-test-results" style="display:none">
+                                    <div id="rag-search-output" class="border rounded p-2"
+                                         style="max-height:200px;overflow-y:auto;font-size:.85rem"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Document Manager ──────────────────────────────────────── -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-journal-text"></i>
+                                    <span data-i18n="rag.doc_manager">Document Manager</span>
+                                    <span class="badge bg-info ms-2" id="rag-doc-count">0</span>
+                                </h6>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="ragLoadDocuments()" title="Refresh">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning" onclick="ragCompactIndex()" id="rag-compact-btn" title="Compact index (remove dead vectors)" style="display:none">
+                                        <i class="bi bi-scissors"></i> <span data-i18n="rag.compact">Compact</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="ragShowAddModal()">
+                                        <i class="bi bi-plus-lg"></i> <span data-i18n="rag.add_doc">Add Document</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Info block -->
+                            <div class="alert alert-info m-3 mb-0 py-2" style="font-size:.82rem">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <strong data-i18n="rag.doc_manager_info_title">Incremental indexing:</strong>
+                                <span data-i18n="rag.doc_manager_info">Add or edit documents here — only changed content is re-embedded. Deleted documents are soft-removed; run <strong>Compact</strong> to reclaim FAISS space.</span>
+                            </div>
+
+                            <div class="card-body p-0">
+                                <div id="rag-doc-stats" class="px-3 pt-2 pb-1 text-muted" style="font-size:.8rem"></div>
+                                <div id="rag-documents-list" style="max-height:320px;overflow-y:auto">
+                                    <div class="text-muted text-center p-3"><small data-i18n="rag.no_docs">No documents yet. Add one →</small></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add / Edit Document Modal -->
+                <div class="modal fade" id="ragDocModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="ragDocModalTitle" data-i18n="rag.add_doc">Add Document</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" id="rag-doc-edit-id" value="">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="rag.doc_title">Title</label>
+                                    <input type="text" id="rag-doc-title" class="form-control" placeholder="Document title">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span data-i18n="rag.doc_content">Content</span>
+                                        <small class="text-muted" id="rag-doc-char-count">0 chars</small>
+                                    </label>
+                                    <textarea id="rag-doc-content" class="form-control font-monospace"
+                                              rows="12" style="font-size:.82rem;resize:vertical"
+                                              placeholder="Paste document text here..."
+                                              oninput="document.getElementById('rag-doc-char-count').textContent = this.value.length + ' chars'"></textarea>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label" data-i18n="rag.doc_source">Source path (optional)</label>
+                                    <input type="text" id="rag-doc-source" class="form-control" placeholder="/path/to/file.md">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="ragSaveDocument()" id="rag-doc-save-btn">
+                                    <i class="bi bi-floppy"></i> <span data-i18n="common.save">Save &amp; Index</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Extractor section -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> <span data-i18n="rag.extractor_title">Text Extractor</span></h6>
+                                <span class="badge bg-secondary" data-i18n="rag.extractor_badge">40+ formats</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3" data-i18n="rag.extractor_hint">
+                                    Extract text from files or URLs to preview content before indexing.
+                                    Supports PDF, DOCX, XLSX, PPTX, images (OCR), HTML, archives and more.
+                                </p>
+
+                                <!-- Tabs: File / URL -->
+                                <ul class="nav nav-tabs nav-sm mb-3" id="extractorTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="ext-file-tab" data-bs-toggle="tab"
+                                                data-bs-target="#ext-file-pane" type="button" role="tab">
+                                            <i class="bi bi-file-earmark-arrow-up"></i>
+                                            <span data-i18n="rag.extractor_file">File</span>
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="ext-url-tab" data-bs-toggle="tab"
+                                                data-bs-target="#ext-url-pane" type="button" role="tab">
+                                            <i class="bi bi-globe"></i>
+                                            <span data-i18n="rag.extractor_url">URL</span>
+                                        </button>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content">
+                                    <!-- File extraction -->
+                                    <div class="tab-pane fade show active" id="ext-file-pane" role="tabpanel">
+                                        <div class="input-group mb-2">
+                                            <input type="file" id="ext-file-input" class="form-control"
+                                                   accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.html,.htm,.md,.json,.xml,.yaml,.yml,.csv,.odt,.rtf,.epub,.eml,.msg,.zip,.rar,.7z,.tar,.gz,.jpg,.jpeg,.png,.tiff,.bmp,.gif,.py,.js,.ts,.php,.rb,.go,.rs,.cs,.java,.cpp,.c,.sh,.ps1">
+                                            <button class="btn btn-primary" onclick="extractFromFile()" id="ext-file-btn">
+                                                <i class="bi bi-play-fill"></i>
+                                                <span data-i18n="rag.extractor_extract">Extract</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- URL extraction -->
+                                    <div class="tab-pane fade" id="ext-url-pane" role="tabpanel">
+                                        <div class="input-group mb-2">
+                                            <input type="text" id="ext-url-input" class="form-control"
+                                                   placeholder="https://example.com/document.pdf"
+                                                   data-i18n-placeholder="rag.extractor_url_placeholder">
+                                            <button class="btn btn-primary" onclick="extractFromURL()" id="ext-url-btn">
+                                                <i class="bi bi-play-fill"></i>
+                                                <span data-i18n="rag.extractor_extract">Extract</span>
+                                            </button>
+                                        </div>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-auto">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" id="ext-js-enabled">
+                                                    <label class="form-check-label small" for="ext-js-enabled"
+                                                           data-i18n="rag.extractor_js">JavaScript</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="checkbox" id="ext-images-enabled">
+                                                    <label class="form-check-label small" for="ext-images-enabled"
+                                                           data-i18n="rag.extractor_images">OCR images</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Result -->
+                                <div id="ext-result" style="display:none">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted" id="ext-result-meta"></small>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="copyExtractedText()">
+                                            <i class="bi bi-clipboard"></i>
+                                            <span data-i18n="rag.extractor_copy">Copy</span>
+                                        </button>
+                                    </div>
+                                    <textarea id="ext-result-text" class="form-control font-monospace"
+                                              rows="8" readonly
+                                              style="font-size:.8rem;resize:vertical"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Directory Browser Modal ── -->
+            <div class="modal fade" id="ragBrowserModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header py-2">
+                            <h6 class="modal-title mb-0"><i class="bi bi-folder2-open"></i> <span data-i18n="rag.browser_title">Select Directory</span></h6>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div class="d-flex align-items-center gap-1 px-2 py-1 border-bottom bg-light">
+                                <button class="btn btn-sm btn-outline-secondary" id="rag-browser-up" onclick="ragBrowserUp()" disabled>
+                                    <i class="bi bi-arrow-up"></i>
+                                </button>
+                                <code class="small text-truncate flex-grow-1" id="rag-browser-path" style="font-size:.75rem"></code>
+                            </div>
+                            <div id="rag-browser-list" style="min-height:200px;max-height:360px;overflow-y:auto">
+                                <div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer py-2">
+                            <small class="text-muted me-auto text-truncate" id="rag-browser-selected-label" style="max-width:60%"></small>
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-i18n="common.cancel">Cancel</button>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="ragBrowserConfirm()" data-i18n="common.select">Select</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

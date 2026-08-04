@@ -1,0 +1,19 @@
+- servers/:
+  - Обзор: dev/code/mcp_servers/index.md
+  - wordpress-cli/:
+    - Обзор: dev/code/mcp_servers/wordpress-cli/index.md
+    - .gemini/:
+      - Обзор: dev/code/mcp_servers/wordpress-cli/.gemini/index.md
+      - Settings: dev/code/mcp_servers/wordpress-cli/.gemini/settings.md
+  - Docs Deploy Mcp: dev/code/mcp_servers/docs_deploy_mcp.md
+  - Ftp Mcp: dev/code/mcp_servers/ftp_mcp.md
+  - Huggingface Mcp: dev/code/mcp_servers/huggingface_mcp.md
+  - Local Models Mcp: dev/code/mcp_servers/local_models_mcp.md
+  - Mcphttpsserver: dev/code/mcp_servers/McpHttpsServer.md
+  - Mcphuggingfaceserver: dev/code/mcp_servers/McpHuggingFaceServer.md
+  - Mcpstdioserver: dev/code/mcp_servers/McpSTDIOServer.md
+  - Mcpstdioserver.V1: dev/code/mcp_servers/McpSTDIOServer.v1.md
+  - Mcpsystemmonitor: dev/code/mcp_servers/McpSystemMonitor.md
+  - Mcpwpcliserver: dev/code/mcp_servers/McpWPCLIServer.md
+  - Mcpwpserver: dev/code/mcp_servers/McpWpServer.md
+  - Windows Os Mcp: dev/code/mcp_servers/windows_os_mcp.md

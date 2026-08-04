@@ -1,0 +1,5 @@
+- telegram/:
+  - Обзор: dev/code/telegram/index.md
+  - Admin Bot: dev/code/telegram/admin_bot.md
+  - Helpdesk Bot: dev/code/telegram/helpdesk_bot.md
+  - Listener Bot: dev/code/telegram/listener_bot.md

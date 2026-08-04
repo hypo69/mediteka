@@ -1,0 +1,8 @@
+{
+  "extensionName": {
+    "message": "AI Assistant — Summarizer"
+  },
+  "extensionDescription": {
+    "message": "Summarise current page or all open tabs using Gemini AI"
+  }
+}

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Assistant — Chat</title>
+    <link rel="stylesheet" href="css/theme.css">
+</head>
+<body>
+
+<div class="chat-wrap">
+
+    <!-- Navbar -->
+    <div class="ext-navbar">
+        <div class="brand">💬 <span data-i18n="chat.title">Chat</span></div>
+        <span class="badge bg-primary" id="current-model-badge" style="display:none"></span>
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <label class="text-white-50 small mb-0" data-i18n="chat.model_label">Model</label>
+            <select id="model-select" class="form-select form-select-sm"
+                    style="width:auto;max-width:220px;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">
+                <option data-i18n="chat.model_loading">Loading…</option>
+            </select>
+            <button class="btn btn-sm btn-outline-light" id="clear-btn" data-i18n="chat.clear">Clear</button>
+            <button class="btn btn-sm btn-success" id="rag-btn" style="display:none" data-i18n="chat.send_to_rag">📚 RAG</button>
+            <select class="lang-select form-select form-select-sm"
+                    style="width:auto;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">
+                <option value="en">EN</option>
+                <option value="ru">RU</option>
+                <option value="he">HE</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages-area" id="messages">
+        <div class="empty-state" id="empty-state">
+            <div class="icon">🤖</div>
+            <div data-i18n="chat.start_prompt">Start a conversation</div>
+        </div>
+    </div>
+
+    <div id="error-banner" class="alert alert-danger m-2 py-2 small" style="display:none"></div>
+
+    <!-- Input -->
+    <div class="input-area">
+        <div class="input-group">
+            <textarea id="user-input" class="form-control form-control-sm" rows="1"
+                data-i18n-placeholder="chat.placeholder"
+                placeholder="Type a message…"></textarea>
+            <button id="send-btn" class="btn btn-primary btn-sm" data-i18n="chat.send">Send</button>
+        </div>
+        <div class="input-hint" data-i18n="chat.input_hint">Enter to send · Shift+Enter for new line</div>
+    </div>
+
+</div>
+
+<script src="chat.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+- src/:
+  - Обзор: dev/code/src/index.md
+  - agents/:
+    - Обзор: dev/code/src/agents/index.md
+    - Base: dev/code/src/agents/base.md
+    - Computer Admin Agent: dev/code/src/agents/computer_admin_agent.md
+    - Google Agent: dev/code/src/agents/google_agent.md
+    - Hitl Orchestrator: dev/code/src/agents/hitl_orchestrator.md
+    - Keystroke Agent: dev/code/src/agents/keystroke_agent.md
+    - Mcp Agent: dev/code/src/agents/mcp_agent.md
+    - Powershell Agent: dev/code/src/agents/powershell_agent.md
+    - Qa Agent: dev/code/src/agents/qa_agent.md
+    - Rag Agent: dev/code/src/agents/rag_agent.md
+    - Recommender Agent: dev/code/src/agents/recommender_agent.md
+    - Windows Os Agent: dev/code/src/agents/windows_os_agent.md
+  - api/:
+    - Обзор: dev/code/src/api/index.md
+    - endpoints/:
+      - Обзор: dev/code/src/api/endpoints/index.md
+      - Agent: dev/code/src/api/endpoints/agent.md
+      - Ai Endpoints: dev/code/src/api/endpoints/ai_endpoints.md
+      - Chat Endpoints: dev/code/src/api/endpoints/chat_endpoints.md
+      - Config: dev/code/src/api/endpoints/config.md
+      - Content Blocks: dev/code/src/api/endpoints/content_blocks.md
+      - Converter: dev/code/src/api/endpoints/converter.md
+      - Foundry: dev/code/src/api/endpoints/foundry.md
+      - Foundry Management: dev/code/src/api/endpoints/foundry_management.md
+      - Foundry Models: dev/code/src/api/endpoints/foundry_models.md
+      - Generate: dev/code/src/api/endpoints/generate.md
+      - Health: dev/code/src/api/endpoints/health.md
+      - Helpdesk: dev/code/src/api/endpoints/helpdesk.md
+      - Hf Models: dev/code/src/api/endpoints/hf_models.md
+      - Install: dev/code/src/api/endpoints/install.md
+      - Llama Cpp: dev/code/src/api/endpoints/llama_cpp.md
+      - Lmstudio: dev/code/src/api/endpoints/lmstudio.md
+      - Logs: dev/code/src/api/endpoints/logs.md
+      - Main: dev/code/src/api/endpoints/main.md
+      - Mcp Agent Endpoints: dev/code/src/api/endpoints/mcp_agent_endpoints.md
+      - Mcp Powershell: dev/code/src/api/endpoints/mcp_powershell.md
+      - Models: dev/code/src/api/endpoints/models.md
+      - Ollama: dev/code/src/api/endpoints/ollama.md
+      - Openai Models: dev/code/src/api/endpoints/openai_models.md
+      - Opencode: dev/code/src/api/endpoints/opencode.md
+      - Processor: dev/code/src/api/endpoints/processor.md
+      - Rag: dev/code/src/api/endpoints/rag.md
+      - Rag Ingestor: dev/code/src/api/endpoints/rag_ingestor.md
+      - Recommender: dev/code/src/api/endpoints/recommender.md
+      - Security: dev/code/src/api/endpoints/security.md
+      - Support: dev/code/src/api/endpoints/support.md
+      - System Stats: dev/code/src/api/endpoints/system_stats.md
+      - Training: dev/code/src/api/endpoints/training.md
+      - Translator: dev/code/src/api/endpoints/translator.md
+    - App: dev/code/src/api/app.md
+    - Docs Generator: dev/code/src/api/docs_generator.md
+    - Main: dev/code/src/api/main.md
+    - Models: dev/code/src/api/models.md
+    - Utils: dev/code/src/api/utils.md
+    - Websocket Manager: dev/code/src/api/websocket_manager.md
+  - converter/:
+    - Обзор: dev/code/src/converter/index.md
+    - Gguf To Onnx: dev/code/src/converter/gguf_to_onnx.md
+  - core/:
+    - Обзор: dev/code/src/core/index.md
+    - Config: dev/code/src/core/config.md
+  - db/:
+    - Обзор: dev/code/src/db/index.md
+    - Chat Db: dev/code/src/db/chat_db.md
+    - Schemas: dev/code/src/db/schemas.md
+  - logger/:
+    - Обзор: dev/code/src/logger/index.md
+  - models/:
+    - Обзор: dev/code/src/models/index.md
+    - Enhanced Foundry Client: dev/code/src/models/enhanced_foundry_client.md
+    - Foundry Client: dev/code/src/models/foundry_client.md
+    - Hf Client: dev/code/src/models/hf_client.md
+    - Llama Registry: dev/code/src/models/llama_registry.md
+    - Lmstudio Client: dev/code/src/models/lmstudio_client.md
+    - Model Manager: dev/code/src/models/model_manager.md
+    - Ollama Client: dev/code/src/models/ollama_client.md
+    - Opencode Client: dev/code/src/models/opencode_client.md
+    - Router: dev/code/src/models/router.md
+  - rag/:
+    - Обзор: dev/code/src/rag/index.md
+    - text_extractors/:
+      - Обзор: dev/code/src/rag/text_extractors/index.md
+      - markitdown/:
+        - Обзор: dev/code/src/rag/text_extractors/markitdown/index.md
+        - Extractor: dev/code/src/rag/text_extractors/markitdown/extractor.md
+      - text_extractor_4_rag/:
+        - Обзор: dev/code/src/rag/text_extractors/text_extractor_4_rag/index.md
+        - Config: dev/code/src/rag/text_extractors/text_extractor_4_rag/config.md
+        - Extractors: dev/code/src/rag/text_extractors/text_extractor_4_rag/extractors.md
+        - Main: dev/code/src/rag/text_extractors/text_extractor_4_rag/main.md
+        - Utils: dev/code/src/rag/text_extractors/text_extractor_4_rag/utils.md
+      - whisper/:
+        - Обзор: dev/code/src/rag/text_extractors/whisper/index.md
+        - Extractor: dev/code/src/rag/text_extractors/whisper/extractor.md
+    - Document Ingestor: dev/code/src/rag/document_ingestor.md
+    - Document Store: dev/code/src/rag/document_store.md
+    - Incremental Indexer: dev/code/src/rag/incremental_indexer.md
+    - Indexer: dev/code/src/rag/indexer.md
+    - Rag Pipeline: dev/code/src/rag/rag_pipeline.md
+    - Rag Profile Manager: dev/code/src/rag/rag_profile_manager.md
+    - Rag Service: dev/code/src/rag/rag_service.md
+    - Rag System: dev/code/src/rag/rag_system.md
+  - training/:
+    - Обзор: dev/code/src/training/index.md
+    - Dataset Store: dev/code/src/training/dataset_store.md
+    - Trainer: dev/code/src/training/trainer.md
+  - utils/:
+    - Обзор: dev/code/src/utils/index.md
+    - Api Utils: dev/code/src/utils/api_utils.md
+    - Command Agent: dev/code/src/utils/command_agent.md
+    - Env Processor: dev/code/src/utils/env_processor.md
+    - Foundry Finder: dev/code/src/utils/foundry_finder.md
+    - Foundry Utils: dev/code/src/utils/foundry_utils.md
+    - Log Analyzer: dev/code/src/utils/log_analyzer.md
+    - Logging Config: dev/code/src/utils/logging_config.md
+    - Logging System: dev/code/src/utils/logging_system.md
+    - Process Utils: dev/code/src/utils/process_utils.md
+    - Processor: dev/code/src/utils/processor.md
+    - Telegram Bot: dev/code/src/utils/telegram_bot.md
+    - Telegram Support Bot: dev/code/src/utils/telegram_support_bot.md
+    - Text Extractor: dev/code/src/utils/text_extractor.md
+    - Text Utils: dev/code/src/utils/text_utils.md
+    - Translator: dev/code/src/utils/translator.md

@@ -1,0 +1,70 @@
+# =============================================================================
+# MODE — Installation / Runtime Mode Configuration
+# =============================================================================
+# Project : AI Assistant (ai_assist)
+# Version : 0.7.1
+# File    : MODE  (project root)
+#
+# Declares the active mode for install.ps1 and related scripts.
+# Read by: install.ps1, scripts/ReinstallFoundry.ps1
+#
+# Override without editing this file — pass -Mode on the command line:
+#   powershell -ExecutionPolicy Bypass -File .\install.ps1 -Mode prod
+#   powershell -ExecutionPolicy Bypass -File .\install.ps1 -Mode qa
+#   powershell -ExecutionPolicy Bypass -File .\install.ps1 -Mode qa+debug
+#
+# Command-line -Mode always wins over this file.
+# =============================================================================
+
+mode = qa+debug
+
+# =============================================================================
+# AVAILABLE MODES
+# =============================================================================
+#
+# prod
+#   Default interactive installation.
+#   - Prompts before overwriting venv
+#   - Prompts before installing Foundry
+#   - Prompts before downloading default models
+#   Use for: first-time setup on a developer machine
+#
+# qa
+#   Full uninstall of all running services, then clean reinstall.
+#   Produces a deterministic environment identical to a first-time install.
+#   Steps performed automatically (no prompts):
+#     1. Stop FastAPI server  (PID file or port 9696)
+#     2. Stop llama.cpp       (port 9780)
+#     3. Stop MkDocs          (port 9697)
+#     4. Stop Foundry Local   (foundry service stop)
+#     5. Remove venv/         (full wipe)
+#     6. Remove bin/llama-*   (re-extracted from zip on next install)
+#     7. Reinstall Foundry Local via winget
+#     8. Run full install pipeline (pip, RAG, Tesseract, .env, logs, llama)
+#   Use for: CI pipelines, QA validation, regression testing
+#
+# debug
+#   Diagnostics only — no changes to any service or file.
+#   Prints: foundry --version, foundry service status
+#   Use for: troubleshooting a broken environment without touching it
+#
+# qa+debug  (also accepted: debug+qa)
+#   Same as qa (full uninstall + reinstall), PLUS verbose diagnostic output
+#   after the reinstall completes:
+#     - foundry --version
+#     - foundry service status
+#   Use for: CI with detailed post-install verification logs
+#
+# =============================================================================
+# ACCEPTED ALIASES (all normalised by Resolve-Mode)
+# =============================================================================
+#
+#   qa+debug   ->  qa+debug   (canonical)
+#   debug+qa   ->  qa+debug   (normalised)
+#   QA+DEBUG   ->  qa+debug   (case-insensitive)
+#   QA         ->  qa
+#   DEBUG      ->  debug
+#   PROD       ->  prod
+#   <empty>    ->  prod        (safe default)
+#
+# =============================================================================

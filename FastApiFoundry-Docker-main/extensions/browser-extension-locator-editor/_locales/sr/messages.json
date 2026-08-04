@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Назив проширења"
+  },
+  "extensionDescription": {
+    "message": "Креира јасне и структуриране описе компоненти рачунара",
+    "description": "Опис проширења"
+  },
+  "contextMenuTitle": {
+    "message": "Генериши понуду цене",
+    "description": "Назив ставке контекстног менија"
+  },
+  "apiKeyLabel": {
+    "message": "API кључ Google Gemini",
+    "description": "Натпис за поље за унос API кључа"
+  },
+  "modelLabel": {
+    "message": "Модел",
+    "description": "Натпис за избор модела"
+  },
+  "saveButton": {
+    "message": "Сачувај",
+    "description": "Текст дугмета за чување"
+  },
+  "statusNoApiKey": {
+    "message": "Молимо унесите ваш API кључ",
+    "description": "Порука када API кључ није унет"
+  },
+  "indicatorAnalyzing": {
+    "message": "Ваша понуда цене се формира…",
+    "description": "Порука током анализе"
+  },
+  "errorFetchContent": {
+    "message": "Није успело преузимање садржаја странице",
+    "description": "Грешка при преузимању садржаја странице"
+  },
+  "errorPageTooShort": {
+    "message": "Страница садржи премало садржаја",
+    "description": "Грешка када је страница прекратка"
+  },
+  "errorApi": {
+    "message": "API грешка: $error$",
+    "description": "Општа порука о API грешци",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Неважећи API кључ"
+      }
+    }
+  },
+  "price": {
+    "message": "Цена",
+    "description": "Цена израде"
+  },
+  "totalPriceLabel": {
+    "message": "Укупна цена:",
+    "description": "Натпис за укупну цену у понуди"
+  },
+  "saveOfferButton": {
+    "message": "Сачувај понуду",
+    "description": "Текст дугмета 'Сачувај понуду'"
+  },
+  "changeImageButton": {
+    "message": "Промени слику",
+    "description": "Текст дугмета 'Промени слику' у подножју"
+  }
+}

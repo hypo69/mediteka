@@ -1,0 +1,369 @@
+{
+  "models": [
+    {
+      "id": "phi-4-openvino-gpu:1",
+      "name": "phi-4 (GPU)",
+      "size": "8.83 GB",
+      "description": "phi-4 - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 8.37 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 10.16 модель",
+      "current": false
+    },
+    {
+      "id": "Phi-3.5-mini-instruct-openvino-gpu:1",
+      "name": "phi-3.5-mini (GPU)",
+      "size": "1.95 GB",
+      "description": "phi-3.5-mini - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 2.16 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 2.53 модель",
+      "current": false
+    },
+    {
+      "id": "Phi-3-mini-128k-instruct-openvino-gpu:1",
+      "name": "phi-3-mini-128k (GPU)",
+      "size": "2.27 GB",
+      "description": "phi-3-mini-128k - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 2.13 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 2.54 модель",
+      "current": false
+    },
+    {
+      "id": "Phi-3-mini-4k-instruct-openvino-gpu:1",
+      "name": "phi-3-mini-4k (GPU)",
+      "size": "2.01 GB",
+      "description": "phi-3-mini-4k - chat модель",
+      "current": true
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 2.13 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 2.53 модель",
+      "current": false
+    },
+    {
+      "id": "Mistral-7B-Instruct-v0-2-openvino-gpu:1",
+      "name": "mistral-7b-v0.2 (GPU)",
+      "size": "4.27 GB",
+      "description": "mistral-7b-v0.2 - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB apache-2.0",
+      "description": "GPU - 4.07 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB apache-2.0",
+      "description": "CPU - 4.07 модель",
+      "current": false
+    },
+    {
+      "id": "DeepSeek-R1-Distill-Qwen-14B-openvino-gpu:1",
+      "name": "deepseek-r1-14b (GPU)",
+      "size": "7.87 GB",
+      "description": "deepseek-r1-14b - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 10.27 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 11.51 модель",
+      "current": false
+    },
+    {
+      "id": "DeepSeek-R1-Distill-Qwen-7B-openvino-gpu:1",
+      "name": "deepseek-r1-7b (GPU)",
+      "size": "4.19 GB",
+      "description": "deepseek-r1-7b - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 5.58 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 6.43 модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-coder-0.5b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-coder-0.5b (GPU)",
+      "size": "tools 0.36",
+      "description": "qwen2.5-coder-0.5b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-0.5b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "0.52 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-0.5b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "0.80 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "Phi-4-mini-reasoning-openvino-gpu:2",
+      "name": "phi-4-mini-reasoning (GPU)",
+      "size": "2.47 GB",
+      "description": "phi-4-mini-reasoning - chat модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "GPU (chat)",
+      "size": "GB MIT",
+      "description": "GPU - 3.15 модель",
+      "current": false
+    },
+    {
+      "id": "Unknown",
+      "name": "CPU (chat)",
+      "size": "GB MIT",
+      "description": "CPU - 4.52 модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-0.5b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-0.5b (GPU)",
+      "size": "tools 0.36",
+      "description": "qwen2.5-0.5b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-0.5b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "0.68 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen3-0.6b-generic-cpu:4:4",
+      "name": "CPU (chat,)",
+      "size": "0.80 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-1.5b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-1.5b (GPU)",
+      "size": "tools 1.00",
+      "description": "qwen2.5-1.5b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-1.5b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "1.51 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-1.5b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "1.78 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-coder-1.5b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-coder-1.5b (GPU)",
+      "size": "tools 0.99",
+      "description": "qwen2.5-coder-1.5b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-1.5b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "1.25 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-1.5b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "1.78 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "MIT phi-4-mini-instruct-openvino-gpu:2",
+      "name": "phi-4-mini (GPU)",
+      "size": "tools 2.15",
+      "description": "phi-4-mini - chat, модель",
+      "current": false
+    },
+    {
+      "id": "Phi-4-mini-instruct-generic-gpu:5",
+      "name": "GPU (chat,)",
+      "size": "3.72 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "Phi-4-mini-instruct-generic-cpu:5",
+      "name": "CPU (chat,)",
+      "size": "4.80 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-14b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-14b (GPU)",
+      "size": "tools 4.79",
+      "description": "qwen2.5-14b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-14b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "9.30 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-14b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "11.06 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-coder-14b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-coder-14b (GPU)",
+      "size": "tools 9.08",
+      "description": "qwen2.5-coder-14b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-14b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "8.79 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-14b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "11.06 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-coder-7b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-coder-7b (GPU)",
+      "size": "tools 4.80",
+      "description": "qwen2.5-coder-7b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-7b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "4.73 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-coder-7b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "6.16 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "apache-2.0 qwen2.5-7b-instruct-openvino-gpu:2",
+      "name": "qwen2.5-7b (GPU)",
+      "size": "tools 4.79",
+      "description": "qwen2.5-7b - chat, модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-7b-instruct-generic-gpu:4",
+      "name": "GPU (chat,)",
+      "size": "5.20 GB",
+      "description": "GPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "qwen2.5-7b-instruct-generic-cpu:4",
+      "name": "CPU (chat,)",
+      "size": "6.16 GB",
+      "description": "CPU - tools модель",
+      "current": false
+    },
+    {
+      "id": "gpt-oss-20b-generic-cpu:1",
+      "name": "gpt-oss-20b (CPU)",
+      "size": "12.26 GB",
+      "description": "gpt-oss-20b - chat модель",
+      "current": false
+    }
+  ],
+  "current_model": "Phi-3-mini-4k-instruct-openvino-gpu:1"
+}

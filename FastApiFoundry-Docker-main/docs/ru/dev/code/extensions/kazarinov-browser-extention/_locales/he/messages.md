@@ -1,0 +1,101 @@
+# Messages
+
+**Файл:** `extensions/kazarinov-browser-extention/_locales/he/messages.json`  
+**Тип:** `.json`
+
+---
+
+| Ключ | Тип | Значение |
+|---|---|---|
+| `extensionName` | `dict` | объект: `message`, `description` |
+| `extensionDescription` | `dict` | объект: `message`, `description` |
+| `contextMenuTitle` | `dict` | объект: `message`, `description` |
+| `apiKeyLabel` | `dict` | объект: `message`, `description` |
+| `modelLabel` | `dict` | объект: `message`, `description` |
+| `saveButton` | `dict` | объект: `message`, `description` |
+| `statusNoApiKey` | `dict` | объект: `message`, `description` |
+| `indicatorAnalyzing` | `dict` | объект: `message`, `description` |
+| `errorFetchContent` | `dict` | объект: `message`, `description` |
+| `errorPageTooShort` | `dict` | объект: `message`, `description` |
+| `errorApi` | `dict` | объект: `message`, `description`, `placeholders` |
+| `price` | `dict` | объект: `message`, `description` |
+| `totalPriceLabel` | `dict` | объект: `message`, `description` |
+| `saveOfferButton` | `dict` | объект: `message`, `description` |
+| `changeImageButton` | `dict` | объект: `message`, `description` |
+
+**Полная структура:**
+
+```json
+{
+  "extensionName": {
+    "message": "מחולל הצעות מחיר קזרינוב",
+    "description": "Название расширения"
+  },
+  "extensionDescription": {
+    "message": "יוצר תיאורים מובנים וברורים של רכיבי מחשב",
+    "description": "Описание расширения"
+  },
+  "contextMenuTitle": {
+    "message": "צור הצעת מחיר",
+    "description": "Название пункта контекстного меню"
+  },
+  "apiKeyLabel": {
+    "message": "מפתח API של Google Gemini",
+    "description": "Подпись для поля ввода API-ключа"
+  },
+  "modelLabel": {
+    "message": "מודל",
+    "description": "Подпись для выбора модели"
+  },
+  "saveButton": {
+    "message": "שמור",
+    "description": "Текст кнопки сохранения"
+  },
+  "statusNoApiKey": {
+    "message": "אנא הזן את מפתח ה-API שלך",
+    "description": "Сообщение, когда API-ключ не введён"
+  },
+  "indicatorAnalyzing": {
+    "message": "הצעת המחיר שלך נוצרת...",
+    "description": "Сообщение во время анализа"
+  },
+  "errorFetchContent": {
+    "message": "לא ניתן היה לקבל את תוכן העמוד",
+    "description": "Ошибка при получении содержимого страницы"
+  },
+  "errorPageTooShort": {
+    "message": "העמוד מכיל מעט מדי תוכן",
+    "description": "Ошибка, когда страница слишком короткая"
+  },
+  "errorApi": {
+    "message": "שגיאת API: $error$",
+    "description": "Общее сообщение об ошибке API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "מפתח API שגוי"
+      }
+    }
+  },
+  "price": {
+    "message": "עלות",
+    "description": "Цена сборки"
+  },
+  "totalPriceLabel": {
+    "message": "מחיר סופי:",
+    "description": "Подпись для итоговой цены в предложении"
+  },
+  "saveOfferButton": {
+    "message": "שמור הצעה",
+    "description": "Текст кнопки 'Сохранить предложение'"
+  },
+  "changeImageButton": {
+    "message": "שנה תמונה",
+    "description": "Текст кнопки 'Изменить картинку' в футере"
+  }
+}
+```
+
+---
+
+*Проект: AI Assistant (ai_assist) · v0.8.0 · автогенерация: `scripts/Create-Doc/Generate-FullReference.py`*

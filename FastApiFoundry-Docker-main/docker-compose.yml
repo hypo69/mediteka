@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Название процесса: Docker Compose конфигурация для FastApiFoundry (Docker)
+# =============================================================================
+# Описание:
+#   Docker Compose файл для запуска FastApiFoundry в контейнере
+#   Поддержка переменных окружения, volume mapping, сетевых настроек
+#
+# Примеры:
+#   docker-compose up -d
+#   docker-compose logs -f
+#   docker-compose down
+#
+# File: docker-compose.yml
+# Project: Ai Assistant (Docker)
+# Version: 0.2.1
+# Author: hypo69
+# Copyright: © 2024 - 2026 hypo69
+# Date: 9 декабря 2025
+# =============================================================================
+
+services:
+  fastapi-foundry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fastapi-foundry:0.2.1
+    container_name: fastapi-foundry-docker
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - FASTAPI_FOUNDRY_MODE=production
+      - FOUNDRY_HOST=${FOUNDRY_HOST:-localhost}
+      - FOUNDRY_PORT=${FOUNDRY_PORT:-50477}
+      - API_KEY=${API_KEY}
+      - RAG_ENABLED=${RAG_ENABLED:-true}
+      - RAG_INDEX_PATH=/app/rag_index
+      - RAG_CHUNK_SIZE=${RAG_CHUNK_SIZE:-1000}
+    volumes:
+      - ./logs:/app/logs
+      - ./rag_index:/app/rag_index
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9696/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - fastapi-foundry-network
+
+networks:
+  fastapi-foundry-network:
+    driver: bridge

@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Όνομα επέκτασης"
+  },
+  "extensionDescription": {
+    "message": "Δημιουργεί σαφείς και δομημένες περιγραφές εξαρτημάτων υπολογιστή",
+    "description": "Περιγραφή επέκτασης"
+  },
+  "contextMenuTitle": {
+    "message": "Δημιουργία προσφοράς τιμής",
+    "description": "Τίτλος στοιχείου μενού περιβάλλοντος"
+  },
+  "apiKeyLabel": {
+    "message": "Κλειδί API Google Gemini",
+    "description": "Ετικέτα για το πεδίο εισαγωγής κλειδιού API"
+  },
+  "modelLabel": {
+    "message": "Μοντέλο",
+    "description": "Ετικέτα για την επιλογή μοντέλου"
+  },
+  "saveButton": {
+    "message": "Αποθήκευση",
+    "description": "Κείμενο κουμπιού αποθήκευσης"
+  },
+  "statusNoApiKey": {
+    "message": "Παρακαλώ εισάγετε το κλειδί API σας",
+    "description": "Μήνυμα όταν δεν έχει εισαχθεί κλειδί API"
+  },
+  "indicatorAnalyzing": {
+    "message": "Δημιουργείται η προσφορά τιμής σας…",
+    "description": "Μήνυμα κατά την ανάλυση"
+  },
+  "errorFetchContent": {
+    "message": "Αδυναμία ανάκτησης περιεχομένου σελίδας",
+    "description": "Σφάλμα κατά την ανάκτηση περιεχομένου σελίδας"
+  },
+  "errorPageTooShort": {
+    "message": "Η σελίδα περιέχει πολύ λίγο περιεχόμενο",
+    "description": "Σφάλμα όταν η σελίδα είναι πολύ μικρή"
+  },
+  "errorApi": {
+    "message": "Σφάλμα API: $error$",
+    "description": "Γενικό μήνυμα σφάλματος API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Μη έγκυρο κλειδί API"
+      }
+    }
+  },
+  "price": {
+    "message": "Τιμή",
+    "description": "Τιμή κατασκευής"
+  },
+  "totalPriceLabel": {
+    "message": "Συνολική τιμή:",
+    "description": "Ετικέτα για τη συνολική τιμή στην προσφορά"
+  },
+  "saveOfferButton": {
+    "message": "Αποθήκευση προσφοράς",
+    "description": "Κείμενο κουμπιού 'Αποθήκευση προσφοράς'"
+  },
+  "changeImageButton": {
+    "message": "Αλλαγή εικόνας",
+    "description": "Κείμενο κουμπιού 'Αλλαγή εικόνας' στο υποσέλιδο"
+  }
+}

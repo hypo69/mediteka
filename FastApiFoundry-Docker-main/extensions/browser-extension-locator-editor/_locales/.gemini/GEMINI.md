@@ -1,0 +1,127 @@
+В директории `ru` распложен файл `messages.json` 
+Твоя задача добавить в локали (директории),:
+[
+  "en",
+  "en-US",
+  "en-GB",
+  "en-CA",
+  "en-AU",
+  "es",
+  "es-ES",
+  "es-MX",
+  "es-AR",
+  "fr",
+  "fr-FR",
+  "fr-CA",
+  "de",
+  "de-DE",
+  "it",
+  "it-IT",
+  "pt",
+  "pt-PT",
+  "pt-BR",
+  "ru",
+  "uk",
+  "pl",
+  "nl",
+  "nl-NL",
+  "sv",
+  "no",
+  "da",
+  "fi",
+  "cs",
+  "sk",
+  "hu",
+  "ro",
+  "bg",
+  "sr",
+  "hr",
+  "el",
+  "tr",
+  "ar",
+  "ar-SA",
+  "fa",
+  "he",
+  "zh",
+  "zh-CN",
+  "zh-TW",
+  "ja",
+  "ko",
+  "th",
+  "vi",
+  "id",
+  "ms",
+  "hi"
+]
+
+файл messages.json со следующим содержимым переведенным на соответствующий язык (по имени директории).
+
+в Каждой из них поместить `messages.json` с переводом следующего содержимого ня язык локали:
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Название расширения"
+  },
+  "extensionDescription": {
+    "message": "Создаёт чёткие и структурированные описания компонентов компьютера",
+    "description": "Описание расширения"
+  },
+  "contextMenuTitle": {
+    "message": "Сформировать предложение цены",
+    "description": "Название пункта контекстного меню"
+  },
+  "apiKeyLabel": {
+    "message": "API-ключ Google Gemini",
+    "description": "Подпись для поля ввода API-ключа"
+  },
+  "modelLabel": {
+    "message": "Модель",
+    "description": "Подпись для выбора модели"
+  },
+  "saveButton": {
+    "message": "Сохранить",
+    "description": "Текст кнопки сохранения"
+  },
+  "statusNoApiKey": {
+    "message": "Пожалуйста, введите ваш API-ключ",
+    "description": "Сообщение, когда API-ключ не введён"
+  },
+  "indicatorAnalyzing": {
+    "message": "Формируется ваше предложение цены…",
+    "description": "Сообщение во время анализа"
+  },
+  "errorFetchContent": {
+    "message": "Не удалось получить содержимое страницы",
+    "description": "Ошибка при получении содержимого страницы"
+  },
+  "errorPageTooShort": {
+    "message": "Страница содержит слишком мало контента",
+    "description": "Ошибка, когда страница слишком короткая"
+  },
+  "errorApi": {
+    "message": "Ошибка API: $error$",
+    "description": "Общее сообщение об ошибке API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Неверный API-ключ"
+      }
+    }
+  },
+  "price": {
+    "message": "Цена",
+    "description": "Цена сборки"
+  },
+  "totalPriceLabel": {
+    "message": "Итоговая цена:",
+    "description": "Подпись для итоговой цены в предложении"
+  },
+  "saveOfferButton": {
+    "message": "Сохранить предложение",
+    "description": "Текст кнопки 'Сохранить предложение'"
+  },
+  "changeImageButton": {
+    "message": "Изменить картинку",
+    "description": "Текст кнопки 'Изменить картинку' в футере"
+  }
+}

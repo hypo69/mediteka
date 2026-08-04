@@ -186,3 +186,49 @@ class TestTorrentPlaywrightPlugin:
         p = plugin(mock_model)
         
         assert p is not None
+
+
+class TestYtDlpPlugin:
+    """Тесты yt_dlp плагина."""
+
+    def test_plugin_creation(self, mock_ai_model):
+        """Тест создания плагина."""
+        from plugins.yt_dlp import YtDlpPlugin
+        
+        p = YtDlpPlugin(mock_ai_model)
+        assert p is not None
+        assert p.name == "yt_dlp"
+
+    def test_can_handle(self, mock_ai_model):
+        """Тест метода can_handle."""
+        from plugins.yt_dlp import YtDlpPlugin
+        
+        p = YtDlpPlugin(mock_ai_model)
+        assert p.can_handle("скачай видео https://youtu.be/xyz") is True
+        assert p.can_handle("https://www.youtube.com/watch?v=123") is True
+        assert p.can_handle("найди на ютубе котиков") is True
+        assert p.can_handle("какой-то левый текст") is False
+
+    def test_detect_intent(self, mock_ai_model):
+        """Тест метода _detect_intent."""
+        from plugins.yt_dlp import YtDlpPlugin
+        
+        p = YtDlpPlugin(mock_ai_model)
+        assert p._detect_intent("скачай https://youtu.be/xyz") == "download_video"
+        assert p._detect_intent("скачай mp3 https://youtu.be/xyz") == "download_audio"
+        assert p._detect_intent("инфо о видео https://youtu.be/xyz") == "info"
+        assert p._detect_intent("найди видео котики") == "search"
+
+    def test_extract_url(self):
+        """Тест метода _extract_url."""
+        from plugins.yt_dlp import YtDlpPlugin
+        
+        assert YtDlpPlugin._extract_url("привет https://youtu.be/xyz пока") == "https://youtu.be/xyz"
+        assert YtDlpPlugin._extract_url("тут нет ссылки") is None
+
+    def test_extract_query(self):
+        """Тест метода _extract_query."""
+        from plugins.yt_dlp import YtDlpPlugin
+        
+        assert YtDlpPlugin._extract_query("найди видео смешные коты") == "смешные коты"
+

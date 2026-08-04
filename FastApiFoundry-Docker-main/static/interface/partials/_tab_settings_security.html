@@ -1,0 +1,25 @@
+<!-- ── SECURITY ────────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--security">
+    <div class="settings-section-header text-secondary">
+        <i class="bi bi-shield-lock"></i> <span data-i18n="settings.security">Security</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.api_key">API Key</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_api_key"></i>
+            </label>
+            <input type="password" id="config-security-key" class="form-control"
+                   data-i18n-placeholder="settings.api_key_hint" placeholder="Leave empty to disable">
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="config-security-https">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-security-https">
+                    <span data-i18n="settings.enable_https">Enable HTTPS</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_https"></i>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>

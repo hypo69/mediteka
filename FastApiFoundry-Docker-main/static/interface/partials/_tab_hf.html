@@ -1,0 +1,91 @@
+<div class="tab-pane fade" id="hf" role="tabpanel">
+                <div class="row mt-3">
+                    <!-- Hub + Downloaded + Loaded models -->
+                    <div class="col-md-7">
+                        <!-- Hub Models -->
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-cloud"></i> HuggingFace Hub</h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="hfLoadHubModels()">
+                                    <i class="bi bi-arrow-clockwise"></i> Load
+                                </button>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="nav nav-tabs nav-sm px-2 pt-2" id="hfHubTabs">
+                                    <li class="nav-item">
+                                        <button class="nav-link active py-1 px-3" id="hf-my-tab"
+                                            onclick="hfSwitchHubTab('my')">
+                                            <i class="bi bi-person"></i> My Models
+                                        </button>
+                                    </li>
+                                    <li class="nav-item">
+                                        <button class="nav-link py-1 px-3" id="hf-public-tab"
+                                            onclick="hfSwitchHubTab('public')">
+                                            <i class="bi bi-globe"></i> Popular Public
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div id="hf-hub-list" style="max-height:220px;overflow-y:auto">
+                                    <div class="text-muted text-center p-3"><small>Click Load to fetch from Hub</small></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Downloaded -->
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-hdd"></i> Downloaded Locally</h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="hfRefreshModels()"><i class="bi bi-arrow-clockwise"></i></button>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="hf-downloaded-list" style="max-height:260px;overflow-y:auto">
+                                    <div class="text-muted text-center p-3"><small>Click Refresh to load</small></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Loaded in memory -->
+                        <div class="card">
+                            <div class="card-header"><h6 class="mb-0"><i class="bi bi-cpu"></i> Loaded in Memory</h6></div>
+                            <div class="card-body p-0">
+                                <div id="hf-loaded-list" style="max-height:100px;overflow-y:auto">
+                                    <div class="text-muted text-center p-3"><small>No models loaded</small></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Status + Download -->
+                    <div class="col-md-5">
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-info-circle"></i> HuggingFace Status</h6>
+                                <button class="btn btn-sm btn-outline-primary" onclick="hfCheckStatus()"><i class="bi bi-arrow-clockwise"></i></button>
+                            </div>
+                            <div class="card-body" id="hf-status-body">
+                                <div class="text-muted text-center"><small>Click refresh to check</small></div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header"><h6 class="mb-0"><i class="bi bi-cloud-download"></i> Download Model</h6></div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <label class="form-label">Model ID <small class="text-muted">(e.g. google/gemma-2b)</small></label>
+                                    <input type="text" id="hf-download-id" class="form-control" placeholder="google/gemma-2b">
+                                    <div class="form-text">Token берётся автоматически из Settings → HuggingFace</div>
+                                </div>
+                                <div id="hf-token-warning" class="alert alert-warning p-2 mb-2" style="display:none">
+                                    ⚠️ HF Token не задан. Укажите его в
+                                    <a href="#" onclick="document.getElementById('settings-tab').click()">Settings → HuggingFace</a>
+                                </div>
+                                <div class="alert alert-info p-2 mb-2" style="font-size:.85rem">
+                                    <div class="fw-semibold mb-1">Как это появится в чате</div>
+                                    Если модель gated (нужна лицензия), сначала задайте токен в <strong>Settings → HuggingFace</strong> и примите лицензию на странице модели.
+                                    После успешного <strong>Download</strong> модель появится в <strong>Downloaded Locally</strong>. Нажмите <strong>refresh</strong>, и локальные HF модели станут доступны в выпадающем списке чата.
+                                </div>
+                                <button class="btn btn-success w-100" onclick="hfDownload()">
+                                    <i class="bi bi-download"></i> Download
+                                </button>
+                                <div id="hf-download-status" class="mt-2" style="display:none"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>

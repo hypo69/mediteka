@@ -1,0 +1,63 @@
+# Config Mcphttps
+
+**Файл:** `mcp/src/config/Config-McpHTTPS.json`  
+**Тип:** `.json`
+
+---
+
+| Ключ | Тип | Значение |
+|---|---|---|
+| `ServerConfig` | `dict` | объект: `Name`, `Version`, `Description`, `MaxExecutionTime`, `LogLevel` |
+
+**Полная структура:**
+
+```json
+{
+  "ServerConfig": {
+    "Name": "PowerShell HTTPS Server",
+    "Version": "1.1.2",
+    "Description": "Выполняет PowerShell скрипты через HTTPS MCP протокол",
+    "MaxExecutionTime": 300,
+    "LogLevel": "INFO",
+    "Http": {
+      "Port": 8090,
+      "Host": "localhost",
+      "UseHttps": false,
+      "MaxConcurrentRequests": 10
+    },
+    "Security": {
+      "EnableAuthentication": false,
+      "EnableScriptValidation": false,
+      "BlockDangerousCommands": false,
+      "RestrictedCommands": [
+        "Remove-Item.*C:\\\\Windows",
+        "Remove-Item.*C:\\\\Program Files",
+        "Format-Volume",
+        "Stop-Computer",
+        "Restart-Computer",
+        "Remove-Item.*HKLM:",
+        "New-ItemProperty.*HKLM:",
+        "Set-ItemProperty.*HKLM:",
+        "Remove-ItemProperty.*HKLM:"
+      ],
+      "AllowedModules": [
+        "Microsoft.PowerShell.*",
+        "PackageManagement",
+        "PowerShellGet",
+        "PSReadLine",
+        "ThreadJob"
+      ],
+      "MaxOutputSize": 10000,
+      "MaxScriptLength": 50000
+    },
+    "Logging": {
+      "LogFile": "mcp-https-server.log",
+      "DetailedLogging": false
+    }
+  }
+}
+```
+
+---
+
+*Проект: AI Assistant (ai_assist) · v0.8.0 · автогенерация: `scripts/Create-Doc/Generate-FullReference.py`*

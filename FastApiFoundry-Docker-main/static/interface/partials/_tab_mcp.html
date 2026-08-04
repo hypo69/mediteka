@@ -1,0 +1,38 @@
+<div class="tab-pane fade" id="mcp" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="bi bi-plug"></i> <span data-i18n="tabs.mcp">MCP Servers</span></h5>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="refreshMCPServers()">
+                                        <i class="bi bi-arrow-clockwise"></i> <span data-i18n="common.refresh">Refresh</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="startAllMCPServers()">
+                                        <i class="bi bi-play-fill"></i> Start All
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="stopAllMCPServers()">
+                                        <i class="bi bi-stop-fill"></i> Stop All
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="mcp-servers-list">
+                                    <div class="text-muted text-center">
+                                        <i class="bi bi-server"></i><br>
+                                        MCP servers will be listed here
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header"><h5 class="mb-0" data-i18n="common.notes">Notes</h5></div>
+                            <div class="card-body">
+                                <p class="card-text">Manage PowerShell MCP micro-services. Each server runs as a separate process.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>

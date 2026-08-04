@@ -1,0 +1,116 @@
+<!--
+===============================================================================
+Process Name: AI Assistant Main View
+===============================================================================
+Description:
+    Primary UI layout for the Desktop application.
+    Contains status indicators, input area for prompts, and response container.
+
+File: index.html
+Project: Ai Assistant
+Author: hypo69
+Copyright: © 2026 hypo69
+===============================================================================
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="app.title">Ai Assistant</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; color: #212529; font-family: system-ui, -apple-system, sans-serif; }
+        .admin-card { border: none; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); margin-bottom: 1.5rem; }
+        .nav-tabs { border-bottom: 2px solid #dee2e6; margin-bottom: 1.5rem; }
+        pre { background: #f1f3f5; padding: 1rem; border-radius: 0.375rem; border: 1px solid #dee2e6; }
+        #response-content { max-height: 500px; overflow-y: auto; white-space: pre-wrap; }
+        .badge-online { background-color: #198754; }
+        .badge-offline { background-color: #dc3545; }
+        
+        /* Dark Theme Styles */
+        [data-theme="dark"] { background-color: #121212; color: #e0e0e0; }
+        [data-theme="dark"] body { background-color: #121212; color: #e0e0e0; }
+        [data-theme="dark"] .admin-card { background-color: #1e1e1e; border: 1px solid #333; color: #e0e0e0; }
+        [data-theme="dark"] .card-title { color: #fff; }
+        [data-theme="dark"] pre { background: #2d2d2d; color: #9cdcfe; border-color: #444; }
+        [data-theme="dark"] .form-control, [data-theme="dark"] .form-select { background-color: #2d2d2d; border-color: #444; color: #fff; }
+        [data-theme="dark"] .nav-link { color: #aaa; }
+        [data-theme="dark"] .nav-link.active { background-color: #1e1e1e; border-color: #444 #444 #1e1e1e; color: #fff; }
+    </style>
+</head>
+<body class="py-4">
+    <div class="container-xl">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0"><span data-i18n="app.title">Ai Assistant</span> <span id="status-badge" class="badge rounded-pill bg-secondary ms-2 text-uppercase" style="font-size: 0.4em;">Checking...</span></h1>
+            <select id="lang-select" class="form-select form-select-sm" style="width: auto;">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+            </select>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat-pane" type="button" role="tab" data-i18n="tabs.chat">Chat</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status-pane" type="button" role="tab" data-i18n="tabs.status">Status</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-pane" type="button" role="tab" data-i18n="tabs.settings">Settings</button>
+            </li>
+        </ul>
+
+        <!-- Tabs Content -->
+        <div class="tab-content" id="adminTabsContent">
+            <!-- Chat Tab -->
+            <div class="tab-pane fade show active" id="chat-pane" role="tabpanel" tabindex="0">
+                <div class="card admin-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3" data-i18n="section.prompt">AI Prompt</h5>
+                        <textarea id="prompt-input" class="form-control mb-3" rows="4" placeholder="Type your request..." data-i18n-placeholder="placeholder.prompt"></textarea>
+                        <button id="send-btn" class="btn btn-primary px-4" data-i18n="btn.send">Send</button>
+                    </div>
+                </div>
+                <div class="card admin-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0" data-i18n="label.response">Response</h5>
+                            <div id="chat-spinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></div>
+                        </div>
+                        <pre id="response-content" class="mb-0">Waiting...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Tab -->
+            <div class="tab-pane fade" id="status-pane" role="tabpanel" tabindex="0">
+                <div class="card admin-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3" data-i18n="section.status">Backend Status</h5>
+                        <pre id="status-content" class="mb-0">Loading...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings-pane" role="tabpanel" tabindex="0">
+                <div class="card admin-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3" data-i18n="tabs.settings">Settings</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="theme-toggle">
+                            <label class="form-check-label" for="theme-toggle" data-i18n="label.theme">Dark Mode</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

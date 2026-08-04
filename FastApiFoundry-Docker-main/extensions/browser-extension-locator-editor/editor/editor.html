@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+    <style>
+      /* Basic styles to replace TailwindCDN and keep the app usable */
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background-color: #111827; /* gray-900 */
+        color: #f3f4f6; /* gray-100 */
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
+     <script>
+        document.title = chrome.i18n.getMessage("appName");
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="../vendor/react.development.js"></script>
+    <script src="../vendor/react-dom.development.js"></script>
+    <script type="module" src="./editor.js"></script>
+  </body>
+</html>

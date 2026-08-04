@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Име на разширението"
+  },
+  "extensionDescription": {
+    "message": "Създава ясни и структурирани описания на компютърни компоненти",
+    "description": "Описание на разширението"
+  },
+  "contextMenuTitle": {
+    "message": "Генериране на ценова оферта",
+    "description": "Име на елемент от контекстното меню"
+  },
+  "apiKeyLabel": {
+    "message": "API ключ за Google Gemini",
+    "description": "Етикет за полето за въвеждане на API ключ"
+  },
+  "modelLabel": {
+    "message": "Модел",
+    "description": "Етикет за избор на модел"
+  },
+  "saveButton": {
+    "message": "Запазване",
+    "description": "Текст на бутона за запазване"
+  },
+  "statusNoApiKey": {
+    "message": "Моля, въведете вашия API ключ",
+    "description": "Съобщение, когато API ключът не е въведен"
+  },
+  "indicatorAnalyzing": {
+    "message": "Генериране на вашата ценова оферта…",
+    "description": "Съобщение по време на анализ"
+  },
+  "errorFetchContent": {
+    "message": "Неуспешно извличане на съдържанието на страницата",
+    "description": "Грешка при извличане на съдържанието на страницата"
+  },
+  "errorPageTooShort": {
+    "message": "Страницата съдържа твърде малко съдържание",
+    "description": "Грешка, когато страницата е твърде кратка"
+  },
+  "errorApi": {
+    "message": "API грешка: $error$",
+    "description": "Общо съобщение за API грешка",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Невалиден API ключ"
+      }
+    }
+  },
+  "price": {
+    "message": "Цена",
+    "description": "Цена на сглобката"
+  },
+  "totalPriceLabel": {
+    "message": "Крайна цена:",
+    "description": "Етикет за крайната цена в офертата"
+  },
+  "saveOfferButton": {
+    "message": "Запазване на офертата",
+    "description": "Текст на бутона 'Запазване на офертата'"
+  },
+  "changeImageButton": {
+    "message": "Промяна на изображението",
+    "description": "Текст на бутона 'Промяна на изображението' във футъра"
+  }
+}

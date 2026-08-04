@@ -1,0 +1,147 @@
+{
+  "mcpServers": {
+    "powershell-stdio": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./mcp/src/servers/McpSTDIOServer.ps1"
+      ],
+      "envFile": "./.env",
+      "description": "PowerShell STDIO сервер — выполнение команд на локальной машине"
+    },
+    "powershell-https": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./mcp/src/servers/McpHttpsServer.ps1",
+        "-Port",
+        "8090",
+        "-ServerHost",
+        "localhost",
+        "-ConfigFile",
+        "./mcp/src/config/Config-McpHTTPS.json"
+      ],
+      "envFile": "./.env",
+      "description": "PowerShell HTTPS REST API сервер на порту 8090"
+    },
+    "wordpress-cli": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./mcp/src/servers/McpWPCLIServer.ps1",
+        "-ConfigFile",
+        "./mcp/src/config/Config-McpWPCLI.json"
+      ],
+      "envFile": "./.env",
+      "description": "WordPress CLI сервер для управления WP сайтами"
+    },
+    "local-models": {
+      "command": "python",
+      "args": [
+        "./mcp/src/servers/local_models_mcp.py"
+      ],
+      "env": {
+        "FASTAPI_BASE_URL": "http://localhost:9696"
+      },
+      "description": "Локальные AI модели через FastAPI Foundry (Foundry, llama.cpp, Ollama, HuggingFace)"
+    },
+    "huggingface": {
+      "command": "python",
+      "args": [
+        "./mcp/src/servers/huggingface_mcp.py"
+      ],
+      "env": {
+        "HF_TOKEN": "${HF_TOKEN}"
+      },
+      "description": "HuggingFace Inference API для генерации текста"
+    },
+    "docs-deploy": {
+      "command": "python",
+      "args": [
+        "./mcp/src/servers/docs_deploy_mcp.py"
+      ],
+      "env": {
+        "FTP_HOST": "${FTP_HOST}",
+        "FTP_USER": "${FTP_USER}",
+        "FTP_PASSWORD": "${FTP_PASSWORD}",
+        "FTP_PORT": "${FTP_PORT}",
+        "FTP_DOCS_RU": "${FTP_DOCS_RU}",
+        "FTP_DOCS_EN": "${FTP_DOCS_EN}"
+      },
+      "description": "Deploy MkDocs documentation (site/ru, site/en) to FTP server"
+    },
+    "windows-os": {
+      "command": "python",
+      "args": [
+        "./mcp/src/servers/windows_os_mcp.py"
+      ],
+      "description": "Windows OS диагностика: процессы, службы, диск, сеть, автозагрузка"
+    },
+    "ftp": {
+      "command": "python",
+      "args": [
+        "./mcp/src/servers/ftp_mcp.py"
+      ],
+      "env": {
+        "FTP_HOST": "${FTP_HOST}",
+        "FTP_USER": "${FTP_USER}",
+        "FTP_PASSWORD": "${FTP_PASSWORD}",
+        "FTP_PORT": "${FTP_PORT}"
+      },
+      "description": "FTP операции: список файлов, загрузка, скачивание, удаление, переименование"
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PAT}"
+      },
+      "description": "GitHub API интеграция"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "description": "Автоматизация браузера через Playwright"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "description": "Последовательное мышление и планирование"
+    }
+  },
+
+  "disabledServers": {
+    "_note": "Перенесите сервер из disabledServers в mcpServers чтобы включить его",
+    "powershell-huggingface-ps": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "./mcp/src/servers/McpHuggingFaceServer.ps1",
+        "-Port",
+        "8080"
+      ],
+      "description": "PowerShell версия HuggingFace (устарело — используйте huggingface Python сервер)"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="app.title">AI Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { transition: background-color 0.3s; height: 100vh; display: flex; flex-direction: column; }
+        .nav-tabs { cursor: pointer; }
+        .content-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .tab-content { flex: 1; overflow-y: auto; padding: 20px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; white-space: pre-wrap; word-wrap: break-word; }
+        [data-bs-theme="dark"] pre { background: #2b2d2e; border-color: #444; color: #9cdcfe; }
+        .response-container { position: relative; }
+        .spinner-overlay { position: absolute; right: 10px; top: 10px; }
+        textarea { font-family: 'Consolas', monospace; }
+    </style>
+</head>
+<body>
+    <header class="p-3 border-bottom shadow-sm d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 text-primary">
+            <span data-i18n="app.title">AI Assistant</span>
+            <span id="status-badge" class="badge rounded-pill bg-secondary ms-2" style="font-size: 0.5em;">OFFLINE</span>
+        </h4>
+        <div class="d-flex gap-2">
+            <select id="lang-select" class="form-select form-select-sm" style="width: auto;">
+                <option value="ru">RU</option>
+                <option value="en">EN</option>
+            </select>
+        </div>
+    </header>
+
+    <div class="content-area">
+        <ul class="nav nav-tabs px-3 mt-2" id="adminTabs" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#chat-tab" data-i18n="tabs.chat">Чат</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#status-tab" data-i18n="tabs.status">Статус</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#settings-tab" data-i18n="tabs.settings">Настройки</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- CHAT -->
+            <div class="tab-pane fade show active" id="chat-tab">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <label class="form-label fw-bold" data-i18n="section.prompt">Ваш запрос</label>
+                        <textarea id="prompt-input" class="form-control mb-3" rows="3" placeholder="..." data-i18n-placeholder="placeholder.prompt"></textarea>
+                        <button id="send-btn" class="btn btn-primary d-flex align-items-center gap-2">
+                            <span data-i18n="btn.send">Отправить</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="response-container">
+                    <div id="chat-spinner" class="spinner-overlay d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                    <label class="form-label fw-bold" data-i18n="label.response">Ответ системы</label>
+                    <pre id="response-content">...</pre>
+                </div>
+            </div>
+
+            <!-- STATUS -->
+            <div class="tab-pane fade" id="status-tab">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 data-i18n="section.status">Backend Status</h5>
+                        <pre id="status-content">{}</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="tab-pane fade" id="settings-tab">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 data-i18n="tabs.settings">Настройки</h5>
+                        <div class="form-check form-switch mt-3">
+                            <input class="form-check-input" type="checkbox" id="theme-toggle">
+                            <label class="form-check-label" for="theme-toggle" data-i18n="label.theme">Темная тема</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

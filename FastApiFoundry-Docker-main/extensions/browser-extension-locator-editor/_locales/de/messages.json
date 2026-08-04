@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Name der Erweiterung"
+  },
+  "extensionDescription": {
+    "message": "Kreative Inhalte aus Seiteninformationen erstellen",
+    "description": "Beschreibung der Erweiterung"
+  },
+  "contextMenuTitle": {
+    "message": "Preisangebot erstellen",
+    "description": "Titel des Kontextmenüpunkts"
+  },
+  "apiKeyLabel": {
+    "message": "API-Schlüssel Google Gemini",
+    "description": "Beschriftung für das API-Schlüssel-Eingabefeld"
+  },
+  "modelLabel": {
+    "message": "Modell",
+    "description": "Beschriftung für die Modellauswahl"
+  },
+  "saveButton": {
+    "message": "Speichern",
+    "description": "Text der Schaltfläche Speichern"
+  },
+  "statusNoApiKey": {
+    "message": "Bitte geben Sie Ihren API-Schlüssel ein",
+    "description": "Meldung, wenn kein API-Schlüssel eingegeben wurde"
+  },
+  "indicatorAnalyzing": {
+    "message": "Ihr Preisangebot wird erstellt…",
+    "description": "Meldung während der Analyse"
+  },
+  "errorFetchContent": {
+    "message": "Inhalt der Seite konnte nicht abgerufen werden",
+    "description": "Fehler beim Abrufen des Seiteninhalts"
+  },
+  "errorPageTooShort": {
+    "message": "Die Seite enthält zu wenig Inhalt",
+    "description": "Fehler, wenn die Seite zu kurz ist"
+  },
+  "errorApi": {
+    "message": "API-Fehler: $error$",
+    "description": "Allgemeine API-Fehlermeldung",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Ungültiger API-Schlüssel"
+      }
+    }
+  },
+  "price": {
+    "message": "Preis",
+    "description": "Preis des Builds"
+  },
+  "totalPriceLabel": {
+    "message": "Gesamtpreis:",
+    "description": "Beschriftung für den Gesamtpreis im Angebot"
+  },
+  "saveOfferButton": {
+    "message": "Angebot speichern",
+    "description": "Text der Schaltfläche 'Angebot speichern'"
+  },
+  "changeImageButton": {
+    "message": "Bild ändern",
+    "description": "Text der Schaltfläche 'Bild ändern' in der Fußzeile"
+  }
+}

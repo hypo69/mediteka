@@ -1,0 +1,20 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ai_assist": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "FastAPI Foundry",
+      "options": {
+        "baseURL": "http://localhost:9696/v1",
+        "apiKey": "none"
+      },
+      "models": {
+        "foundry-qwen2.5-coder-0.5b-instruct-generic-cpu:4": {
+          "name": "foundry::qwen2.5-coder-0.5b-instruct-generic-cpu:4"
+        }
+      }
+    }
+  },
+  "model": "ai_assist/foundry-qwen2.5-coder-0.5b-instruct-generic-cpu:4",
+  "small_model": "ai_assist/foundry-qwen2.5-coder-0.5b-instruct-generic-cpu:4"
+}

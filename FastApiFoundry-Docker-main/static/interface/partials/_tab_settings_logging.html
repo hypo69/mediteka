@@ -1,0 +1,120 @@
+<!-- ── LOGGING ─────────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--logging">
+    <div class="settings-section-header" style="color:#fd7e14">
+        <i class="bi bi-journal-text"></i> <span data-i18n="settings.logging">Logging</span>
+    </div>
+    <div class="row g-3">
+
+        <!-- Level + console -->
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_level">Log Level</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_level"></i>
+            </label>
+            <select id="config-log-level" class="form-select">
+                <option value="DEBUG">Debug</option>
+                <option value="INFO" selected>Info</option>
+                <option value="WARNING">Warning</option>
+                <option value="ERROR">Error</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_max_bytes">Max File Size (MB)</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_max_bytes"></i>
+            </label>
+            <input type="number" id="config-log-max-mb" class="form-control" placeholder="10" min="1" max="500">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_backup_count">Backup Count</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_backup_count"></i>
+            </label>
+            <input type="number" id="config-log-backup-count" class="form-control" placeholder="5" min="1" max="20">
+        </div>
+
+        <!-- File paths -->
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_file">Main Log File</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_file"></i>
+            </label>
+            <input type="text" id="config-log-file" class="form-control font-monospace" placeholder="logs/fastapi-foundry.log">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_structured_file">Structured JSONL File</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_structured"></i>
+            </label>
+            <input type="text" id="config-log-structured-file" class="form-control font-monospace" placeholder="logs/fastapi-foundry-structured.jsonl">
+        </div>
+
+        <!-- Handlers toggles -->
+        <div class="col-12">
+            <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="config-log-console" checked>
+                    <label class="form-check-label" for="config-log-console">
+                        <i class="bi bi-terminal me-1"></i>
+                        <span data-i18n="settings.log_console">Console output</span>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="config-log-file-enabled" checked>
+                    <label class="form-check-label" for="config-log-file-enabled">
+                        <i class="bi bi-file-text me-1"></i>
+                        <span data-i18n="settings.log_file_handler">File handler</span>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="config-log-errors-file" checked>
+                    <label class="form-check-label" for="config-log-errors-file">
+                        <i class="bi bi-exclamation-triangle me-1 text-danger"></i>
+                        <span data-i18n="settings.log_errors_file">Errors-only file</span>
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="config-log-structured" checked>
+                    <label class="form-check-label" for="config-log-structured">
+                        <i class="bi bi-braces me-1 text-info"></i>
+                        <span data-i18n="settings.log_structured_handler">Structured JSONL</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Retention -->
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_retention">Retention (hours)</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_retention"></i>
+            </label>
+            <input type="number" id="config-log-retention" class="form-control" placeholder="24" min="1">
+        </div>
+
+        <!-- Noisy loggers suppression -->
+        <div class="col-md-8">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.log_suppress">Suppress noisy loggers</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_log_suppress"></i>
+            </label>
+            <input type="text" id="config-log-suppress" class="form-control font-monospace"
+                   placeholder="watchfiles,uvicorn.access">
+            <div class="form-text" data-i18n="settings.log_suppress_hint">Comma-separated logger names set to WARNING level</div>
+        </div>
+
+        <!-- Log analyzer stats (read-only) -->
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="fw-semibold" style="font-size:.85rem" data-i18n="settings.log_health">Log Health (last 1h)</span>
+                <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="refreshLogHealth()" style="font-size:.75rem">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div id="log-health-badges" class="d-flex flex-wrap gap-2">
+                <span class="badge bg-secondary" data-i18n="settings.log_health_loading">Loading...</span>
+            </div>
+        </div>
+
+    </div>
+</div>

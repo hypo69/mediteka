@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "AI Assistant — Summarizer",
+  "description": "Summarise current page or all open tabs using Gemini AI",
+  "version": "1.0.0",
+  "default_locale": "en",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "tabs",
+    "storage",
+    "scripting",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/",
+    "https://api.openai.com/",
+    "https://openrouter.ai/",
+    "https://api.anthropic.com/",
+    "https://api.mistral.ai/",
+    "https://api.groq.com/",
+    "https://api.cohere.com/",
+    "https://api.deepseek.com/",
+    "https://api.x.ai/",
+    "https://integrate.api.nvidia.com/",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Assistant"
+  },
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["providers.html", "chat.html", "debug.html", "rag-storage.html", "locales/*.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

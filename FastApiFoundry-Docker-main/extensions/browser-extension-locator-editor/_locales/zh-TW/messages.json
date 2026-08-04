@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "擴充功能名稱"
+  },
+  "extensionDescription": {
+    "message": "建立清晰且結構化的電腦組件描述",
+    "description": "擴充功能描述"
+  },
+  "contextMenuTitle": {
+    "message": "生成報價",
+    "description": "上下文菜單項目的名稱"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API 金鑰",
+    "description": "API 金鑰輸入欄位的標籤"
+  },
+  "modelLabel": {
+    "message": "模型",
+    "description": "模型選擇的標籤"
+  },
+  "saveButton": {
+    "message": "儲存",
+    "description": "儲存按鈕的文字"
+  },
+  "statusNoApiKey": {
+    "message": "請輸入您的 API 金鑰",
+    "description": "未輸入 API 金鑰時的訊息"
+  },
+  "indicatorAnalyzing": {
+    "message": "正在生成您的報價…",
+    "description": "分析時的訊息"
+  },
+  "errorFetchContent": {
+    "message": "無法獲取頁面內容",
+    "description": "獲取頁面內容時的錯誤"
+  },
+  "errorPageTooShort": {
+    "message": "頁面內容太短",
+    "description": "頁面內容太短時的錯誤"
+  },
+  "errorApi": {
+    "message": "API 錯誤：$error$",
+    "description": "一般 API 錯誤訊息",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "無效的 API 金鑰"
+      }
+    }
+  },
+  "price": {
+    "message": "價格",
+    "description": "組裝價格"
+  },
+  "totalPriceLabel": {
+    "message": "總價：",
+    "description": "報價中總價的標籤"
+  },
+  "saveOfferButton": {
+    "message": "儲存報價",
+    "description": "「儲存報價」按鈕的文字"
+  },
+  "changeImageButton": {
+    "message": "更改圖片",
+    "description": "頁腳中「更改圖片」按鈕的文字"
+  }
+}

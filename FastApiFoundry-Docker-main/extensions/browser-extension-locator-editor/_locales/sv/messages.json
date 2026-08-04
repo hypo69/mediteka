@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Namn på tillägg"
+  },
+  "extensionDescription": {
+    "message": "Skapa kreativt innehåll från informationen på sidan",
+    "description": "Beskrivning av tillägg"
+  },
+  "contextMenuTitle": {
+    "message": "Skapa ett prisförslag",
+    "description": "Titel på kontextmenyobjekt"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API-nyckel",
+    "description": "Etikett för inmatningsfält för API-nyckel"
+  },
+  "modelLabel": {
+    "message": "Modell",
+    "description": "Etikett för modellval"
+  },
+  "saveButton": {
+    "message": "Spara",
+    "description": "Text för spara-knapp"
+  },
+  "statusNoApiKey": {
+    "message": "Vänligen ange din API-nyckel.",
+    "description": "Meddelande när API-nyckel inte har angetts"
+  },
+  "indicatorAnalyzing": {
+    "message": "Ditt prisförslag håller på att utarbetas…",
+    "description": "Meddelande under analys"
+  },
+  "errorFetchContent": {
+    "message": "Det gick inte att hämta sidinnehållet",
+    "description": "Fel vid hämtning av sidinnehåll"
+  },
+  "errorPageTooShort": {
+    "message": "Sidan innehåller för lite innehåll",
+    "description": "Fel när sidan är för kort"
+  },
+  "errorApi": {
+    "message": "API-fel: $error$",
+    "description": "Allmänt API-felmeddelande",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Ogiltig API-nyckel"
+      }
+    }
+  },
+  "price": {
+    "message": "Pris",
+    "description": "Byggpris"
+  },
+  "totalPriceLabel": {
+    "message": "Totalpris:",
+    "description": "Etikett för totalpris i erbjudandet"
+  },
+  "saveOfferButton": {
+    "message": "Spara erbjudande",
+    "description": "Text för knappen 'Spara erbjudande'"
+  },
+  "changeImageButton": {
+    "message": "Ändra bild",
+    "description": "Text för knappen 'Ändra bild' i sidfoten"
+  }
+}

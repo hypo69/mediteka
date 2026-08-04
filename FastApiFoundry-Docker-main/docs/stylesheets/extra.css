@@ -1,0 +1,44 @@
+/* ── mkdocstrings: separators between methods/functions ── */
+.doc-function,
+.doc-method,
+.doc-attribute {
+    border-top: 2px solid var(--md-default-fg-color--lighter);
+    margin-top: 1.6rem !important;
+    padding-top: 1rem;
+    padding-bottom: 0.4rem;
+}
+
+/* ── mkdocstrings: tighter vertical spacing ── */
+.doc-function p,
+.doc-method p,
+.doc-attribute p,
+.doc-function li,
+.doc-method li {
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.5;
+}
+
+.doc-function h2,
+.doc-function h3,
+.doc-function h4,
+.doc-method h2,
+.doc-method h3,
+.doc-method h4 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.3rem;
+}
+
+/* ── mkdocstrings: "Source code in ..." — dark burgundy ── */
+details.mkdocstrings-source > summary {
+    color: #8b1a2e !important;
+    font-weight: 600;
+}
+
+details.mkdocstrings-source > summary code {
+    background-color: #f5d0d8 !important;
+    color: #6b1a2a !important;
+    border: 1px solid #c4607a !important;
+    padding: 1px 5px;
+    border-radius: 3px;
+}

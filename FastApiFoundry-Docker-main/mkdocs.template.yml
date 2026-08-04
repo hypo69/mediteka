@@ -1,0 +1,91 @@
+site_name: AI Assistant
+site_description: Оркестратор локальных AI моделей с единым REST API
+site_author: hypo69
+site_url: https://davidka.net/ai_assist/site/
+site_dir: site
+docs_dir: docs/ru
+exclude_docs: |
+  ~*.md
+  **/~*.md
+
+theme:
+  name: material
+  language: ru
+  logo: assets/icons/icon128.png
+  favicon: assets/icons/icon48.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_category_heading: true
+            members_order: source
+            docstring_section_style: table
+            show_if_no_docstring: false
+            warn_unknown_params: false
+          import:
+            - https://docs.python.org/3/objects.inv
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_javascript:
+  - javascripts/extra.js
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/hypo69/FastApiFoundry-Docker
+  ai_assist_version: "0.8.0"
+  generator: false
+
+copyright: >
+  Проект: <strong>AI Assistant</strong> &nbsp;|
+  Автор: <a href="https://github.com/hypo69" target="_blank">hypo69</a> &nbsp;|
+  Copyright &copy; 2024&ndash;2026 hypo69 &nbsp;|
+  <a href="https://opensource.org/licenses/MIT" target="_blank">Лицензия: MIT</a>

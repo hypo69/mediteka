@@ -1,0 +1,18 @@
+# MCP Servers — Python Runtime Dependencies
+# ==========================================
+# Install: pip install -r mcp/requirements.txt
+
+# MCP protocol
+mcp>=1.0.0
+
+# Async HTTP client (local_models_mcp.py)
+httpx>=0.27.0
+
+# HuggingFace (huggingface_mcp.py)
+huggingface-hub>=0.19.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# System utilities
+psutil>=5.9.0

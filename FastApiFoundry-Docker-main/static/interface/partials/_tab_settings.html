@@ -1,0 +1,632 @@
+<div class="tab-pane fade" id="settings" role="tabpanel">
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" data-i18n="settings.title">Configuration</h5>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="exportConfig()">
+                            <i class="bi bi-download"></i> <span data-i18n="settings.export">Export</span>
+                        </button>
+                        <label class="btn btn-sm btn-outline-secondary mb-0">
+                            <i class="bi bi-upload"></i> <span data-i18n="settings.import">Import</span>
+                            <input type="file" id="import-config-file" accept=".json" style="display:none" onchange="importConfig(event)">
+                        </label>
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadConfigFields()">
+                            <i class="bi bi-arrow-clockwise"></i> <span data-i18n="settings.reload">Reload</span>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="saveConfigFields()">
+                            <i class="bi bi-check-lg"></i> <span data-i18n="settings.save_all">Save All</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" id="settings-card-body" style="overflow-y:auto;">
+
+                    <!-- ── 1. SERVER ─────────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-primary fw-semibold">
+                            <i class="bi bi-server"></i> <span data-i18n="settings.section_server">Server</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                FastAPI <span data-i18n="settings.port">Port</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_api_port"></i>
+                            </label>
+                            <input type="number" id="config-api-port" class="form-control" placeholder="9696">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.host">Host</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_host"></i>
+                            </label>
+                            <input type="text" id="config-api-host" class="form-control" placeholder="0.0.0.0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.workers">Workers</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_workers"></i>
+                            </label>
+                            <input type="number" id="config-api-workers" class="form-control" placeholder="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.mode">Mode</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_mode"></i>
+                            </label>
+                            <select id="config-api-mode" class="form-select">
+                                <option value="dev" data-i18n="settings.mode_dev">Development</option>
+                                <option value="prod" data-i18n="settings.mode_prod">Production</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="config-api-auto-port">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-api-auto-port">
+                                    <span data-i18n="settings.auto_port">Auto-find free port</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_auto_port"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 2. DIRECTORIES ────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-primary fw-semibold">
+                            <i class="bi bi-folder2"></i> <span data-i18n="settings.directories">Directories</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.dir_models">GGUF models</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_dir_models"></i>
+                            </label>
+                            <input type="text" id="config-dir-models" class="form-control font-monospace" placeholder="~/.models">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.dir_rag">RAG bases</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_dir_rag"></i>
+                            </label>
+                            <input type="text" id="config-dir-rag" class="form-control font-monospace" placeholder="~/.ai-assist/rag">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.dir_hf">HuggingFace models</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_dir_hf"></i>
+                            </label>
+                            <input type="text" id="config-dir-hf" class="form-control font-monospace" placeholder="~/.hf_models">
+                        </div>
+                    </div>
+                    <div class="form-text mb-3" data-i18n="settings.dir_hint">~/ is the user home directory.</div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 3. FOUNDRY AI ──────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-success fw-semibold">
+                            <i class="bi bi-robot"></i> <span data-i18n="settings.foundry_ai">Foundry AI</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.base_url">Base URL</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_foundry_url"></i>
+                            </label>
+                            <input type="url" id="config-foundry-url" class="form-control" placeholder="http://localhost:50477/v1/">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.default_model">Default Model</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_foundry_model"></i>
+                            </label>
+                            <input type="text" id="config-foundry-model" class="form-control" placeholder="deepseek-r1-distill-qwen-7b-generic-cpu:3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.temperature">Temperature</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_temperature"></i>
+                            </label>
+                            <input type="number" id="config-foundry-temp" class="form-control" step="0.1" min="0" max="2" placeholder="0.7">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.max_tokens">Max Tokens</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_max_tokens"></i>
+                            </label>
+                            <input type="number" id="config-foundry-tokens" class="form-control" placeholder="2048">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="config-foundry-autostart">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-foundry-autostart">
+                                    <span data-i18n="settings.foundry_autostart">Auto-start Foundry service on startup</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_foundry_autostart"></i>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="config-foundry-autoload">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-foundry-autoload">
+                                    <span data-i18n="settings.auto_load">Auto-load default model on startup</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_foundry_autoload"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 3.5. STARTUP MODEL ────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-success fw-semibold">
+                            <i class="bi bi-play-circle"></i> <span data-i18n="settings.startup_model">Load on startup</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="startup-model-mode"
+                                       id="startup-mode-active" value="active">
+                                <label class="form-check-label" for="startup-mode-active">
+                                    <i class="bi bi-lightning-charge text-warning me-1"></i>
+                                    <span data-i18n="settings.startup_active">Active model</span>
+                                    <small class="text-muted ms-1" data-i18n="settings.startup_active_hint">(last loaded before shutdown)</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="radio" name="startup-model-mode"
+                                       id="startup-mode-default" value="default" checked>
+                                <label class="form-check-label" for="startup-mode-default">
+                                    <i class="bi bi-star-fill text-primary me-1"></i>
+                                    <span data-i18n="settings.startup_default">Default model</span>
+                                    <small class="text-muted ms-1">(foundry_ai.default_model)</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="radio" name="startup-model-mode"
+                                       id="startup-mode-custom" value="custom">
+                                <label class="form-check-label" for="startup-mode-custom">
+                                    <i class="bi bi-pencil text-secondary me-1"></i>
+                                    <span data-i18n="settings.startup_custom">Custom model</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12" id="startup-custom-model-row" style="display:none">
+                            <label class="form-label" data-i18n="settings.startup_custom_model">Model ID</label>
+                            <input type="text" id="config-startup-custom-model" class="form-control"
+                                   placeholder="deepseek-r1-distill-qwen-7b-generic-cpu:3">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 4. HUGGINGFACE ─────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-danger fw-semibold">
+                            <i class="bi bi-boxes"></i> <span data-i18n="settings.huggingface">HuggingFace</span>
+                        </h6>
+                    </div>
+                    <div class="alert alert-info py-2 px-3 mb-2" style="font-size:.85rem">
+                        <i class="bi bi-key me-1"></i>
+                        <span data-i18n="settings.hf_token_moved">HuggingFace Token has been moved to the</span>
+                        <a href="#" onclick="document.getElementById('providers-tab').click();return false;" data-i18n="settings.hf_token_moved_link">API Keys</a>
+                        <span data-i18n="settings.hf_token_moved_tab">tab.</span>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.device">Device</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_hf_device"></i>
+                            </label>
+                            <select id="config-hf-device" class="form-select">
+                                <option value="auto" data-i18n="settings.device_auto">Auto</option>
+                                <option value="cpu" data-i18n="settings.device_cpu">CPU</option>
+                                <option value="cuda" data-i18n="settings.device_cuda">CUDA (GPU)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.default_max_tokens">Default Max Tokens</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_hf_max_tokens"></i>
+                            </label>
+                            <input type="number" id="config-hf-max-tokens" class="form-control" placeholder="512">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.default_model">Default Model</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_hf_default_model"></i>
+                            </label>
+                            <input type="text" id="config-hf-default-model" class="form-control"
+                                   placeholder="hf::model-id">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 5. LLAMA.CPP ───────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-warning fw-semibold">
+                            <i class="bi bi-cpu"></i> llama.cpp
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.port">Port</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_llama_port"></i>
+                            </label>
+                            <input type="number" id="config-llama-port" class="form-control" placeholder="9780">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.dir_models">Models directory</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_dir_models"></i>
+                            </label>
+                            <input type="text" id="config-llama-models-dir" class="form-control font-monospace"
+                                   placeholder="~/.models">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.llama_default_model">Default Model</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_foundry_model"></i>
+                            </label>
+                            <input type="text" id="config-llama-default-model" class="form-control"
+                                   placeholder="model.gguf">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="config-llama-autostart">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-llama-autostart">
+                                    <span data-i18n="settings.llama_autostart">Auto-start llama.cpp on startup</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_llama_autostart"></i>
+                                </label>
+                            </div>
+                            <div class="form-text" data-i18n="settings.llama_autostart_hint">
+                                Saves to config.json: llama_cpp.auto_start, llama_cpp.models_dir and llama_cpp.default_model
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 6. RAG ─────────────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-info fw-semibold">
+                            <i class="bi bi-search"></i> <span data-i18n="settings.rag_system">RAG System</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="config-rag-enabled" onchange="handleRAGToggle(this)">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-rag-enabled">
+                                    <span data-i18n="settings.enable_rag">Enable RAG System</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_rag_enabled"></i>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.index_dir">Index Directory</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_rag_index"></i>
+                            </label>
+                            <input type="text" id="config-rag-index" class="form-control" placeholder="~/.ai-assist/rag/default_index">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.chunk_size">Chunk Size</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_rag_chunk"></i>
+                            </label>
+                            <input type="number" id="config-rag-chunk" class="form-control" placeholder="1000">
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-sm btn-outline-warning" onclick="clearRAGChunks()">
+                                <i class="bi bi-trash"></i> <span data-i18n="settings.clear_rag">Clear RAG chunks</span>
+                            </button>
+                            <small class="form-text text-muted d-block mt-1" data-i18n="settings.clear_rag_hint">Remove all indexed documents</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 6.5. TEXT EXTRACTOR ────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-info fw-semibold">
+                            <i class="bi bi-file-earmark-text"></i> <span data-i18n="settings.text_extractor">Text Extractor</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.extractor_max_size">Max File Size (MB)</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_extractor_max_size"></i>
+                            </label>
+                            <input type="number" id="config-extractor-max-size" class="form-control" placeholder="20">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.extractor_timeout">Timeout (seconds)</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_extractor_timeout"></i>
+                            </label>
+                            <input type="number" id="config-extractor-timeout" class="form-control" placeholder="300">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.extractor_ocr_langs">OCR Languages</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_extractor_ocr_langs"></i>
+                            </label>
+                            <input type="text" id="config-extractor-ocr-langs" class="form-control" placeholder="rus+eng">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.extractor_web_timeout">Web Timeout (sec)</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_extractor_web_timeout"></i>
+                            </label>
+                            <input type="number" id="config-extractor-web-timeout" class="form-control" placeholder="30">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.extractor_max_images">Max Images/Page</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_extractor_max_images"></i>
+                            </label>
+                            <input type="number" id="config-extractor-max-images" class="form-control" placeholder="20">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="config-extractor-js">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-extractor-js">
+                                    <span data-i18n="settings.extractor_enable_js">Enable JavaScript</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_extractor_js"></i>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="config-extractor-limits">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-extractor-limits">
+                                    <span data-i18n="settings.extractor_resource_limits">Enable Resource Limits</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_extractor_limits"></i>
+                                </label>
+                            </div>
+                            <small class="form-text text-muted" data-i18n="settings.extractor_limits_hint">
+                                Memory limits for LibreOffice and Tesseract (Unix only)
+                            </small>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 7. SECURITY ────────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-secondary fw-semibold">
+                            <i class="bi bi-shield-lock"></i> <span data-i18n="settings.security">Security</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.api_key">API Key</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_api_key"></i>
+                            </label>
+                            <input type="password" id="config-security-key" class="form-control"
+                                   data-i18n-placeholder="settings.api_key_hint" placeholder="Leave empty to disable">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="config-security-https">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-security-https">
+                                    <span data-i18n="settings.enable_https">Enable HTTPS</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_https"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 8. LOGGING ─────────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-secondary fw-semibold">
+                            <i class="bi bi-file-text"></i> <span data-i18n="settings.logging">Logging</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.log_level">Log Level</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_log_level"></i>
+                            </label>
+                            <select id="config-log-level" class="form-select">
+                                <option value="DEBUG">Debug</option>
+                                <option value="INFO">Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" data-i18n="settings.log_file">Log File</label>
+                            <input type="text" id="config-log-file" class="form-control" placeholder="logs/fastapi-foundry.log">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 9. DOCS + DEV ──────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-secondary fw-semibold">
+                            <i class="bi bi-code-slash"></i> <span data-i18n="settings.development">Development</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                MkDocs <span data-i18n="settings.port">Port</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_docs_port"></i>
+                            </label>
+                            <input type="number" id="config-docs-port" class="form-control" placeholder="9697">
+                        </div>
+                        <div class="col-md-8 d-flex align-items-end gap-4">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="config-docs-enabled">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-docs-enabled">
+                                    <span data-i18n="settings.enable_docs">Enable MkDocs on startup</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_docs_enabled"></i>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="config-dev-debug">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-dev-debug">
+                                    <span data-i18n="settings.debug_mode">Debug Mode</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_debug"></i>
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="config-dev-verbose">
+                                <label class="form-check-label d-flex align-items-center gap-1" for="config-dev-verbose">
+                                    <span data-i18n="settings.verbose_logging">Verbose</span>
+                                    <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                       data-i18n-title="settings.tip_verbose"></i>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- ── 10. LANGUAGE ───────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-secondary fw-semibold">
+                            <i class="bi bi-translate"></i> <span data-i18n="settings.language">Language</span>
+                        </h6>
+                    </div>
+                    <select class="form-select" style="max-width:200px" onchange="switchLang(this.value)" id="lang-selector-settings">
+                        <option value="en">English</option>
+                        <option value="ru">Русский</option>
+                        <option value="he">עברית</option>
+                    </select>
+
+                    <hr class="my-3">
+
+                    <!-- ── 11. TRANSLATOR ────────────────────────────────── -->
+                    <div class="mb-1">
+                        <h6 class="text-primary fw-semibold">
+                            <i class="bi bi-globe2"></i> <span data-i18n="settings.translator">Translator</span>
+                        </h6>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       id="config-translator-enabled"
+                                       onchange="document.getElementById('translator-settings-body').style.display=this.checked?'':'none'">
+                                <label class="form-check-label fw-semibold" for="config-translator-enabled">
+                                    <span data-i18n="settings.translator_enabled">Auto-translate requests to English</span>
+                                </label>
+                                <small class="text-muted d-block mt-1" data-i18n="settings.translator_enabled_hint">
+                                    Translates user input → English before sending to model, then translates response back.
+                                </small>
+                            </div>
+                        </div>
+                        <div id="translator-settings-body" style="display:none" class="col-12">
+                        <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.translator_provider">Default Provider</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_translator_provider"></i>
+                            </label>
+                            <select id="config-translator-provider" class="form-select">
+                                <option value="mymemory">MyMemory (free, no key)</option>
+                                <option value="libretranslate">LibreTranslate (free, no key)</option>
+                                <option value="deepl">DeepL (DEEPL_API_KEY)</option>
+                                <option value="google">Google Translate (GOOGLE_TRANSLATE_API_KEY)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.translator_timeout">Request Timeout (sec)</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_translator_timeout"></i>
+                            </label>
+                            <input type="number" id="config-translator-timeout" class="form-control" min="5" max="120" placeholder="30">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.translator_mymemory_email">MyMemory Email</span>
+                                <small class="text-muted" data-i18n="settings.translator_mymemory_email_hint">(raises limit to 50K words/day)</small>
+                            </label>
+                            <input type="email" id="config-translator-mymemory-email" class="form-control" placeholder="your@email.com">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.translator_libre_url">LibreTranslate URL</span>
+                                <i class="bi bi-question-circle text-muted" style="cursor:help"
+                                   data-i18n-title="settings.tip_translator_libre_url"></i>
+                            </label>
+                            <input type="url" id="config-translator-libre-url" class="form-control" placeholder="https://libretranslate.com">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label" data-i18n="settings.translator_libre_fallback">LibreTranslate Fallback URL</label>
+                            <input type="url" id="config-translator-libre-fallback" class="form-control" placeholder="https://translate.argosopentech.com">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label d-flex align-items-center gap-1">
+                                <span data-i18n="settings.translator_libre_key">LibreTranslate API Key</span>
+                                <small class="text-muted" data-i18n="settings.translator_libre_key_hint">(optional, for private instances)</small>
+                            </label>
+                            <input type="password" id="config-translator-libre-key" class="form-control" placeholder="optional">
+                        </div>
+                        </div><!-- /row g-3 inner -->
+                        </div><!-- /translator-settings-body -->
+                    </div>
+
+                    <div id="config-status" class="alert mt-3" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="tab-pane fade" id="opencode" role="tabpanel">
+    <div class="row mt-3 g-3">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-terminal"></i> OpenCode 1.15.3</h5>
+                    <span id="opencode-status-badge" class="badge bg-secondary">Unknown</span>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshOpenCodeStatus()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="startOpenCode()">
+                            <i class="bi bi-play-fill"></i> Start
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="stopOpenCode()">
+                            <i class="bi bi-stop-fill"></i> Stop
+                        </button>
+                    </div>
+                    <dl class="row small mb-0">
+                        <dt class="col-4">Base URL</dt>
+                        <dd class="col-8 font-monospace" id="opencode-base-url">-</dd>
+                        <dt class="col-4">Version</dt>
+                        <dd class="col-8" id="opencode-version">-</dd>
+                        <dt class="col-4">PID</dt>
+                        <dd class="col-8" id="opencode-pid">-</dd>
+                        <dt class="col-4">Provider</dt>
+                        <dd class="col-8 font-monospace" id="opencode-provider">-</dd>
+                        <dt class="col-4">Model</dt>
+                        <dd class="col-8 font-monospace" id="opencode-model">-</dd>
+                        <dt class="col-4">API</dt>
+                        <dd class="col-8 font-monospace" id="opencode-api-base-url">-</dd>
+                    </dl>
+                    <div class="mt-3">
+                        <a id="opencode-doc-link" class="btn btn-sm btn-outline-secondary" href="#" target="_blank" rel="noopener">
+                            <i class="bi bi-box-arrow-up-right"></i> OpenAPI /doc
+                        </a>
+                    </div>
+                    <div id="opencode-alert" class="alert mt-3 py-2" style="display:none"></div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Providers</h6>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-sm btn-outline-secondary mb-2" onclick="loadOpenCodeProviders()">Load providers</button>
+                    <div id="opencode-providers" class="small text-muted">No data loaded.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Session Message</h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadOpenCodeSessions()">
+                        <i class="bi bi-list-ul"></i> Sessions
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Session ID</label>
+                            <input id="opencode-session-id" class="form-control font-monospace" placeholder="empty = new session">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Provider ID</label>
+                            <input id="opencode-provider-id" class="form-control" placeholder="anthropic">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Model ID</label>
+                            <input id="opencode-model-id" class="form-control" placeholder="claude-sonnet-4-5">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-4">
+                            <label class="form-label">Agent</label>
+                            <input id="opencode-agent" class="form-control" placeholder="build">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">System</label>
+                            <input id="opencode-system" class="form-control" placeholder="optional system instruction">
+                        </div>
+                    </div>
+                    <label class="form-label">Prompt</label>
+                    <textarea id="opencode-prompt" class="form-control" rows="7" placeholder="Ask OpenCode to inspect, change, or explain the project..."></textarea>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-primary" onclick="sendOpenCodeMessage()">
+                            <i class="bi bi-send"></i> Send
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="document.getElementById('opencode-output').textContent=''">
+                            <i class="bi bi-eraser"></i> Clear
+                        </button>
+                    </div>
+                    <pre id="opencode-output" class="mt-3 p-3 bg-light border rounded small" style="min-height:220px;max-height:420px;overflow:auto;white-space:pre-wrap"></pre>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Sessions</h6>
+                </div>
+                <div class="card-body">
+                    <div id="opencode-sessions" class="small text-muted">No data loaded.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

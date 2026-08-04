@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "扩展名称"
+  },
+  "extensionDescription": {
+    "message": "创建清晰且结构化的计算机组件描述",
+    "description": "扩展描述"
+  },
+  "contextMenuTitle": {
+    "message": "生成报价",
+    "description": "上下文菜单项的标题"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API 密钥",
+    "description": "API 密钥输入字段的标签"
+  },
+  "modelLabel": {
+    "message": "模型",
+    "description": "模型选择的标签"
+  },
+  "saveButton": {
+    "message": "保存",
+    "description": "保存按钮的文本"
+  },
+  "statusNoApiKey": {
+    "message": "请输入您的 API 密钥",
+    "description": "未输入 API 密钥时的消息"
+  },
+  "indicatorAnalyzing": {
+    "message": "正在生成您的报价…",
+    "description": "分析时的消息"
+  },
+  "errorFetchContent": {
+    "message": "无法获取页面内容",
+    "description": "获取页面内容时出错"
+  },
+  "errorPageTooShort": {
+    "message": "页面内容太少",
+    "description": "页面内容太短时出错"
+  },
+  "errorApi": {
+    "message": "API 错误: $error$",
+    "description": "通用 API 错误消息",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "无效的 API 密钥"
+      }
+    }
+  },
+  "price": {
+    "message": "价格",
+    "description": "构建价格"
+  },
+  "totalPriceLabel": {
+    "message": "总价:",
+    "description": "报价中总价的标签"
+  },
+  "saveOfferButton": {
+    "message": "保存报价",
+    "description": "“保存报价”按钮的文本"
+  },
+  "changeImageButton": {
+    "message": "更改图片",
+    "description": "页脚中“更改图片”按钮的文本"
+  }
+}

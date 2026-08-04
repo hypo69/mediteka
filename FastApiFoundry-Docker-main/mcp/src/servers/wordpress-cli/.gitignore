@@ -1,0 +1,318 @@
+# =============================================================================
+# 🧠 GENERAL / PROJECT CONFIGURATION
+# =============================================================================
+# Общие кэши и временные артефакты
+*.pickle
+.llmapi.bin
+*.cache.*
+tests_cache.pickle
+*.local.*
+outputs/
+.VSCodeCounter/
+
+# IDE settings
+.vscode/
+.idea/
+.vs/
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# 🐍 PYTHON
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+cython_debug/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Type checking / analyzers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# Jupyter & IPython
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# Sphinx docs
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# =============================================================================
+# ☣️ ENVIRONMENTS & DEPENDENCIES
+# =============================================================================
+.env
+.env.*
+.env.local
+.env.*.local
+.venv
+.venv*
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pyenv
+
+# pipenv / poetry / pdm
+#Pipfile.lock
+#poetry.lock
+.pdm.toml
+#pdm.lock
+__pypackages__/
+
+# =============================================================================
+# ⚙️ FRAMEWORKS & LIBRARIES
+# =============================================================================
+
+# --- Django / Flask / Scrapy ---
+*.log
+instance/
+.webassets-cache
+.scrapy/
+db.sqlite3*
+celerybeat-schedule
+celerybeat.pid
+
+# --- SageMath ---
+*.sage.py
+
+# --- MkDocs ---
+/site
+
+# =============================================================================
+# 🌐 WORDPRESS
+# =============================================================================
+# Исключаем ядро, кэш, резервные копии, загруженные файлы
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backups/
+wp-content/uploads/
+wp-content/ai1wm-backups/
+wp-content/advanced-cache.php
+wp-content/object-cache.php
+wp-content/wp-cache-config.php
+wp-content/debug.log
+wp-config.php
+wp-config-*.php
+wp-cli.local.yml
+
+# Исключаем установочные и временные файлы
+*.sql
+*.sql.gz
+*.tar
+*.gz
+*.zip
+*.bak
+*.tmp
+*.swp
+*.orig
+
+# Разрешаем кастомные плагины и темы для версионирования
+!wp-content/plugins/
+!wp-content/plugins/*/
+!wp-content/themes/
+!wp-content/themes/*/
+
+# Исключаем сгенерированные внутри тем/плагинов кэши
+wp-content/plugins/*/vendor/
+wp-content/themes/*/node_modules/
+wp-content/themes/*/dist/
+wp-content/themes/*/assets/cache/
+
+# =============================================================================
+# 🛍️ PRESTASHOP
+# =============================================================================
+# Кэш и временные файлы
+app/cache/
+var/cache/
+var/logs/
+var/sessions/
+config/xml/
+config/settings.inc.php
+admin*/autoupgrade/
+admin*/backups/
+admin*/export/
+admin*/import/
+themes/*/cache/
+themes/*/assets/cache/
+modules/*/cache/
+override/
+img/tmp/
+log/
+tmp/
+cachefs/
+translations/cldr/
+composer.lock
+*.log
+*.bak
+*.tmp
+
+# Установочные файлы
+install-dev/
+upgrade-dev/
+autoload.php
+
+# Разрешаем кастомные модули и темы для разработки
+!themes/
+!themes/*/
+!modules/
+!modules/*/
+
+# =============================================================================
+# 🧩 NODE / FRONTEND
+# =============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Certificates
+*.crt
+*.key
+*.pem
+*.p12
+*.pfx
+certificates/
+
+# =============================================================================
+# ⚡️ POWERSHELL & WINDOWS
+# =============================================================================
+*.ps1xml
+C:\WINDOWS\TEMP
+
+# =============================================================================
+# 💾 DATABASES & STORAGE
+# =============================================================================
+*.db
+*.sqlite*
+storage/
+data/
+statistic/
+materials/
+
+# =============================================================================
+# 📦 BACKUPS & EXPORTS
+# =============================================================================
+*.bak
+*.backup
+*.bkp
+backup/
+backups/
+export/
+
+# =============================================================================
+# 🧾 LOGS & TEMP
+# =============================================================================
+logs/
+log/
+tmp/
+temp/
+*.tmp
+*.log
+*.log.*
+
+# =============================================================================
+# 🧱 BINARIES & ARCHIVES
+# =============================================================================
+bin/
+*.exe
+*.zip
+*.7z
+*.taz
+
+# =============================================================================
+# 🔐 SECRETS & SENSITIVE FILES
+# =============================================================================
+secrets/
+secrets.json
+secrets.yaml
+config/secrets.*
+e-cat-346312-137284f4419e.json
+hypo69-c32c8736ca62.json
+password.txt
+*.kdbx
+*api_key*
+*token*
+*secret*
+*password*
+___*.*
+
+# =============================================================================
+# 🧰 PROJECT SPECIFIC
+# =============================================================================
+profiles/
+.chat_history/*
+~*.*
+
+# Разрешаем все config-файлы (JSON/YAML/TOML и т.п.)
+!config/
+!config/*.*
+!src/config.*
+!src/config/*.*
+!*.config
+!*.json
+!*.yaml
+!*.yml
+!*.toml
+
+# =============================================================================
+# 🚀 DEPLOYMENT
+# =============================================================================
+.vercel
+
+# =============================================================================
+# 🗂️ KEEP FILES THAT MUST BE TRACKED
+# =============================================================================
+!.env.example
+!.gitignore
+!README*.md

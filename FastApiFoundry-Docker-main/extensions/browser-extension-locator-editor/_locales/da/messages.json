@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Navn på udvidelse"
+  },
+  "extensionDescription": {
+    "message": "Skaber klare og strukturerede beskrivelser af computerkomponenter",
+    "description": "Beskrivelse af udvidelsen"
+  },
+  "contextMenuTitle": {
+    "message": "Generer pristilbud",
+    "description": "Titel på kontekstmenupunkt"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API-nøgle",
+    "description": "Etiket for API-nøgleindtastningsfelt"
+  },
+  "modelLabel": {
+    "message": "Model",
+    "description": "Etiket for modelvalg"
+  },
+  "saveButton": {
+    "message": "Gem",
+    "description": "Tekst til gem-knap"
+  },
+  "statusNoApiKey": {
+    "message": "Indtast venligst din API-nøgle",
+    "description": "Besked når API-nøgle ikke er indtastet"
+  },
+  "indicatorAnalyzing": {
+    "message": "Dit pristilbud genereres...",
+    "description": "Besked under analyse"
+  },
+  "errorFetchContent": {
+    "message": "Kunne ikke hente sideindhold",
+    "description": "Fejl ved hentning af sideindhold"
+  },
+  "errorPageTooShort": {
+    "message": "Siden indeholder for lidt indhold",
+    "description": "Fejl når siden er for kort"
+  },
+  "errorApi": {
+    "message": "API-fejl: $error$",
+    "description": "Generel API-fejlmeddelelse",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Ugyldig API-nøgle"
+      }
+    }
+  },
+  "price": {
+    "message": "Pris",
+    "description": "Pris for samling"
+  },
+  "totalPriceLabel": {
+    "message": "Totalpris:",
+    "description": "Etiket for totalpris i tilbud"
+  },
+  "saveOfferButton": {
+    "message": "Gem tilbud",
+    "description": "Tekst til knappen 'Gem tilbud'"
+  },
+  "changeImageButton": {
+    "message": "Skift billede",
+    "description": "Tekst til knappen 'Skift billede' i sidefoden"
+  }
+}

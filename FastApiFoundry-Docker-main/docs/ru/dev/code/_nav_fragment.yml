@@ -1,0 +1,904 @@
+- check_engine/:
+  - Обзор: dev/code/check_engine/index.md
+  - Check Port: dev/code/check_engine/Check-Port.md
+  - Check Chat Implementation: dev/code/check_engine/check_chat_implementation.md
+  - Check Config: dev/code/check_engine/check_config.md
+  - Check Config Editor: dev/code/check_engine/check_config_editor.md
+  - Check Default Model: dev/code/check_engine/check_default_model.md
+  - Check Foundry Models: dev/code/check_engine/check_foundry_models.md
+  - Check Rag: dev/code/check_engine/check_rag.md
+  - Check Server: dev/code/check_engine/check_server.md
+  - Check Simplified: dev/code/check_engine/check_simplified.md
+  - Check System: dev/code/check_engine/check_system.md
+  - Smoke All Endpoints: dev/code/check_engine/smoke_all_endpoints.md
+- cli/:
+  - Обзор: dev/code/cli/index.md
+  - commands/:
+    - Обзор: dev/code/cli/commands/index.md
+    - Ai: dev/code/cli/commands/ai.md
+    - Chat: dev/code/cli/commands/chat.md
+    - Mcp: dev/code/cli/commands/mcp.md
+    - Registry: dev/code/cli/commands/registry.md
+    - System: dev/code/cli/commands/system.md
+  - Helpers: dev/code/cli/helpers.md
+- extensions/:
+  - Обзор: dev/code/extensions/index.md
+  - browser-extension-locator-editor/:
+    - Обзор: dev/code/extensions/browser-extension-locator-editor/index.md
+    - _locales/:
+      - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/index.md
+      - ar/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ar/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ar/messages.md
+      - ar-SA/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ar-SA/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ar-SA/messages.md
+      - bg/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/bg/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/bg/messages.md
+      - cs/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/cs/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/cs/messages.md
+      - da/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/da/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/da/messages.md
+      - de/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/de/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/de/messages.md
+      - de-DE/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/de-DE/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/de-DE/messages.md
+      - el/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/el/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/el/messages.md
+      - en/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/en/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/en/messages.md
+      - en-AU/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/en-AU/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/en-AU/messages.md
+      - en-CA/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/en-CA/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/en-CA/messages.md
+      - en-GB/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/en-GB/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/en-GB/messages.md
+      - en-US/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/en-US/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/en-US/messages.md
+      - es/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/es/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/es/messages.md
+      - es-AR/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/es-AR/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/es-AR/messages.md
+      - es-ES/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/es-ES/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/es-ES/messages.md
+      - es-MX/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/es-MX/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/es-MX/messages.md
+      - fa/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/fa/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/fa/messages.md
+      - fi/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/fi/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/fi/messages.md
+      - fr/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/fr/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/fr/messages.md
+      - fr-CA/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/fr-CA/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/fr-CA/messages.md
+      - fr-FR/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/fr-FR/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/fr-FR/messages.md
+      - he/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/he/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/he/messages.md
+      - hi/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/hi/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/hi/messages.md
+      - hr/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/hr/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/hr/messages.md
+      - hu/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/hu/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/hu/messages.md
+      - id/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/id/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/id/messages.md
+      - it/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/it/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/it/messages.md
+      - it-IT/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/it-IT/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/it-IT/messages.md
+      - ja/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ja/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ja/messages.md
+      - ko/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ko/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ko/messages.md
+      - ms/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ms/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ms/messages.md
+      - nl/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/nl/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/nl/messages.md
+      - nl-NL/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/nl-NL/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/nl-NL/messages.md
+      - no/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/no/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/no/messages.md
+      - pl/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/pl/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/pl/messages.md
+      - pt/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/pt/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/pt/messages.md
+      - pt-BR/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/pt-BR/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/pt-BR/messages.md
+      - pt-PT/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/pt-PT/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/pt-PT/messages.md
+      - ro/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ro/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ro/messages.md
+      - ru/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/ru/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/ru/messages.md
+      - sk/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/sk/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/sk/messages.md
+      - sr/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/sr/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/sr/messages.md
+      - sv/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/sv/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/sv/messages.md
+      - th/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/th/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/th/messages.md
+      - tr/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/tr/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/tr/messages.md
+      - uk/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/uk/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/uk/messages.md
+      - vi/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/vi/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/vi/messages.md
+      - zh/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/zh/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/zh/messages.md
+      - zh-CN/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/zh-CN/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/zh-CN/messages.md
+      - zh-TW/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/_locales/zh-TW/index.md
+        - Messages: dev/code/extensions/browser-extension-locator-editor/_locales/zh-TW/messages.md
+    - components/:
+      - Обзор: dev/code/extensions/browser-extension-locator-editor/components/index.md
+    - editor/:
+      - Обзор: dev/code/extensions/browser-extension-locator-editor/editor/index.md
+      - components/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/editor/components/index.md
+        - Header: dev/code/extensions/browser-extension-locator-editor/editor/components/Header.md
+        - Icons: dev/code/extensions/browser-extension-locator-editor/editor/components/Icons.md
+        - Locatorform: dev/code/extensions/browser-extension-locator-editor/editor/components/LocatorForm.md
+        - Locatorlist: dev/code/extensions/browser-extension-locator-editor/editor/components/LocatorList.md
+      - App: dev/code/extensions/browser-extension-locator-editor/editor/App.md
+      - Constants: dev/code/extensions/browser-extension-locator-editor/editor/constants.md
+      - Editor: dev/code/extensions/browser-extension-locator-editor/editor/editor.md
+      - Editor: dev/code/extensions/browser-extension-locator-editor/editor/editor.md
+      - Types: dev/code/extensions/browser-extension-locator-editor/editor/types.md
+    - icons/:
+      - Обзор: dev/code/extensions/browser-extension-locator-editor/icons/index.md
+    - locator-editor/:
+      - Обзор: dev/code/extensions/browser-extension-locator-editor/locator-editor/index.md
+      - components/:
+        - Обзор: dev/code/extensions/browser-extension-locator-editor/locator-editor/components/index.md
+      - Constants: dev/code/extensions/browser-extension-locator-editor/locator-editor/constants.md
+      - Editor: dev/code/extensions/browser-extension-locator-editor/locator-editor/editor.md
+      - Types: dev/code/extensions/browser-extension-locator-editor/locator-editor/types.md
+    - vendor/:
+      - Обзор: dev/code/extensions/browser-extension-locator-editor/vendor/index.md
+      - React Dom.Development: dev/code/extensions/browser-extension-locator-editor/vendor/react-dom.development.md
+      - React.Development: dev/code/extensions/browser-extension-locator-editor/vendor/react.development.md
+    - Background: dev/code/extensions/browser-extension-locator-editor/background.md
+    - Constants: dev/code/extensions/browser-extension-locator-editor/constants.md
+    - Content: dev/code/extensions/browser-extension-locator-editor/content.md
+    - Index: dev/code/extensions/browser-extension-locator-editor/index.md
+    - Manifest: dev/code/extensions/browser-extension-locator-editor/manifest.md
+    - Metadata: dev/code/extensions/browser-extension-locator-editor/metadata.md
+    - Package: dev/code/extensions/browser-extension-locator-editor/package.md
+    - Popup: dev/code/extensions/browser-extension-locator-editor/popup.md
+    - Popup: dev/code/extensions/browser-extension-locator-editor/popup.md
+    - Tsconfig: dev/code/extensions/browser-extension-locator-editor/tsconfig.md
+    - Types: dev/code/extensions/browser-extension-locator-editor/types.md
+    - Vite.Config: dev/code/extensions/browser-extension-locator-editor/vite.config.md
+  - browser-extension-recommender/:
+    - Обзор: dev/code/extensions/browser-extension-recommender/index.md
+    - Background: dev/code/extensions/browser-extension-recommender/background.md
+    - Content: dev/code/extensions/browser-extension-recommender/content.md
+    - Manifest: dev/code/extensions/browser-extension-recommender/manifest.md
+    - Popup: dev/code/extensions/browser-extension-recommender/popup.md
+    - Popup: dev/code/extensions/browser-extension-recommender/popup.md
+  - browser-extension-review-parser/:
+    - Обзор: dev/code/extensions/browser-extension-review-parser/index.md
+    - Background: dev/code/extensions/browser-extension-review-parser/background.md
+    - Manifest: dev/code/extensions/browser-extension-review-parser/manifest.md
+    - Popup: dev/code/extensions/browser-extension-review-parser/popup.md
+    - Popup: dev/code/extensions/browser-extension-review-parser/popup.md
+  - browser-extension-summarizer/:
+    - Обзор: dev/code/extensions/browser-extension-summarizer/index.md
+    - _locales/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/_locales/index.md
+      - en/:
+        - Обзор: dev/code/extensions/browser-extension-summarizer/_locales/en/index.md
+        - Messages: dev/code/extensions/browser-extension-summarizer/_locales/en/messages.md
+      - ru/:
+        - Обзор: dev/code/extensions/browser-extension-summarizer/_locales/ru/index.md
+        - Messages: dev/code/extensions/browser-extension-summarizer/_locales/ru/messages.md
+    - connectors/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/connectors/index.md
+      - Gemini: dev/code/extensions/browser-extension-summarizer/connectors/gemini.md
+      - Openai Compat: dev/code/extensions/browser-extension-summarizer/connectors/openai-compat.md
+      - Openrouter: dev/code/extensions/browser-extension-summarizer/connectors/openrouter.md
+    - css/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/css/index.md
+    - icons/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/icons/index.md
+    - js/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/js/index.md
+      - I18N: dev/code/extensions/browser-extension-summarizer/js/i18n.md
+    - locales/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/locales/index.md
+      - En: dev/code/extensions/browser-extension-summarizer/locales/en.md
+      - He: dev/code/extensions/browser-extension-summarizer/locales/he.md
+      - Ru: dev/code/extensions/browser-extension-summarizer/locales/ru.md
+    - prompts/:
+      - Обзор: dev/code/extensions/browser-extension-summarizer/prompts/index.md
+      - De: dev/code/extensions/browser-extension-summarizer/prompts/de.md
+      - En: dev/code/extensions/browser-extension-summarizer/prompts/en.md
+      - Es: dev/code/extensions/browser-extension-summarizer/prompts/es.md
+      - Factcheck: dev/code/extensions/browser-extension-summarizer/prompts/factcheck.md
+      - Fr: dev/code/extensions/browser-extension-summarizer/prompts/fr.md
+      - Index: dev/code/extensions/browser-extension-summarizer/prompts/index.md
+      - Ja: dev/code/extensions/browser-extension-summarizer/prompts/ja.md
+      - Ru: dev/code/extensions/browser-extension-summarizer/prompts/ru.md
+      - Zh: dev/code/extensions/browser-extension-summarizer/prompts/zh.md
+    - Background: dev/code/extensions/browser-extension-summarizer/background.md
+    - Chat: dev/code/extensions/browser-extension-summarizer/chat.md
+    - Chat: dev/code/extensions/browser-extension-summarizer/chat.md
+    - Create Icons: dev/code/extensions/browser-extension-summarizer/create-icons.md
+    - Debug: dev/code/extensions/browser-extension-summarizer/debug.md
+    - Debug: dev/code/extensions/browser-extension-summarizer/debug.md
+    - Logger: dev/code/extensions/browser-extension-summarizer/logger.md
+    - Manifest: dev/code/extensions/browser-extension-summarizer/manifest.md
+    - Popup: dev/code/extensions/browser-extension-summarizer/popup.md
+    - Popup: dev/code/extensions/browser-extension-summarizer/popup.md
+    - Providers Page: dev/code/extensions/browser-extension-summarizer/providers-page.md
+    - Providers Registry: dev/code/extensions/browser-extension-summarizer/providers-registry.md
+    - Providers: dev/code/extensions/browser-extension-summarizer/providers.md
+    - Providers: dev/code/extensions/browser-extension-summarizer/providers.md
+    - Rag Storage: dev/code/extensions/browser-extension-summarizer/rag-storage.md
+    - Rag Storage: dev/code/extensions/browser-extension-summarizer/rag-storage.md
+    - Summarizer: dev/code/extensions/browser-extension-summarizer/summarizer.md
+    - Ui Manager: dev/code/extensions/browser-extension-summarizer/ui-manager.md
+  - kazarinov-browser-extention/:
+    - Обзор: dev/code/extensions/kazarinov-browser-extention/index.md
+    - _locales/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/_locales/index.md
+      - he/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/_locales/he/index.md
+        - Messages: dev/code/extensions/kazarinov-browser-extention/_locales/he/messages.md
+      - it/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/_locales/it/index.md
+        - Messages: dev/code/extensions/kazarinov-browser-extention/_locales/it/messages.md
+      - pl/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/_locales/pl/index.md
+        - Messages: dev/code/extensions/kazarinov-browser-extention/_locales/pl/messages.md
+      - ru/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/_locales/ru/index.md
+        - Messages: dev/code/extensions/kazarinov-browser-extention/_locales/ru/messages.md
+      - uk/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/_locales/uk/index.md
+        - Messages: dev/code/extensions/kazarinov-browser-extention/_locales/uk/messages.md
+    - assets/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/index.md
+      - images/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/index.md
+        - bb/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/bb/index.md
+        - blue_neon/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/blue_neon/index.md
+        - blue_red_neon/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/blue_red_neon/index.md
+        - colorfull_typewriter/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/colorfull_typewriter/index.md
+        - fantasy/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/fantasy/index.md
+        - for_pricelist/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/for_pricelist/index.md
+        - judaic/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/judaic/index.md
+        - neo/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/neo/index.md
+        - painted/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/painted/index.md
+        - pastel/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/index.md
+          - bright/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/bright/index.md
+            - set_1/:
+              - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/bright/set_1/index.md
+            - set_2/:
+              - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/bright/set_2/index.md
+          - carrier/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/carrier/index.md
+          - set_1/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/set_1/index.md
+          - set_2/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/set_2/index.md
+          - set_3/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/set_3/index.md
+          - set_4/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/set_4/index.md
+          - set_5/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/set_5/index.md
+          - set_6/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pastel/set_6/index.md
+        - pencil/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/pencil/index.md
+        - polaroid/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/polaroid/index.md
+        - realistic/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/realistic/index.md
+          - set_1/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/realistic/set_1/index.md
+          - set_2/:
+            - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/realistic/set_2/index.md
+        - ROBOTS/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/ROBOTS/index.md
+        - spy/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/spy/index.md
+        - vintage/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/assets/images/vintage/index.md
+    - css/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/css/index.md
+    - data/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/data/index.md
+      - Assembly: dev/code/extensions/kazarinov-browser-extention/data/assembly.md
+      - Products: dev/code/extensions/kazarinov-browser-extention/data/products.md
+    - doc/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/index.md
+      - de/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/de/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/de/tutorials/index.md
+      - en/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/en/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/en/tutorials/index.md
+      - es/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/es/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/es/tutorials/index.md
+      - fr/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/fr/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/fr/tutorials/index.md
+      - he/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/he/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/he/tutorials/index.md
+      - it/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/it/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/it/tutorials/index.md
+      - pl/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/pl/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/pl/tutorials/index.md
+      - ru/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/ru/index.md
+        - dev/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/ru/dev/index.md
+        - howto/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/ru/howto/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/ru/tutorials/index.md
+      - uk/:
+        - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/uk/index.md
+        - tutorials/:
+          - Обзор: dev/code/extensions/kazarinov-browser-extention/doc/uk/tutorials/index.md
+    - icons/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/icons/index.md
+    - locators/:
+      - Обзор: dev/code/extensions/kazarinov-browser-extention/locators/index.md
+      - Grandadvance.Co.Il: dev/code/extensions/kazarinov-browser-extention/locators/grandadvance.co.il.md
+      - Ivory.Co.Il: dev/code/extensions/kazarinov-browser-extention/locators/ivory.co.il.md
+      - Ksp.Co.Il: dev/code/extensions/kazarinov-browser-extention/locators/ksp.co.il.md
+      - Morlevi.Co.Il: dev/code/extensions/kazarinov-browser-extention/locators/morlevi.co.il.md
+    - Background: dev/code/extensions/kazarinov-browser-extention/background.md
+    - Chat: dev/code/extensions/kazarinov-browser-extention/chat.md
+    - Chat: dev/code/extensions/kazarinov-browser-extention/chat.md
+    - Content: dev/code/extensions/kazarinov-browser-extention/content.md
+    - Create Image Manifest: dev/code/extensions/kazarinov-browser-extention/create-image-manifest.md
+    - Debug Tabs Checker: dev/code/extensions/kazarinov-browser-extention/debug-tabs-checker.md
+    - Debug: dev/code/extensions/kazarinov-browser-extention/debug.md
+    - Debug: dev/code/extensions/kazarinov-browser-extention/debug.md
+    - Execute Locators: dev/code/extensions/kazarinov-browser-extention/execute-locators.md
+    - Gemini: dev/code/extensions/kazarinov-browser-extention/gemini.md
+    - Handlers: dev/code/extensions/kazarinov-browser-extention/handlers.md
+    - Image Manifest: dev/code/extensions/kazarinov-browser-extention/image-manifest.md
+    - Json2Html: dev/code/extensions/kazarinov-browser-extention/json2html.md
+    - Locales Manifest: dev/code/extensions/kazarinov-browser-extention/locales-manifest.md
+    - Logger: dev/code/extensions/kazarinov-browser-extention/logger.md
+    - Manifest: dev/code/extensions/kazarinov-browser-extention/manifest.md
+    - Menu: dev/code/extensions/kazarinov-browser-extention/menu.md
+    - Offer Template: dev/code/extensions/kazarinov-browser-extention/offer-template.md
+    - Popup: dev/code/extensions/kazarinov-browser-extention/popup.md
+    - Popup: dev/code/extensions/kazarinov-browser-extention/popup.md
+    - Preview Offer: dev/code/extensions/kazarinov-browser-extention/preview-offer.md
+    - Preview Offer: dev/code/extensions/kazarinov-browser-extention/preview-offer.md
+    - Regenerate Images Manifest: dev/code/extensions/kazarinov-browser-extention/regenerate-images-manifest.md
+    - Result: dev/code/extensions/kazarinov-browser-extention/result.md
+    - Result: dev/code/extensions/kazarinov-browser-extention/result.md
+    - Search Renderer: dev/code/extensions/kazarinov-browser-extention/search-renderer.md
+    - Search Result: dev/code/extensions/kazarinov-browser-extention/search-result.md
+    - Ui Manager: dev/code/extensions/kazarinov-browser-extention/ui-manager.md
+- gui/:
+  - Обзор: dev/code/gui/index.md
+  - Api: dev/code/gui/api.md
+  - App: dev/code/gui/app.md
+  - App: dev/code/gui/app.md
+  - Index: dev/code/gui/index.md
+  - Start Tray: dev/code/gui/Start-Tray.md
+  - Start User: dev/code/gui/Start-User.md
+  - Tray: dev/code/gui/tray.md
+- mcp/:
+  - Обзор: dev/code/mcp/index.md
+  - src/:
+    - Обзор: dev/code/mcp/src/index.md
+    - clients/:
+      - Обзор: dev/code/mcp/src/clients/index.md
+      - Invoke Powershell: dev/code/mcp/src/clients/Invoke-PowerShell.md
+      - Invoke Wpcli: dev/code/mcp/src/clients/Invoke-WpCli.md
+      - Nodejs: dev/code/mcp/src/clients/nodejs.md
+      - Python Client: dev/code/mcp/src/clients/python_client.md
+    - config/:
+      - Обзор: dev/code/mcp/src/config/index.md
+      - Config Mcphttps: dev/code/mcp/src/config/Config-McpHTTPS.md
+      - Config Mcpwpcli: dev/code/mcp/src/config/Config-McpWPCLI.md
+      - Mcp Powershell Stdio.Config: dev/code/mcp/src/config/mcp-powershell-stdio.config.md
+    - servers/:
+      - Обзор: dev/code/mcp/src/servers/index.md
+      - wordpress-cli/:
+        - Обзор: dev/code/mcp/src/servers/wordpress-cli/index.md
+      - Docs Deploy Mcp: dev/code/mcp/src/servers/docs_deploy_mcp.md
+      - Ftp Mcp: dev/code/mcp/src/servers/ftp_mcp.md
+      - Huggingface Mcp: dev/code/mcp/src/servers/huggingface_mcp.md
+      - Local Models Mcp: dev/code/mcp/src/servers/local_models_mcp.md
+      - Mcphttpsserver: dev/code/mcp/src/servers/McpHttpsServer.md
+      - Mcphuggingfaceserver: dev/code/mcp/src/servers/McpHuggingFaceServer.md
+      - Mcpstdioserver: dev/code/mcp/src/servers/McpSTDIOServer.md
+      - Mcpstdioserver.V1: dev/code/mcp/src/servers/McpSTDIOServer.v1.md
+      - Mcpsystemmonitor: dev/code/mcp/src/servers/McpSystemMonitor.md
+      - Mcpwpcliserver: dev/code/mcp/src/servers/McpWPCLIServer.md
+      - Mcpwpserver: dev/code/mcp/src/servers/McpWpServer.md
+      - Windows Os Mcp: dev/code/mcp/src/servers/windows_os_mcp.md
+  - .Mcp Pids: dev/code/mcp/.mcp-pids.md
+  - Settings: dev/code/mcp/settings.md
+  - Start Mcpservers: dev/code/mcp/Start-MCPServers.md
+- SANDBOX/:
+  - Обзор: dev/code/SANDBOX/index.md
+  - Alrix010/:
+    - Обзор: dev/code/SANDBOX/Alrix010/index.md
+    - sdk/:
+      - Обзор: dev/code/SANDBOX/Alrix010/sdk/index.md
+      - Cli: dev/code/SANDBOX/Alrix010/sdk/cli.md
+      - Client: dev/code/SANDBOX/Alrix010/sdk/client.md
+      - Example: dev/code/SANDBOX/Alrix010/sdk/example.md
+      - Exceptions: dev/code/SANDBOX/Alrix010/sdk/exceptions.md
+      - Foundry Models List: dev/code/SANDBOX/Alrix010/sdk/foundry_models_list.md
+      - Models: dev/code/SANDBOX/Alrix010/sdk/models.md
+      - Rag Basic: dev/code/SANDBOX/Alrix010/sdk/rag_basic.md
+      - Setup: dev/code/SANDBOX/Alrix010/sdk/setup.md
+      - Test All Api: dev/code/SANDBOX/Alrix010/sdk/test_all_api.md
+    - Check Engine: dev/code/SANDBOX/Alrix010/check_engine.md
+    - Example1: dev/code/SANDBOX/Alrix010/example1.md
+  - examples/:
+    - Обзор: dev/code/SANDBOX/examples/index.md
+    - Example Client: dev/code/SANDBOX/examples/example_client.md
+    - Example Mcp Client: dev/code/SANDBOX/examples/example_mcp_client.md
+    - Example Microsoft Agent Framework: dev/code/SANDBOX/examples/example_microsoft_agent-framework.md
+    - Example Model Client: dev/code/SANDBOX/examples/example_model_client.md
+    - Example Rag Client: dev/code/SANDBOX/examples/example_rag_client.md
+    - Translator Example: dev/code/SANDBOX/examples/translator_example.md
+- scripts/:
+  - Обзор: dev/code/scripts/index.md
+  - Create-Doc/:
+    - Обзор: dev/code/scripts/Create-Doc/index.md
+    - Generate Apireference: dev/code/scripts/Create-Doc/Generate-ApiReference.md
+    - Generate Codereference: dev/code/scripts/Create-Doc/Generate-CodeReference.md
+    - Generate Fullreference: dev/code/scripts/Create-Doc/Generate-FullReference.md
+    - Generate Nav: dev/code/scripts/Create-Doc/Generate-Nav.md
+    - Generate Psdocs: dev/code/scripts/Create-Doc/Generate-PsDocs.md
+  - Install/:
+    - Обзор: dev/code/scripts/Install/index.md
+    -  Setup Env: dev/code/scripts/Install/_setup_env.md
+    - Common: dev/code/scripts/Install/Common.md
+    - Init Databases: dev/code/scripts/Install/Init-Databases.md
+    - Install Autostart: dev/code/scripts/Install/Install-Autostart.md
+    - Install Chromium: dev/code/scripts/Install/Install-Chromium.md
+    - Install Foundry: dev/code/scripts/Install/Install-Foundry.md
+    - Install Huggingfacecli: dev/code/scripts/Install/Install-HuggingFaceCli.md
+    - Install Llama: dev/code/scripts/Install/Install-Llama.md
+    - Install Lmstudio: dev/code/scripts/Install/Install-LMStudio.md
+    - Install Models: dev/code/scripts/Install/Install-Models.md
+    - Install Ollama: dev/code/scripts/Install/Install-Ollama.md
+    - Install Opencode: dev/code/scripts/Install/Install-OpenCode.md
+    - Install Shortcuts: dev/code/scripts/Install/Install-Shortcuts.md
+    - Install Tesseract: dev/code/scripts/Install/Install-Tesseract.md
+    - Install Winget: dev/code/scripts/Install/Install-Winget.md
+    - Install Rag Deps: dev/code/scripts/Install/install_rag_deps.md
+    - Make Ico: dev/code/scripts/Install/Make-Ico.md
+    - Reinstallfoundry: dev/code/scripts/Install/ReinstallFoundry.md
+    - Setup Env: dev/code/scripts/Install/Setup-Env.md
+    - Step Backends: dev/code/scripts/Install/Step-Backends.md
+    - Step Configanddata: dev/code/scripts/Install/Step-ConfigAndData.md
+    - Step Finalize: dev/code/scripts/Install/Step-Finalize.md
+    - Step Pythonenvironment: dev/code/scripts/Install/Step-PythonEnvironment.md
+    - Step Userinterface: dev/code/scripts/Install/Step-UserInterface.md
+  - os_diagnostic/:
+    - Обзор: dev/code/scripts/os_diagnostic/index.md
+    - Invoke Osdiagnostic: dev/code/scripts/os_diagnostic/Invoke-OsDiagnostic.md
+  - Start-Engine/:
+    - Обзор: dev/code/scripts/Start-Engine/index.md
+    - Check Health: dev/code/scripts/Start-Engine/Check-Health.md
+    - Start Fastapi: dev/code/scripts/Start-Engine/Start-FastApi.md
+    - Start Foundry: dev/code/scripts/Start-Engine/Start-Foundry.md
+    - Start Llama: dev/code/scripts/Start-Engine/Start-Llama.md
+    - Start Mkdocs: dev/code/scripts/Start-Engine/Start-MkDocs.md
+    - Start Opencode: dev/code/scripts/Start-Engine/Start-OpenCode.md
+    - Stop Engine: dev/code/scripts/Start-Engine/Stop-Engine.md
+  - Archive Ragindices: dev/code/scripts/Archive-RagIndices.md
+  - Build Exes: dev/code/scripts/Build-Exes.md
+  - Build Release: dev/code/scripts/Build-Release.md
+  - Clear Archivedfiles: dev/code/scripts/Clear-ArchivedFiles.md
+  - Clear Reports: dev/code/scripts/Clear-Reports.md
+  - Clear Tempfiles: dev/code/scripts/Clear-TempFiles.md
+  - Create Requirements: dev/code/scripts/Create-Requirements.md
+  - Download Model: dev/code/scripts/Download-Model.md
+  - Fix Vulnerabilities: dev/code/scripts/Fix-Vulnerabilities.md
+  - Get Foundryutils: dev/code/scripts/Get-FoundryUtils.md
+  - Get Servicestatus: dev/code/scripts/Get-ServiceStatus.md
+  - Get Telegramchatid: dev/code/scripts/Get-TelegramChatId.md
+  - Hf Downloadmodel: dev/code/scripts/Hf-DownloadModel.md
+  - Hf Models: dev/code/scripts/Hf-Models.md
+  - Invoke Apirequest: dev/code/scripts/Invoke-APIRequest.md
+  - Invoke Envmigration: dev/code/scripts/Invoke-EnvMigration.md
+  - Invoke Fastapirequest: dev/code/scripts/Invoke-FastApiRequest.md
+  - Invoke Qa: dev/code/scripts/Invoke-Qa.md
+  - List Models: dev/code/scripts/List-Models.md
+  - Load Model: dev/code/scripts/Load-Model.md
+  - Merge Docsnav: dev/code/scripts/Merge-DocsNav.md
+  - Monitor Diskspace: dev/code/scripts/Monitor-DiskSpace.md
+  - New Release: dev/code/scripts/New-Release.md
+  - Reinstallfoundry: dev/code/scripts/ReinstallFoundry.md
+  - Restart Mkdocs: dev/code/scripts/Restart-MkDocs.md
+  - Restore Ragindex: dev/code/scripts/Restore-RagIndex.md
+  - Rotate Cleanuplog: dev/code/scripts/Rotate-CleanupLog.md
+  - Run Qa: dev/code/scripts/run-qa.md
+  - Setup Githooks: dev/code/scripts/Setup-GitHooks.md
+  - Unload Model: dev/code/scripts/Unload-Model.md
+  - Update Project: dev/code/scripts/Update-Project.md
+  - Visualize Health: dev/code/scripts/visualize_health.md
+  - Watch Tests: dev/code/scripts/Watch-Tests.md
+- sdk/:
+  - Обзор: dev/code/sdk/index.md
+  - fastapi_foundry_sdk/:
+    - Обзор: dev/code/sdk/fastapi_foundry_sdk/index.md
+    - examples/:
+      - Обзор: dev/code/sdk/fastapi_foundry_sdk/examples/index.md
+      - Demo All: dev/code/sdk/fastapi_foundry_sdk/examples/demo_all.md
+      - Demo Mcp: dev/code/sdk/fastapi_foundry_sdk/examples/demo_mcp.md
+    - Client: dev/code/sdk/fastapi_foundry_sdk/client.md
+    - Mcp Client: dev/code/sdk/fastapi_foundry_sdk/mcp_client.md
+  - microsoft_foundry_sdk/:
+    - Обзор: dev/code/sdk/microsoft_foundry_sdk/index.md
+    - examples/:
+      - Обзор: dev/code/sdk/microsoft_foundry_sdk/examples/index.md
+      - 01 Model Lifecycle: dev/code/sdk/microsoft_foundry_sdk/examples/01_model_lifecycle.md
+      - 02 Chat: dev/code/sdk/microsoft_foundry_sdk/examples/02_chat.md
+      - 03 Agent With Mcp: dev/code/sdk/microsoft_foundry_sdk/examples/03_agent_with_mcp.md
+      - 04 Multiple Mcp Servers: dev/code/sdk/microsoft_foundry_sdk/examples/04_multiple_mcp_servers.md
+      - 05 Remote Mcp Sse: dev/code/sdk/microsoft_foundry_sdk/examples/05_remote_mcp_sse.md
+    - Agent: dev/code/sdk/microsoft_foundry_sdk/agent.md
+    - Chat: dev/code/sdk/microsoft_foundry_sdk/chat.md
+    - Manager: dev/code/sdk/microsoft_foundry_sdk/manager.md
+    - Mcp Connector: dev/code/sdk/microsoft_foundry_sdk/mcp_connector.md
+- src/:
+  - Обзор: dev/code/src/index.md
+  - agents/:
+    - Обзор: dev/code/src/agents/index.md
+    - Base: dev/code/src/agents/base.md
+    - Computer Admin Agent: dev/code/src/agents/computer_admin_agent.md
+    - Google Agent: dev/code/src/agents/google_agent.md
+    - Hitl Orchestrator: dev/code/src/agents/hitl_orchestrator.md
+    - Keystroke Agent: dev/code/src/agents/keystroke_agent.md
+    - Mcp Agent: dev/code/src/agents/mcp_agent.md
+    - Powershell Agent: dev/code/src/agents/powershell_agent.md
+    - Qa Agent: dev/code/src/agents/qa_agent.md
+    - Rag Agent: dev/code/src/agents/rag_agent.md
+    - Recommender Agent: dev/code/src/agents/recommender_agent.md
+    - Windows Os Agent: dev/code/src/agents/windows_os_agent.md
+  - api/:
+    - Обзор: dev/code/src/api/index.md
+    - endpoints/:
+      - Обзор: dev/code/src/api/endpoints/index.md
+      - Agent: dev/code/src/api/endpoints/agent.md
+      - Ai Endpoints: dev/code/src/api/endpoints/ai_endpoints.md
+      - Chat Endpoints: dev/code/src/api/endpoints/chat_endpoints.md
+      - Config: dev/code/src/api/endpoints/config.md
+      - Content Blocks: dev/code/src/api/endpoints/content_blocks.md
+      - Converter: dev/code/src/api/endpoints/converter.md
+      - Foundry: dev/code/src/api/endpoints/foundry.md
+      - Foundry Management: dev/code/src/api/endpoints/foundry_management.md
+      - Foundry Models: dev/code/src/api/endpoints/foundry_models.md
+      - Generate: dev/code/src/api/endpoints/generate.md
+      - Health: dev/code/src/api/endpoints/health.md
+      - Helpdesk: dev/code/src/api/endpoints/helpdesk.md
+      - Hf Models: dev/code/src/api/endpoints/hf_models.md
+      - Install: dev/code/src/api/endpoints/install.md
+      - Llama Cpp: dev/code/src/api/endpoints/llama_cpp.md
+      - Lmstudio: dev/code/src/api/endpoints/lmstudio.md
+      - Logs: dev/code/src/api/endpoints/logs.md
+      - Main: dev/code/src/api/endpoints/main.md
+      - Mcp Agent Endpoints: dev/code/src/api/endpoints/mcp_agent_endpoints.md
+      - Mcp Powershell: dev/code/src/api/endpoints/mcp_powershell.md
+      - Models: dev/code/src/api/endpoints/models.md
+      - Ollama: dev/code/src/api/endpoints/ollama.md
+      - Openai Models: dev/code/src/api/endpoints/openai_models.md
+      - Opencode: dev/code/src/api/endpoints/opencode.md
+      - Processor: dev/code/src/api/endpoints/processor.md
+      - Rag: dev/code/src/api/endpoints/rag.md
+      - Rag Ingestor: dev/code/src/api/endpoints/rag_ingestor.md
+      - Recommender: dev/code/src/api/endpoints/recommender.md
+      - Security: dev/code/src/api/endpoints/security.md
+      - Support: dev/code/src/api/endpoints/support.md
+      - System Stats: dev/code/src/api/endpoints/system_stats.md
+      - Training: dev/code/src/api/endpoints/training.md
+      - Translator: dev/code/src/api/endpoints/translator.md
+    - App: dev/code/src/api/app.md
+    - Docs Generator: dev/code/src/api/docs_generator.md
+    - Main: dev/code/src/api/main.md
+    - Models: dev/code/src/api/models.md
+    - Utils: dev/code/src/api/utils.md
+    - Websocket Manager: dev/code/src/api/websocket_manager.md
+  - converter/:
+    - Обзор: dev/code/src/converter/index.md
+    - Gguf To Onnx: dev/code/src/converter/gguf_to_onnx.md
+  - core/:
+    - Обзор: dev/code/src/core/index.md
+    - Config: dev/code/src/core/config.md
+  - db/:
+    - Обзор: dev/code/src/db/index.md
+    - Chat Db: dev/code/src/db/chat_db.md
+    - Schemas: dev/code/src/db/schemas.md
+  - logger/:
+    - Обзор: dev/code/src/logger/index.md
+  - models/:
+    - Обзор: dev/code/src/models/index.md
+    - translator~/:
+      - Обзор: dev/code/src/models/translator~/index.md
+      - Translator: dev/code/src/models/translator~/translator.md
+    - Enhanced Foundry Client: dev/code/src/models/enhanced_foundry_client.md
+    - Foundry Client: dev/code/src/models/foundry_client.md
+    - Hf Client: dev/code/src/models/hf_client.md
+    - Llama Registry: dev/code/src/models/llama_registry.md
+    - Lmstudio Client: dev/code/src/models/lmstudio_client.md
+    - Model Manager: dev/code/src/models/model_manager.md
+    - Ollama Client: dev/code/src/models/ollama_client.md
+    - Opencode Client: dev/code/src/models/opencode_client.md
+    - Router: dev/code/src/models/router.md
+  - rag/:
+    - Обзор: dev/code/src/rag/index.md
+    - text_extractors/:
+      - Обзор: dev/code/src/rag/text_extractors/index.md
+      - markitdown/:
+        - Обзор: dev/code/src/rag/text_extractors/markitdown/index.md
+        - Extractor: dev/code/src/rag/text_extractors/markitdown/extractor.md
+      - text_extractor_4_rag/:
+        - Обзор: dev/code/src/rag/text_extractors/text_extractor_4_rag/index.md
+        - Config: dev/code/src/rag/text_extractors/text_extractor_4_rag/config.md
+        - Extractors: dev/code/src/rag/text_extractors/text_extractor_4_rag/extractors.md
+        - Main: dev/code/src/rag/text_extractors/text_extractor_4_rag/main.md
+        - Utils: dev/code/src/rag/text_extractors/text_extractor_4_rag/utils.md
+      - whisper/:
+        - Обзор: dev/code/src/rag/text_extractors/whisper/index.md
+        - Extractor: dev/code/src/rag/text_extractors/whisper/extractor.md
+    - Document Ingestor: dev/code/src/rag/document_ingestor.md
+    - Document Store: dev/code/src/rag/document_store.md
+    - Incremental Indexer: dev/code/src/rag/incremental_indexer.md
+    - Indexer: dev/code/src/rag/indexer.md
+    - Rag Pipeline: dev/code/src/rag/rag_pipeline.md
+    - Rag Profile Manager: dev/code/src/rag/rag_profile_manager.md
+    - Rag Service: dev/code/src/rag/rag_service.md
+    - Rag System: dev/code/src/rag/rag_system.md
+  - training/:
+    - Обзор: dev/code/src/training/index.md
+    - Dataset Store: dev/code/src/training/dataset_store.md
+    - Trainer: dev/code/src/training/trainer.md
+  - utils/:
+    - Обзор: dev/code/src/utils/index.md
+    - Api Utils: dev/code/src/utils/api_utils.md
+    - Command Agent: dev/code/src/utils/command_agent.md
+    - Env Processor: dev/code/src/utils/env_processor.md
+    - Foundry Finder: dev/code/src/utils/foundry_finder.md
+    - Foundry Utils: dev/code/src/utils/foundry_utils.md
+    - Invoke Loggedcommand: dev/code/src/utils/Invoke-LoggedCommand.md
+    - Log Analyzer: dev/code/src/utils/log_analyzer.md
+    - Logging Config: dev/code/src/utils/logging_config.md
+    - Logging System: dev/code/src/utils/logging_system.md
+    - Process Utils: dev/code/src/utils/process_utils.md
+    - Processor: dev/code/src/utils/processor.md
+    - Telegram Bot: dev/code/src/utils/telegram_bot.md
+    - Telegram Support Bot: dev/code/src/utils/telegram_support_bot.md
+    - Text Extractor: dev/code/src/utils/text_extractor.md
+    - Text Utils: dev/code/src/utils/text_utils.md
+    - Translator: dev/code/src/utils/translator.md
+- static/:
+  - Обзор: dev/code/static/index.md
+  - gui-install/:
+    - Обзор: dev/code/static/gui-install/index.md
+    - Index: dev/code/static/gui-install/index.md
+    - Install: dev/code/static/gui-install/install.md
+  - interface/:
+    - Обзор: dev/code/static/interface/index.md
+    - assets/:
+      - Обзор: dev/code/static/interface/assets/index.md
+      - icons/:
+        - Обзор: dev/code/static/interface/assets/icons/index.md
+    - css/:
+      - Обзор: dev/code/static/interface/css/index.md
+    - js/:
+      - Обзор: dev/code/static/interface/js/index.md
+      - Agent: dev/code/static/interface/js/agent.md
+      - Chat: dev/code/static/interface/js/chat.md
+      - Chat Component: dev/code/static/interface/js/chat_component.md
+      - Config: dev/code/static/interface/js/config.md
+      - Editor: dev/code/static/interface/js/editor.md
+      - Foundry: dev/code/static/interface/js/foundry.md
+      - Hf: dev/code/static/interface/js/hf.md
+      - I18N: dev/code/static/interface/js/i18n.md
+      - Llama: dev/code/static/interface/js/llama.md
+      - Mcp: dev/code/static/interface/js/mcp.md
+      - Model Badge: dev/code/static/interface/js/model-badge.md
+      - Models: dev/code/static/interface/js/models.md
+      - Ollama: dev/code/static/interface/js/ollama.md
+      - Opencode: dev/code/static/interface/js/opencode.md
+      - Providers Registry: dev/code/static/interface/js/providers-registry.md
+      - Providers: dev/code/static/interface/js/providers.md
+      - Rag: dev/code/static/interface/js/rag.md
+      - Sdk: dev/code/static/interface/js/sdk.md
+      - Support: dev/code/static/interface/js/support.md
+      - Ui: dev/code/static/interface/js/ui.md
+    - locales/:
+      - Обзор: dev/code/static/interface/locales/index.md
+      - En: dev/code/static/interface/locales/en.md
+      - He: dev/code/static/interface/locales/he.md
+      - Ru: dev/code/static/interface/locales/ru.md
+    - partials/:
+      - Обзор: dev/code/static/interface/partials/index.md
+      -  Head: dev/code/static/interface/partials/_head.md
+      -  Modal Add Model: dev/code/static/interface/partials/_modal_add_model.md
+      -  Modal Llama Picker: dev/code/static/interface/partials/_modal_llama_picker.md
+      -  Navbar: dev/code/static/interface/partials/_navbar.md
+      -  Scripts: dev/code/static/interface/partials/_scripts.md
+      -  Support Widget: dev/code/static/interface/partials/_support_widget.md
+      -  Tab Agent: dev/code/static/interface/partials/_tab_agent.md
+      -  Tab Chat: dev/code/static/interface/partials/_tab_chat.md
+      -  Tab Docs: dev/code/static/interface/partials/_tab_docs.md
+      -  Tab Editor: dev/code/static/interface/partials/_tab_editor.md
+      -  Tab Foundry: dev/code/static/interface/partials/_tab_foundry.md
+      -  Tab Hf: dev/code/static/interface/partials/_tab_hf.md
+      -  Tab Llama: dev/code/static/interface/partials/_tab_llama.md
+      -  Tab Logs: dev/code/static/interface/partials/_tab_logs.md
+      -  Tab Mcp: dev/code/static/interface/partials/_tab_mcp.md
+      -  Tab Models: dev/code/static/interface/partials/_tab_models.md
+      -  Tab Ollama: dev/code/static/interface/partials/_tab_ollama.md
+      -  Tab Opencode: dev/code/static/interface/partials/_tab_opencode.md
+      -  Tab Providers: dev/code/static/interface/partials/_tab_providers.md
+      -  Tab Rag: dev/code/static/interface/partials/_tab_rag.md
+      -  Tab Settings: dev/code/static/interface/partials/_tab_settings.md
+      -  Tab Settings Dev: dev/code/static/interface/partials/_tab_settings_dev.md
+      -  Tab Settings Dirs: dev/code/static/interface/partials/_tab_settings_dirs.md
+      -  Tab Settings Foundry: dev/code/static/interface/partials/_tab_settings_foundry.md
+      -  Tab Settings Logging: dev/code/static/interface/partials/_tab_settings_logging.md
+      -  Tab Settings Models: dev/code/static/interface/partials/_tab_settings_models.md
+      -  Tab Settings Opencode: dev/code/static/interface/partials/_tab_settings_opencode.md
+      -  Tab Settings Rag: dev/code/static/interface/partials/_tab_settings_rag.md
+      -  Tab Settings Security: dev/code/static/interface/partials/_tab_settings_security.md
+      -  Tab Settings Server: dev/code/static/interface/partials/_tab_settings_server.md
+      -  Tab Settings Shell: dev/code/static/interface/partials/_tab_settings_shell.md
+      -  Tab Support: dev/code/static/interface/partials/_tab_support.md
+      -  Tabs Nav: dev/code/static/interface/partials/_tabs_nav.md
+    - Ai: dev/code/static/interface/ai.md
+    - App: dev/code/static/interface/app.md
+    - Chat: dev/code/static/interface/chat.md
+    - Control: dev/code/static/interface/control.md
+    - Index: dev/code/static/interface/index.md
+    - Simple: dev/code/static/interface/simple.md
+  - Available Models: dev/code/static/available_models.md
+  - Qa: dev/code/static/qa.md
+- telegram/:
+  - Обзор: dev/code/telegram/index.md
+  - Admin Bot: dev/code/telegram/admin_bot.md
+  - Helpdesk Bot: dev/code/telegram/helpdesk_bot.md
+  - Listener Bot: dev/code/telegram/listener_bot.md
+- tests/:
+  - Обзор: dev/code/tests/index.md
+  - agents/:
+    - Обзор: dev/code/tests/agents/index.md
+    - Test Agent Selection: dev/code/tests/agents/test_agent_selection.md
+    - Test Computer Admin Agent: dev/code/tests/agents/test_computer_admin_agent.md
+    - Test Rag Agent: dev/code/tests/agents/test_rag_agent.md
+  - integration/:
+    - Обзор: dev/code/tests/integration/index.md
+    - Llamaextraction.Tests: dev/code/tests/integration/LlamaExtraction.Tests.md
+    - Locustfile: dev/code/tests/integration/locustfile.md
+    - Test Api: dev/code/tests/integration/test_api.md
+    - Test Fastapi Init: dev/code/tests/integration/test_fastapi_init.md
+    - Test Powershell Mcp: dev/code/tests/integration/test_powershell_mcp.md
+    - Test Rag Index: dev/code/tests/integration/test_rag_index.md
+  - models/:
+    - Обзор: dev/code/tests/models/index.md
+    - Test Llama Registry: dev/code/tests/models/test_llama_registry.md
+  - reports/:
+    - Обзор: dev/code/tests/reports/index.md
+  - unit/:
+    - Обзор: dev/code/tests/unit/index.md
+    - Installlmstudio.Tests: dev/code/tests/unit/InstallLMStudio.Tests.md
+    - Monitor Diskspace.Tests: dev/code/tests/unit/Monitor-DiskSpace.Tests.md
+    - Restore Ragindex.Tests: dev/code/tests/unit/Restore-RagIndex.Tests.md
+    - Start Project.Tests: dev/code/tests/unit/Start-Project.Tests.md
+    - Start.Tests: dev/code/tests/unit/start.Tests.md
+    - Test Chat Db: dev/code/tests/unit/test_chat_db.md
+    - Test Decorators: dev/code/tests/unit/test_decorators.md
+    - Test Document Ingestor Docx: dev/code/tests/unit/test_document_ingestor_docx.md
+    - Test Json Utils: dev/code/tests/unit/test_json_utils.md
+    - Test Lmstudio Provider: dev/code/tests/unit/test_lmstudio_provider.md
+    - Test Logging System: dev/code/tests/unit/test_logging_system.md
+    - Test Rag Agent: dev/code/tests/unit/test_rag_agent.md
+    - Test Schemas: dev/code/tests/unit/test_schemas.md
+    - Test Translation Pipeline: dev/code/tests/unit/test_translation_pipeline.md
+  - Conftest: dev/code/tests/conftest.md
+  - Invoke Qainstall: dev/code/tests/Invoke-QaInstall.md
+  - Invoke Qastart: dev/code/tests/Invoke-QaStart.md
+  - Run Load Tests: dev/code/tests/run-load-tests.md
+  - Start Logic.Tests: dev/code/tests/Start-Logic.Tests.md
+  - Test Apiendpoints: dev/code/tests/Test-ApiEndpoints.md
+  - Test Api Coverage: dev/code/tests/test_api_coverage.md
+  - Test Api Endpoints: dev/code/tests/test_api_endpoints.md
+  - Test Api Endpoints: dev/code/tests/test_api_endpoints.md
+  - Test Debug: dev/code/tests/test_debug.md
+  - Test Debug2: dev/code/tests/test_debug2.md
+  - Test Debug3: dev/code/tests/test_debug3.md
+  - Test Foundry Raw: dev/code/tests/test_foundry_raw.md
+  - Test Foundry Status: dev/code/tests/test_foundry_status.md
+  - Test Health: dev/code/tests/test_health.md
+  - Test Process: dev/code/tests/test_process.md
+  - Visualize Performance: dev/code/tests/visualize_performance.md
+- utils/:
+  - Обзор: dev/code/utils/index.md
+  - Ai Model Scanner: dev/code/utils/ai_model_scanner.md
+  - Foundry Model Finder: dev/code/utils/foundry_model_finder.md
+  - Generate Ssl: dev/code/utils/generate-ssl.md
+  - Pc Component Processor: dev/code/utils/pc_component_processor.md
+  - Port Manager: dev/code/utils/port_manager.md

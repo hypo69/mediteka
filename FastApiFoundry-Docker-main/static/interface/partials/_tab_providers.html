@@ -1,0 +1,132 @@
+<!--
+===============================================================================
+Process Name: API Keys / Providers tab partial
+===============================================================================
+Description:
+    Tab content for managing LLM provider API keys.
+    Keys stored in .env via /api/v1/config/provider-keys.
+    Local server API key managed via /api/v1/security/api-key/*.
+    Supports export/import sync with the browser extension.
+
+File: partials/_tab_providers.html
+Project: AI Assistant (ai_assist)
+Version: 0.8.0
+Changes in 0.8.0:
+    - Added local server API key generation/management block
+    - HuggingFace token field now always visible at top of provider list
+Author: hypo69
+Copyright: © 2026 hypo69
+===============================================================================
+-->
+<div class="tab-pane fade" id="providers" role="tabpanel">
+    <div class="row mt-3">
+        <div class="col-md-8">
+
+            <!-- ── Local server API key ── -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-lock text-primary me-1"></i>
+                        <span data-i18n="providers.local_key_title">This Server API Key</span>
+                    </h5>
+                    <span id="local-api-key-status-badge" class="badge bg-secondary">
+                        <span data-i18n="common.loading">Loading…</span>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-3" data-i18n="providers.local_key_hint">
+                        When set, all <code>/api/v1/*</code> requests must include
+                        <code>X-API-Key: &lt;key&gt;</code> header or <code>?api_key=&lt;key&gt;</code> query param.
+                        Health check and key management endpoints are always exempt.
+                    </p>
+
+                    <!-- Current key preview -->
+                    <div id="local-api-key-preview" class="mb-3" style="display:none">
+                        <label class="form-label small fw-semibold" data-i18n="providers.local_key_current">Current key</label>
+                        <div class="input-group input-group-sm">
+                            <input type="password" id="local-api-key-value" class="form-control font-monospace"
+                                   readonly placeholder="••••••••••••••••">
+                            <button class="btn btn-outline-secondary" type="button"
+                                    onclick="localApiKeyToggleVisibility()" title="Show/hide">
+                                <i class="bi bi-eye" id="local-api-key-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button"
+                                    onclick="localApiKeyCopy()" title="Copy">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="form-text" data-i18n="providers.local_key_copy_hint">
+                            Copy this key and add it to your clients as <code>X-API-Key</code> header.
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-primary btn-sm" onclick="localApiKeyGenerate()">
+                            <i class="bi bi-key-fill me-1"></i>
+                            <span data-i18n="providers.local_key_generate">Generate New Key</span>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" id="local-api-key-remove-btn"
+                                onclick="localApiKeyRemove()" style="display:none">
+                            <i class="bi bi-trash me-1"></i>
+                            <span data-i18n="providers.local_key_remove">Remove Key</span>
+                        </button>
+                    </div>
+                    <div id="local-api-key-msg" class="small mt-2"></div>
+                </div>
+            </div>
+
+            <!-- ── Provider API keys ── -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-key me-1"></i>
+                        <span data-i18n="tabs.providers">API Keys</span>
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="providersRefresh()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            <span data-i18n="common.refresh">Refresh</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="providersExport()">
+                            <i class="bi bi-box-arrow-up"></i> Export
+                        </button>
+                        <label class="btn btn-sm btn-outline-warning mb-0">
+                            <i class="bi bi-box-arrow-in-down"></i> Import
+                            <input type="file" id="providers-import-file" accept=".json"
+                                   style="display:none" onchange="providersImport(event)">
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="providers-list">
+                        <div class="text-muted text-center p-3">
+                            <small data-i18n="common.loading">Loading…</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Info sidebar ── -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0">ℹ️ Info</h5></div>
+                <div class="card-body">
+                    <p class="small fw-semibold">🔐 Local server key</p>
+                    <p class="small">Protects this FastAPI server. Generate once, then add to every client request as <code>X-API-Key</code> header.</p>
+                    <hr>
+                    <p class="small fw-semibold">🤗 HuggingFace token</p>
+                    <p class="small">Required for gated models (Llama, Gemma). Get it at <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>.</p>
+                    <hr>
+                    <p class="small fw-semibold">🔄 Sync with extension</p>
+                    <p class="small"><strong>Export</strong> — downloads JSON. Open extension → Providers → Import.</p>
+                    <p class="small"><strong>Import</strong> — upload JSON from extension. Keys written to <code>.env</code>.</p>
+                    <hr>
+                    <p class="small text-muted">Provider keys are stored in <code>.env</code> and never sent to the browser in plain text except when you explicitly view them.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

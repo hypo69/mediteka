@@ -1,0 +1,109 @@
+<!-- ── RAG ─────────────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--rag">
+    <div class="settings-section-header text-info">
+        <i class="bi bi-search"></i> <span data-i18n="settings.rag_system">RAG System</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="config-rag-enabled" onchange="handleRAGToggle(this)">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-rag-enabled">
+                    <span data-i18n="settings.enable_rag">Enable RAG System</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_rag_enabled"></i>
+                </label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.index_dir">Index Directory</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_rag_index"></i>
+            </label>
+            <input type="text" id="config-rag-index" class="form-control" placeholder="~/.ai-assist/rag/default_index">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.dir_rag">RAG bases directory</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_dir_rag"></i>
+            </label>
+            <input type="text" id="config-dir-rag" class="form-control font-monospace" placeholder="~/.ai-assist/rag">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.chunk_size">Chunk Size</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_rag_chunk"></i>
+            </label>
+            <input type="number" id="config-rag-chunk" class="form-control" placeholder="1000">
+        </div>
+        <div class="col-12">
+            <button class="btn btn-sm btn-outline-warning" onclick="clearRAGChunks()">
+                <i class="bi bi-trash"></i> <span data-i18n="settings.clear_rag">Clear RAG chunks</span>
+            </button>
+            <small class="form-text text-muted d-block mt-1" data-i18n="settings.clear_rag_hint">Remove all indexed documents</small>
+        </div>
+    </div>
+</div>
+
+<!-- ── TEXT EXTRACTOR ─────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--extractor">
+    <div class="settings-section-header text-info">
+        <i class="bi bi-file-earmark-text"></i> <span data-i18n="settings.text_extractor">Text Extractor</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.extractor_max_size">Max File Size (MB)</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_max_size"></i>
+            </label>
+            <input type="number" id="config-extractor-max-size" class="form-control" placeholder="20">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.extractor_timeout">Timeout (seconds)</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_timeout"></i>
+            </label>
+            <input type="number" id="config-extractor-timeout" class="form-control" placeholder="300">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.extractor_ocr_langs">OCR Languages</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_ocr_langs"></i>
+            </label>
+            <input type="text" id="config-extractor-ocr-langs" class="form-control" placeholder="rus+eng">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.extractor_web_timeout">Web Timeout (sec)</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_web_timeout"></i>
+            </label>
+            <input type="number" id="config-extractor-web-timeout" class="form-control" placeholder="30">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.extractor_max_images">Max Images/Page</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_max_images"></i>
+            </label>
+            <input type="number" id="config-extractor-max-images" class="form-control" placeholder="20">
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-extractor-js">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-extractor-js">
+                    <span data-i18n="settings.extractor_enable_js">Enable JavaScript</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_js"></i>
+                </label>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="config-extractor-limits">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-extractor-limits">
+                    <span data-i18n="settings.extractor_resource_limits">Enable Resource Limits</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_extractor_limits"></i>
+                </label>
+            </div>
+            <small class="form-text text-muted" data-i18n="settings.extractor_limits_hint">
+                Memory limits for LibreOffice and Tesseract (Unix only)
+            </small>
+        </div>
+    </div>
+</div>

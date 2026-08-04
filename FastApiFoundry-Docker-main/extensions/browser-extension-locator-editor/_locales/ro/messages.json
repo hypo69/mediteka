@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Numele extensiei"
+  },
+  "extensionDescription": {
+    "message": "Creează descrieri clare și structurate ale componentelor computerului",
+    "description": "Descrierea extensiei"
+  },
+  "contextMenuTitle": {
+    "message": "Generați o ofertă de preț",
+    "description": "Numele elementului din meniul contextual"
+  },
+  "apiKeyLabel": {
+    "message": "Cheie API Google Gemini",
+    "description": "Eticheta pentru câmpul de introducere a cheii API"
+  },
+  "modelLabel": {
+    "message": "Model",
+    "description": "Eticheta pentru selecția modelului"
+  },
+  "saveButton": {
+    "message": "Salvați",
+    "description": "Textul butonului de salvare"
+  },
+  "statusNoApiKey": {
+    "message": "Vă rugăm să introduceți cheia API",
+    "description": "Mesaj atunci când cheia API nu este introdusă"
+  },
+  "indicatorAnalyzing": {
+    "message": "Oferta dumneavoastră de preț este în curs de generare…",
+    "description": "Mesaj în timpul analizei"
+  },
+  "errorFetchContent": {
+    "message": "Nu s-a putut obține conținutul paginii",
+    "description": "Eroare la obținerea conținutului paginii"
+  },
+  "errorPageTooShort": {
+    "message": "Pagina conține prea puțin conținut",
+    "description": "Eroare atunci când pagina este prea scurtă"
+  },
+  "errorApi": {
+    "message": "Eroare API: $error$",
+    "description": "Mesaj general de eroare API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Cheie API invalidă"
+      }
+    }
+  },
+  "price": {
+    "message": "Preț",
+    "description": "Prețul construcției"
+  },
+  "totalPriceLabel": {
+    "message": "Preț total:",
+    "description": "Eticheta pentru prețul total în ofertă"
+  },
+  "saveOfferButton": {
+    "message": "Salvați oferta",
+    "description": "Textul butonului 'Salvați oferta'"
+  },
+  "changeImageButton": {
+    "message": "Schimbați imaginea",
+    "description": "Textul butonului 'Schimbați imaginea' din subsol"
+  }
+}

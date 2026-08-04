@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "اسم الإضافة"
+  },
+  "extensionDescription": {
+    "message": "ينشئ أوصافًا واضحة ومنظمة لمكونات الكمبيوتر",
+    "description": "وصف الإضافة"
+  },
+  "contextMenuTitle": {
+    "message": "إنشاء عرض سعر",
+    "description": "عنوان عنصر قائمة السياق"
+  },
+  "apiKeyLabel": {
+    "message": "مفتاح API لـ Google Gemini",
+    "description": "تسمية لحقل إدخال مفتاح API"
+  },
+  "modelLabel": {
+    "message": "النموذج",
+    "description": "تسمية لاختيار النموذج"
+  },
+  "saveButton": {
+    "message": "حفظ",
+    "description": "نص زر الحفظ"
+  },
+  "statusNoApiKey": {
+    "message": "الرجاء إدخال مفتاح API الخاص بك",
+    "description": "رسالة عند عدم إدخال مفتاح API"
+  },
+  "indicatorAnalyzing": {
+    "message": "يتم إنشاء عرض السعر الخاص بك...",
+    "description": "رسالة أثناء التحليل"
+  },
+  "errorFetchContent": {
+    "message": "فشل في جلب محتوى الصفحة",
+    "description": "خطأ عند جلب محتوى الصفحة"
+  },
+  "errorPageTooShort": {
+    "message": "تحتوي الصفحة على محتوى قليل جدًا",
+    "description": "خطأ عندما تكون الصفحة قصيرة جدًا"
+  },
+  "errorApi": {
+    "message": "خطأ في API: $error$",
+    "description": "رسالة خطأ عامة لواجهة برمجة التطبيقات",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "مفتاح API غير صالح"
+      }
+    }
+  },
+  "price": {
+    "message": "السعر",
+    "description": "سعر التجميع"
+  },
+  "totalPriceLabel": {
+    "message": "السعر الإجمالي:",
+    "description": "تسمية للسعر الإجمالي في العرض"
+  },
+  "saveOfferButton": {
+    "message": "حفظ العرض",
+    "description": "نص زر 'حفظ العرض'"
+  },
+  "changeImageButton": {
+    "message": "تغيير الصورة",
+    "description": "نص زر 'تغيير الصورة' في التذييل"
+  }
+}

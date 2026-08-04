@@ -1,0 +1,79 @@
+<div class="tab-pane fade" id="support" role="tabpanel">
+    <div class="row mt-3">
+
+        <!-- Dialogs panel -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-telegram"></i> <span data-i18n="support.title">Support Dialogs</span></h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="supportLoadDialogs()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <!-- User list -->
+                    <div class="d-flex" style="height:520px">
+                        <div id="support-users" class="border-end overflow-auto" style="width:200px;min-width:160px">
+                            <div class="text-muted small p-2" data-i18n="support.no_dialogs">No dialogs yet</div>
+                        </div>
+                        <!-- Messages -->
+                        <div class="flex-grow-1 d-flex flex-column">
+                            <div id="support-messages" class="flex-grow-1 overflow-auto p-3">
+                                <div class="text-muted text-center mt-5">
+                                    <i class="bi bi-chat-square-dots fs-2"></i><br>
+                                    <span data-i18n="support.select_user">Select a user to view conversation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config panel -->
+        <div class="col-md-4">
+            <!-- Bot status -->
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0" data-i18n="support.bot_status">Bot Status</h6></div>
+                <div class="card-body">
+                    <div id="support-status-badge" class="mb-2">
+                        <span class="badge bg-secondary" data-i18n="support.loading">Loading...</span>
+                    </div>
+                    <div class="small text-muted">
+                        <span data-i18n="support.rag_profile_label">RAG Profile:</span>
+                        <strong id="support-rag-profile-name">—</strong>
+                    </div>
+                    <div class="small text-muted mt-1" data-i18n="support.token_hint">
+                        Set TELEGRAM_SUPPORT_TOKEN in .env to enable.
+                    </div>
+                </div>
+            </div>
+
+            <!-- RAG Profiles -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0" data-i18n="support.rag_profiles">RAG Profiles</h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="supportLoadProfiles()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="support-profiles-list" class="mb-3">
+                        <div class="text-muted small" data-i18n="support.no_profiles">No profiles found</div>
+                    </div>
+                    <hr>
+                    <div class="mb-2">
+                        <input type="text" id="support-new-profile-name" class="form-control form-control-sm mb-1"
+                               data-i18n-placeholder="support.profile_name" placeholder="Profile name">
+                        <input type="text" id="support-new-profile-desc" class="form-control form-control-sm mb-1"
+                               data-i18n-placeholder="support.profile_desc" placeholder="Description (optional)">
+                        <button class="btn btn-sm btn-primary w-100" onclick="supportCreateProfile()">
+                            <i class="bi bi-plus-circle"></i> <span data-i18n="support.create_profile">Create Profile</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

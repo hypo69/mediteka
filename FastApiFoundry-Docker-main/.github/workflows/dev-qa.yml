@@ -1,0 +1,157 @@
+# .github/workflows/dev-qa.yml
+# Конвейер автоматической проверки качества кода для ветки dev.
+
+name: Dev QA Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  qa_check:
+    # Обоснование выбора Windows: 
+    #   Проект использует PowerShell скрипты и системные утилиты (taskkill, netstat).
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Необходимо для корректного push бейджа обратно в репозиторий
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-qa.txt
+          pip install pip-audit
+          pip install coverage-badge
+
+      - name: Lint Dockerfile
+        # Проверка качества Docker-образа с помощью hadolint
+        run: |
+          choco install hadolint
+          hadolint Dockerfile
+
+      - name: Dependency Security Audit
+        # Проверка зависимостей на известные уязвимости
+        run: |
+          pip-audit -r requirements.txt
+
+      - name: Prepare environment for Invoke-Qa script
+        # Обоснование: 
+        #   Скрипт scripts/Invoke-Qa.ps1 требует наличия папки venv в корне проекта.
+        run: |
+          python -m venv venv
+
+      - name: Run Quality Assurance Cycle
+        # Выполнение полного цикла: Ruff, Mypy, Pytest.
+        shell: pwsh
+        run: |
+          .\scripts\Invoke-Qa.ps1 -SkipCoverageReport
+
+      - name: Publish Test Report
+        # Визуализация результатов JUnit XML в интерфейсе GitHub Actions
+        uses: mikepenz/action-junit-report@v4
+        if: always() # Выполнять даже если тесты упали
+        with:
+          report_paths: 'tests/reports/junit.xml'
+          detailed_summary: true
+          include_passed: true
+
+      - name: Extract Test Statistics
+        # Извлечение данных из JUnit XML для формирования отчета
+        if: always()
+        id: test_stats
+        shell: pwsh
+        run: |
+          if (Test-Path tests/reports/junit.xml) {
+            [xml]$xml = Get-Content tests/reports/junit.xml
+            $total = $xml.testsuites.tests
+            $fail = $xml.testsuites.failures
+            $err = $xml.testsuites.errors
+            $skip = $xml.testsuites.skipped
+            $pass = [int]$total - [int]$fail - [int]$err - [int]$skip
+            echo "TOTAL=$total" >> $env:GITHUB_OUTPUT
+            echo "PASSED=$pass" >> $env:GITHUB_OUTPUT
+            echo "FAILED=$fail" >> $env:GITHUB_OUTPUT
+            echo "SKIPPED=$skip" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Zip Coverage Report
+        # Архивация HTML-отчета для отправки в Telegram
+        if: failure()
+        shell: pwsh
+        run: |
+          if (Test-Path tests/reports/coverage) {
+            Compress-Archive -Path tests/reports/coverage/* -DestinationPath tests/reports/coverage_report.zip
+          }
+
+      - name: Generate Coverage Badge
+        # Создание SVG бейджа на основе данных покрытия
+        if: success()
+        run: |
+          coverage-badge -f -o docs/ru/assets/coverage.svg
+
+      - name: Commit and Push Badge
+        # Автоматическое обновление бейджа в репозитории
+        if: github.event_name == 'push' && success()
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add docs/ru/assets/coverage.svg
+          git commit -m "docs: автоматическое обновление бейджа покрытия [skip ci]" || exit 0
+          git push
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-reports
+          # Синхронизация пути с выводом скрипта Invoke-Qa.ps1
+          path: tests/reports/
+
+      - name: Send Telegram Notification on Success
+        # Уведомление об успешном прохождении с краткой статистикой
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            ✅ QA Pipeline Passed!
+            Проект: ${{ github.repository }}
+            Ветка: ${{ github.ref_name }}
+            
+            📊 Статистика тестов:
+            Всего: ${{ steps.test_stats.outputs.TOTAL }}
+            Пройдено: ${{ steps.test_stats.outputs.PASSED }}
+            Провалено: ${{ steps.test_stats.outputs.FAILED }}
+            Пропущено: ${{ steps.test_stats.outputs.SKIPPED }}
+            
+            Логи: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Send Telegram Notification on Failure
+        # Запуск только при сбое предыдущих шагов
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          document: tests/reports/coverage_report.zip
+          message: |
+            ❌ QA Pipeline Failed!
+            Репозиторий: ${{ github.repository }}
+            Ветка: ${{ github.ref_name }}
+            Детали: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

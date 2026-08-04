@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Nom de l'extension"
+  },
+  "extensionDescription": {
+    "message": "Créer du contenu créatif à partir des informations de la page",
+    "description": "Description de l'extension"
+  },
+  "contextMenuTitle": {
+    "message": "Formuler une offre de prix",
+    "description": "Titre de l'élément du menu contextuel"
+  },
+  "apiKeyLabel": {
+    "message": "Clé API Google Gemini",
+    "description": "Étiquette pour le champ de saisie de la clé API"
+  },
+  "modelLabel": {
+    "message": "Modèle",
+    "description": "Étiquette pour la sélection du modèle"
+  },
+  "saveButton": {
+    "message": "Enregistrer",
+    "description": "Texte du bouton Enregistrer"
+  },
+  "statusNoApiKey": {
+    "message": "Veuillez saisir votre clé API",
+    "description": "Message lorsque la clé API n'est pas saisie"
+  },
+  "indicatorAnalyzing": {
+    "message": "Votre offre de prix est en cours de formation…",
+    "description": "Message pendant l'analyse"
+  },
+  "errorFetchContent": {
+    "message": "Impossible de récupérer le contenu de la page",
+    "description": "Erreur lors de la récupération du contenu de la page"
+  },
+  "errorPageTooShort": {
+    "message": "La page contient trop peu de contenu",
+    "description": "Erreur lorsque la page est trop courte"
+  },
+  "errorApi": {
+    "message": "Erreur API: $error$",
+    "description": "Message d'erreur général de l'API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Clé API invalide"
+      }
+    }
+  },
+  "price": {
+    "message": "Prix",
+    "description": "Prix de la construction"
+  },
+  "totalPriceLabel": {
+    "message": "Prix total:",
+    "description": "Étiquette pour le prix total dans l'offre"
+  },
+  "saveOfferButton": {
+    "message": "Sauvegarder l'offre",
+    "description": "Texte du bouton 'Sauvegarder l'offre'"
+  },
+  "changeImageButton": {
+    "message": "Changer l'image",
+    "description": "Texte du bouton 'Changer l'image' dans le pied de page"
+  }
+}

@@ -104,18 +104,13 @@ _api_key_names: list[str] = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES'
 use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')
 foundry_model_id = os.getenv('FOUNDRY_MODEL_ID', 'qwen3-0.6b-generic-cpu:4')
 
-if use_foundry:
-    from src.ai.foundry_chat import FoundryChatBase
-    model = FoundryChatBase(
-        model_id=foundry_model_id,
-        system_prompt=_system_instruction,
-    )
-else:
-    model: GoogleGenerativeAI = GoogleGenerativeAI(
-        api_key_names=_api_key_names,
-        system_instruction=_system_instruction,
-        sleep_on_exhausted=False,
-    )
+from src.ai import UnifiedChatModel
+model = UnifiedChatModel(
+    api_key_names=_api_key_names,
+    system_instruction=_system_instruction,
+    foundry_model_id=foundry_model_id,
+    use_foundry=use_foundry,
+)
 plugins = load_plugins(model)
 
 app.include_router(init_chat_router(model, plugins))

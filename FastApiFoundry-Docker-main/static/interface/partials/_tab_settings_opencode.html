@@ -1,0 +1,50 @@
+<div class="settings-section settings-section--opencode">
+    <div class="settings-section-header" style="color:#212529">
+        <i class="bi bi-terminal"></i> <span data-i18n="settings.opencode">OpenCode</span>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Target Version</label>
+            <input type="text" id="config-opencode-version" class="form-control" placeholder="1.15.3">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Host</label>
+            <input type="text" id="config-opencode-host" class="form-control" placeholder="127.0.0.1">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Port</label>
+            <input type="number" id="config-opencode-port" class="form-control" placeholder="4096">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Base URL</label>
+            <input type="url" id="config-opencode-base-url" class="form-control" placeholder="http://127.0.0.1:4096">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Command</label>
+            <input type="text" id="config-opencode-command" class="form-control font-monospace" placeholder="opencode">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Username</label>
+            <input type="text" id="config-opencode-username" class="form-control" placeholder="opencode">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Password</label>
+            <input type="password" id="config-opencode-password" class="form-control" placeholder="OPENCODE_SERVER_PASSWORD">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">CORS origins</label>
+            <input type="text" id="config-opencode-cors" class="form-control" placeholder="http://localhost:9696,http://127.0.0.1:9696">
+            <div class="form-text">Comma-separated origins passed as repeated <code>--cors</code> flags.</div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-4">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-opencode-enabled">
+                <label class="form-check-label" for="config-opencode-enabled">Enabled</label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="config-opencode-autostart">
+                <label class="form-check-label" for="config-opencode-autostart">Auto-start</label>
+            </div>
+        </div>
+    </div>
+</div>

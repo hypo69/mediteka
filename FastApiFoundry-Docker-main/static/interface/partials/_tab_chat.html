@@ -1,0 +1,180 @@
+<div class="tab-pane fade" id="chat" role="tabpanel">
+                <div class="row mt-3">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0" data-i18n="chat.title">AI Chat</h5>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="clearChat()">
+                                    <i class="bi bi-trash"></i> <span data-i18n="chat.clear">Clear</span>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="chat-messages" class="chat-container border rounded p-3 mb-3">
+                                    <div class="text-muted text-center">
+                                        <i class="bi bi-chat-square-dots"></i><br>
+                                        <span data-i18n="chat.start_prompt">Start a conversation with AI</span>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <input type="text" id="chat-input" class="form-control"
+                                           data-i18n-placeholder="chat.placeholder"
+                                           placeholder="Type your message...">
+                                    <button class="btn btn-primary" onclick="sendMessage()">
+                                        <i class="bi bi-send"></i> <span data-i18n="chat.send">Send</span>
+                                    </button>
+                                    <button id="chat-stop-btn" class="btn btn-outline-danger"
+                                            onclick="stopSendingRequest()" disabled
+                                            data-i18n-title="chat.stop">
+                                        <i class="bi bi-stop-fill"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0" data-i18n="chat.settings">Chat Settings</h6>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="loadModels()"
+                                        data-i18n-title="common.refresh">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="chat.model">Model</label>
+                                    <select id="chat-model" class="form-select">
+                                        <option value="" data-i18n="chat.model_auto">Auto-select</option>
+                                    </select>
+                                    <div class="form-text" data-i18n="chat.model_hint">Selected model will be saved as default</div>
+
+                                    <!-- Active model + response stats badge -->
+                                    <div id="chat-stats-badge" class="mt-2" style="display:none">
+                                        <span class="badge bg-primary me-1" id="chat-model-badge"
+                                              style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle"></span>
+                                        <span class="badge bg-secondary me-1" id="chat-timer" style="display:none">
+                                            <i class="bi bi-stopwatch"></i> <span id="chat-timer-value">0.0s</span>
+                                        </span>
+                                        <span class="badge bg-info text-dark" id="chat-tokens-badge" style="display:none">
+                                            <i class="bi bi-hash"></i> <span id="chat-tokens-value">0</span> <span data-i18n="chat.tokens">tok</span>
+                                        </span>
+                                    </div>
+
+                                    <!-- Generation params -->
+                                    <div class="mt-2">
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1">
+                                                <span data-i18n="chat.temperature">Temperature</span>:
+                                                <span id="temp-value">0.7</span>
+                                            </label>
+                                            <input type="range" id="temperature" class="form-range"
+                                                   min="0" max="2" step="0.1" value="0.7"
+                                                   oninput="updateTempValue(this.value)">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label mb-1" data-i18n="chat.max_tokens">Max Tokens</label>
+                                            <input type="number" id="max-tokens" class="form-control form-control-sm" value="2048" min="1" max="8192">
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="use-rag" checked>
+                                            <label class="form-check-label" for="use-rag" data-i18n="chat.use_rag">Use RAG Context</label>
+                                        </div>
+                                        <div class="form-check mb-1">
+                                            <input class="form-check-input" type="checkbox" id="translate-dialog" checked>
+                                            <label class="form-check-label" for="translate-dialog">Auto-translate dialog</label>
+                                        </div>
+                                        <div class="mb-2">
+                                            <select id="user-language" class="form-select form-select-sm">
+                                                <option value="">Auto-detect language</option>
+                                                <option value="en">English</option>
+                                                <option value="ru">Русский</option>
+                                                <option value="de">Deutsch</option>
+                                                <option value="fr">Français</option>
+                                                <option value="es">Español</option>
+                                                <option value="zh">中文</option>
+                                                <option value="ja">日本語</option>
+                                                <option value="ar">العربية</option>
+                                                <option value="he">עברית</option>
+                                                <option value="uk">Українська</option>
+                                                <option value="pl">Polski</option>
+                                                <option value="it">Italiano</option>
+                                                <option value="pt">Português</option>
+                                                <option value="ko">한국어</option>
+                                                <option value="tr">Türkçe</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-check mb-1">
+                                            <input class="form-check-input" type="checkbox" id="translate-dialog" checked>
+                                            <label class="form-check-label" for="translate-dialog" data-i18n="chat.translate_dialog">Auto-translate dialog</label>
+                                        </div>
+                                        <div class="mb-2" id="user-language-row">
+                                            <label class="form-label mb-1" style="font-size:.8rem" data-i18n="chat.user_language">Your language</label>
+                                            <select id="user-language" class="form-select form-select-sm">
+                                                <option value="" data-i18n="chat.lang_auto">Auto-detect</option>
+                                                <option value="en">English</option>
+                                                <option value="ru">Русский</option>
+                                                <option value="de">Deutsch</option>
+                                                <option value="fr">Français</option>
+                                                <option value="es">Español</option>
+                                                <option value="zh">中文</option>
+                                                <option value="ja">日本語</option>
+                                                <option value="ar">العربية</option>
+                                                <option value="he">עברית</option>
+                                                <option value="uk">Українська</option>
+                                                <option value="pl">Polski</option>
+                                                <option value="it">Italiano</option>
+                                                <option value="pt">Português</option>
+                                                <option value="ko">한국어</option>
+                                                <option value="tr">Türkçe</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Info block: how models work + CLI instructions -->
+                                    <div class="alert alert-info mt-2 mb-0 p-2 small">
+                                        <div class="fw-semibold mb-1">
+                                            <i class="bi bi-info-circle"></i>
+                                            <span data-i18n="chat.how_models_work">How models work in chat</span>
+                                        </div>
+                                        <ul class="mb-2 ps-3">
+                                            <li data-i18n="chat.models_list_hint">List shows models from local caches.</li>
+                                            <li data-i18n="chat.models_switch_hint">On model switch, active models are unloaded.</li>
+                                            <li data-i18n="chat.models_add_hint">To add: use Foundry, HuggingFace or llama.cpp tabs.</li>
+                                        </ul>
+                                        <div class="fw-semibold mb-1">
+                                            <i class="bi bi-terminal"></i>
+                                            <span data-i18n="chat.cli_title">Load via CLI</span>
+                                        </div>
+                                        <ul class="mb-2 ps-3">
+                                            <li><strong>Foundry:</strong>
+                                                <code class="d-block mt-1">foundry model download deepseek-r1-distill-qwen-7b-generic-cpu:3</code>
+                                                <code class="d-block">foundry model load deepseek-r1-distill-qwen-7b-generic-cpu:3</code>
+                                            </li>
+                                            <li class="mt-1"><strong>HuggingFace CLI:</strong>
+                                                <code class="d-block mt-1">pip install huggingface_hub</code>
+                                                <code class="d-block">hf auth login</code>
+                                                <code class="d-block">hf download bartowski/gemma-2-2b-it-GGUF --local-dir ~/.models</code>
+                                            </li>
+                                            <li class="mt-1"><strong>llama.cpp:</strong>
+                                                <code class="d-block mt-1">llama-server --model ~/.models/gemma-2-2b-it-Q6_K.gguf --port 9780</code>
+                                                <code class="d-block">.\scripts\llama-start.ps1 -ModelPath ~/.models/gemma-2-2b-it-Q6_K.gguf</code>
+                                            </li>
+                                        </ul>
+                                        <div class="fw-semibold mb-1">
+                                            <i class="bi bi-cloud-download"></i>
+                                            <span data-i18n="chat.hf_via_ui">Get HuggingFace model via UI</span>
+                                        </div>
+                                        <ol class="mb-0 ps-3">
+                                            <li data-i18n="chat.hf_step1">Open HuggingFace tab.</li>
+                                            <li data-i18n="chat.hf_step2">For gated models set token in Settings.</li>
+                                            <li data-i18n="chat.hf_step3">Enter model_id and click Download.</li>
+                                            <li data-i18n="chat.hf_step4">Click Refresh in Downloaded Locally.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>

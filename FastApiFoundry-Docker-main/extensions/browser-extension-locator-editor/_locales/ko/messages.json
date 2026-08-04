@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "확장 프로그램 이름"
+  },
+  "extensionDescription": {
+    "message": "컴퓨터 구성 요소에 대한 명확하고 구조화된 설명을 생성합니다",
+    "description": "확장 프로그램 설명"
+  },
+  "contextMenuTitle": {
+    "message": "가격 제안 생성",
+    "description": "상황에 맞는 메뉴 항목 이름"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API 키",
+    "description": "API 키 입력 필드 레이블"
+  },
+  "modelLabel": {
+    "message": "모델",
+    "description": "모델 선택 레이블"
+  },
+  "saveButton": {
+    "message": "저장",
+    "description": "저장 버튼 텍스트"
+  },
+  "statusNoApiKey": {
+    "message": "API 키를 입력해주세요",
+    "description": "API 키가 입력되지 않았을 때의 메시지"
+  },
+  "indicatorAnalyzing": {
+    "message": "가격 제안을 생성 중입니다…",
+    "description": "분석 중 메시지"
+  },
+  "errorFetchContent": {
+    "message": "페이지 콘텐츠를 가져오지 못했습니다",
+    "description": "페이지 콘텐츠를 가져오는 중 오류"
+  },
+  "errorPageTooShort": {
+    "message": "페이지에 콘텐츠가 너무 적습니다",
+    "description": "페이지가 너무 짧을 때의 오류"
+  },
+  "errorApi": {
+    "message": "API 오류: $error$",
+    "description": "일반 API 오류 메시지",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "잘못된 API 키"
+      }
+    }
+  },
+  "price": {
+    "message": "가격",
+    "description": "빌드 가격"
+  },
+  "totalPriceLabel": {
+    "message": "총 가격:",
+    "description": "제안서의 총 가격 레이블"
+  },
+  "saveOfferButton": {
+    "message": "제안 저장",
+    "description": "'제안 저장' 버튼 텍스트"
+  },
+  "changeImageButton": {
+    "message": "이미지 변경",
+    "description": "바닥글의 '이미지 변경' 버튼 텍스트"
+  }
+}

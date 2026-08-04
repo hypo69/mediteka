@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Nazwa rozszerzenia"
+  },
+  "extensionDescription": {
+    "message": "Tworzyć kreatywną treść z informacji na stronie",
+    "description": "Opis rozszerzenia"
+  },
+  "contextMenuTitle": {
+    "message": "Stwórz ofertę cenową",
+    "description": "Tytuł elementu menu kontekstowego"
+  },
+  "apiKeyLabel": {
+    "message": "Klucz API Google Gemini",
+    "description": "Etykieta dla pola wprowadzania klucza API"
+  },
+  "modelLabel": {
+    "message": "Model",
+    "description": "Etykieta wyboru modelu"
+  },
+  "saveButton": {
+    "message": "Zapisać",
+    "description": "Tekst przycisku Zapisz"
+  },
+  "statusNoApiKey": {
+    "message": "Proszę wprowadzić swój klucz API",
+    "description": "Komunikat, gdy klucz API nie został wprowadzony"
+  },
+  "indicatorAnalyzing": {
+    "message": "Twoja oferta cenowa jest w trakcie tworzenia…",
+    "description": "Komunikat podczas analizy"
+  },
+  "errorFetchContent": {
+    "message": "Nie udało się pobrać zawartości strony",
+    "description": "Błąd podczas pobierania zawartości strony"
+  },
+  "errorPageTooShort": {
+    "message": "Strona zawiera zbyt mało treści",
+    "description": "Błąd, gdy strona jest za krótka"
+  },
+  "errorApi": {
+    "message": "Błąd API: $error$",
+    "description": "Ogólny komunikat o błędzie API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Nieprawidłowy klucz API"
+      }
+    }
+  },
+  "price": {
+    "message": "Cena",
+    "description": "Cena kompilacji"
+  },
+  "totalPriceLabel": {
+    "message": "Całkowita cena:",
+    "description": "Etykieta dla ceny całkowitej w ofercie"
+  },
+  "saveOfferButton": {
+    "message": "Zapisz ofertę",
+    "description": "Tekst przycisku 'Zapisz ofertę'"
+  },
+  "changeImageButton": {
+    "message": "Zmień obraz",
+    "description": "Tekst przycisku 'Zmień obraz' w stopce"
+  }
+}

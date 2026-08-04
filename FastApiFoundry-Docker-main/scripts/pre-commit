@@ -1,0 +1,18 @@
+#!/bin/sh
+# Ai Assistant Security: detect-secrets pre-commit hook to prevent committing secrets to the repository.
+
+# Получение списка индексированных файлов (исключая удаленные)
+FILES=$(git diff --cached --name-only --diff-filter=d)
+
+if [ -n "$FILES" ]; then
+    echo "🔍 [SECURITY] Scanning staged files for secrets..."
+    
+    # Запуск сканирования. Если найдены результаты, команда завершится с ошибкой.
+    detect-secrets scan $FILES | python -c "import sys, json; data=json.load(sys.stdin); sys.exit(1 if data['results'] else 0)"
+    
+    if [ $? -ne 0 ]; then
+        echo "❌ [ERROR] Potential secrets detected in staged files. Commit aborted."
+        echo "Please remove secrets or update the baseline. Run: detect-secrets scan"
+        exit 1
+    fi
+fi

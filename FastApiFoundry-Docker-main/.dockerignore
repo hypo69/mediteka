@@ -1,0 +1,61 @@
+# Git
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.mypy_cache/
+.pytest_cache/
+.hypothesis/
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# Logs and runtime data
+logs/
+rag_index/
+*.log
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Pip / tox / coverage
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Documentation build
+docs/_build/
+
+# Temporary files
+*.tmp
+*.temp

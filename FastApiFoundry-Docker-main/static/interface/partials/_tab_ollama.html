@@ -1,0 +1,97 @@
+<div class="tab-pane fade" id="ollama" role="tabpanel">
+    <div class="row mt-3">
+
+        <!-- ── Left column: models list + info ── -->
+        <div class="col-md-7">
+
+            <!-- Local models -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-hdd"></i> Local Ollama Models</h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="ollamaLoadModels()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div id="ollama-models-list" style="max-height:220px;overflow-y:auto">
+                        <div class="text-muted text-center p-3"><small>Click Refresh to load</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pull model -->
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-cloud-download"></i> Pull Model</h6></div>
+                <div class="card-body">
+                    <div class="input-group mb-2">
+                        <input type="text" id="ollama-pull-input" class="form-control"
+                               placeholder="qwen2.5:0.5b">
+                        <button class="btn btn-primary" onclick="ollamaPullModel()">
+                            <i class="bi bi-download"></i> Pull
+                        </button>
+                    </div>
+                    <div id="ollama-pull-status" style="display:none"></div>
+                    <small class="text-muted">
+                        Popular: <code>qwen2.5:0.5b</code>, <code>qwen2.5:1.5b</code>,
+                        <code>llama3.2:1b</code>, <code>llama3.2:3b</code>,
+                        <code>mistral:7b</code>, <code>deepseek-r1:1.5b</code>
+                    </small>
+                </div>
+            </div>
+
+            <!-- Usage -->
+            <div class="card mb-3">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-info-circle"></i> Usage</h6></div>
+                <div class="card-body">
+                    <small class="text-muted">
+                        <p>Ollama exposes an OpenAI-compatible API. Use it as a <strong>Custom</strong> provider:</p>
+                        <code id="ollama-openai-url">http://localhost:11434/v1</code>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="ollamaCopyUrl()">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                        <hr>
+                        <p class="mb-1">Install Ollama:</p>
+                        <code>winget install Ollama.Ollama</code>
+                        <p class="mt-2 mb-1">Pull a model:</p>
+                        <code>ollama pull qwen2.5:0.5b</code>
+                    </small>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── Right column: status ── -->
+        <div class="col-md-5">
+
+            <!-- Status -->
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-activity"></i> Server Status</h6>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="ollamaCheckStatus()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="card-body" id="ollama-status-body">
+                    <div class="text-muted text-center"><small>Click refresh</small></div>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="alert alert-info" style="font-size:.85rem">
+                <div class="fw-semibold mb-2"><i class="bi bi-box-seam"></i> About Ollama</div>
+                <p class="mb-2">Ollama runs AI models locally with a simple CLI and REST API.</p>
+                <ul class="ps-3 mb-2">
+                    <li>Fully local — no internet during inference</li>
+                    <li>OpenAI-compatible <code>/v1</code> endpoint</li>
+                    <li>Supports Qwen, Llama, Mistral, DeepSeek, Gemma</li>
+                    <li>Automatic GPU acceleration</li>
+                </ul>
+                <a href="https://ollama.com/library" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-box-arrow-up-right"></i> Browse Ollama Library
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+</div>

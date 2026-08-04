@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "שם התוסף"
+  },
+  "extensionDescription": {
+    "message": "יוצר תיאורים ברורים ומובנים של רכיבי מחשב",
+    "description": "תיאור התוסף"
+  },
+  "contextMenuTitle": {
+    "message": "צור הצעת מחיר",
+    "description": "שם פריט תפריט ההקשר"
+  },
+  "apiKeyLabel": {
+    "message": "מפתח API של Google Gemini",
+    "description": "תווית עבור שדה קלט מפתח API"
+  },
+  "modelLabel": {
+    "message": "מודל",
+    "description": "תווית לבחירת מודל"
+  },
+  "saveButton": {
+    "message": "שמור",
+    "description": "טקסט כפתור שמירה"
+  },
+  "statusNoApiKey": {
+    "message": "אנא הזן את מפתח ה-API שלך",
+    "description": "הודעה כאשר מפתח ה-API לא הוזן"
+  },
+  "indicatorAnalyzing": {
+    "message": "הצעת המחיר שלך נוצרת…",
+    "description": "הודעה במהלך ניתוח"
+  },
+  "errorFetchContent": {
+    "message": "לא ניתן היה לאחזר את תוכן הדף",
+    "description": "שגיאה באחזור תוכן הדף"
+  },
+  "errorPageTooShort": {
+    "message": "הדף מכיל מעט מדי תוכן",
+    "description": "שגיאה כאשר הדף קצר מדי"
+  },
+  "errorApi": {
+    "message": "שגיאת API: $error$",
+    "description": "הודעת שגיאת API כללית",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "מפתח API לא חוקי"
+      }
+    }
+  },
+  "price": {
+    "message": "מחיר",
+    "description": "מחיר ההרכבה"
+  },
+  "totalPriceLabel": {
+    "message": "מחיר סופי:",
+    "description": "תווית למחיר הסופי בהצעה"
+  },
+  "saveOfferButton": {
+    "message": "שמור הצעה",
+    "description": "טקסט כפתור 'שמור הצעה'"
+  },
+  "changeImageButton": {
+    "message": "שנה תמונה",
+    "description": "טקסט כפתור 'שנה תמונה' בכותרת התחתונה"
+  }
+}

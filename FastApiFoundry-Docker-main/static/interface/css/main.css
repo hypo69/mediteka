@@ -1,0 +1,251 @@
+/*
+===============================================================================
+Process Name: Main UI styles — contrast overrides for form controls
+===============================================================================
+Description:
+  Ensures select/option elements on white backgrounds have sufficient contrast.
+  Uses high specificity to override Bootstrap 5 defaults.
+
+File: css/main.css
+Project: FastApiFoundry (Docker)
+Version: 0.6.0
+Author: hypo69
+Copyright: © 2026 hypo69
+===============================================================================
+*/
+
+/* ── Select on white/light backgrounds — high specificity override ── */
+body select.form-select,
+body select.form-control,
+.tab-content select.form-select,
+.tab-content select.form-control,
+.card select.form-select,
+.card select.form-control,
+.modal select.form-select,
+.modal select.form-control {
+    color: #212529 !important;
+    background-color: #fff !important;
+}
+
+body select.form-select option,
+body select.form-control option,
+.tab-content select.form-select option,
+.card select.form-select option,
+.modal select.form-select option {
+    color: #212529;
+    background-color: #fff;
+}
+
+/* Placeholder / empty option */
+body select.form-select option[value=""],
+body select.form-control option[value=""] {
+    color: #6c757d;
+}
+
+/* Disabled */
+body select.form-select:disabled,
+body select.form-control:disabled {
+    color: #6c757d !important;
+    background-color: #e9ecef !important;
+}
+
+/* ── Navbar selects stay white text on blue bg ── */
+.navbar select.form-select,
+.navbar select.form-control {
+    color: #fff !important;
+    background-color: rgba(255, 255, 255, .15) !important;
+}
+
+.navbar select.form-select option,
+.navbar select.form-control option {
+    color: #212529 !important;
+    background-color: #fff !important;
+}
+
+/* ── Log Viewer ── */
+.log-viewer {
+    height: calc(100vh - 260px);
+    min-height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    padding: 8px 12px;
+    border-radius: 0 0 4px 4px;
+}
+
+.log-viewer--wrap .log-line {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.log-line {
+    white-space: pre;
+    padding: 1px 0;
+    border-bottom: 1px solid rgba(255,255,255,.03);
+}
+
+.log-line:hover {
+    background: rgba(255,255,255,.05);
+}
+
+.log-line mark {
+    background: #f0c040;
+    color: #0d1117;
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+/* Level colors */
+.log-line.text-secondary { color: #6e7681 !important; }
+.log-line.text-info      { color: #79c0ff !important; }
+.log-line.text-warning   { color: #e3b341 !important; }
+.log-line.text-danger    { color: #ff7b72 !important; }
+.log-line.fw-bold        { font-weight: 700 !important; }
+
+/* ── Chat window ── */
+#chat-messages {
+    height: calc(100vh - 300px) !important;
+    min-height: 500px !important;
+    overflow-y: auto;
+}
+
+/* ── Editor textareas ── */
+#env-editor,
+#config-json-editor {
+    height: calc(100vh - 220px) !important;
+    min-height: 560px !important;
+    resize: vertical;
+}
+
+/* ── Settings card body ── */
+#settings .card-body[style*="max-height"] {
+    max-height: calc(100vh - 200px) !important;
+    overflow-y: auto;
+}
+
+#settings-card-body {
+    max-height: calc(100vh - 200px) !important;
+    overflow-y: auto;
+}
+
+/* ── Settings sections ── */
+.settings-section {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem 1.25rem 0.75rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    background: #fff;
+}
+
+.settings-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.settings-section-header i {
+    font-size: 1rem;
+}
+
+.settings-section--server   { border-left: 3px solid #0d6efd; }
+.settings-section--dirs     { border-left: 3px solid #6c757d; }
+.settings-section--foundry  { border-left: 3px solid #198754; }
+.settings-section--startup  { border-left: 3px solid #20c997; }
+.settings-section--hf       { border-left: 3px solid #dc3545; }
+.settings-section--llama    { border-left: 3px solid #ffc107; }
+.settings-section--rag      { border-left: 3px solid #0dcaf0; }
+.settings-section--extractor{ border-left: 3px solid #0dcaf0; }
+.settings-section--security { border-left: 3px solid #6c757d; }
+.settings-section--logging  { border-left: 3px solid #fd7e14; }
+.settings-section--dev      { border-left: 3px solid #6f42c1; }
+.settings-section--lang     { border-left: 3px solid #6c757d; }
+.settings-section--translator { border-left: 3px solid #0d6efd; }
+.settings-section--opencode { border-left: 3px solid #212529; }
+
+/* Active model banner */
+.active-model-banner {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding: 0.55rem 1.25rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #dee2e6;
+    min-height: 2.6rem;
+}
+
+.active-model-banner--idle {
+    background: #f8f9fa;
+    color: #6c757d;
+}
+
+.active-model-banner--active {
+    background: linear-gradient(90deg, #e8f4fd 0%, #f0f9f0 100%);
+    color: #212529;
+    border-left: 4px solid #0d6efd;
+}
+
+.active-model-label {
+    font-weight: 500;
+    margin-right: 0.5rem;
+}
+
+.active-model-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.active-model-stat {
+    font-size: 0.8rem;
+    color: #495057;
+}
+
+/* ── Support chat widget ─────────────────────────────────────────────────── */
+
+/* Smooth open/close animation */
+#support-widget {
+    animation: support-slide-in 0.2s ease-out;
+}
+
+@keyframes support-slide-in {
+    from { opacity: 0; transform: translateY(12px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+
+/* Navbar headset button pulse when bot is active */
+#support-chat-btn.bot-active {
+    animation: support-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes support-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,.4); }
+    50%       { box-shadow: 0 0 0 5px rgba(255,255,255,0); }
+}
+
+/* Chat bubble hover */
+#support-chat-messages .d-flex > div > div:first-child,
+#support-messages .d-flex > div {
+    transition: opacity .15s;
+}
+#support-chat-messages .d-flex:hover > div > div:first-child,
+#support-messages .d-flex:hover > div {
+    opacity: .92;
+}
+
+/* Admin user list hover */
+#support-users > div:hover {
+    background: #f0f4ff;
+}

@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "نام افزونه"
+  },
+  "extensionDescription": {
+    "message": "توضیحات واضح و ساختاریافته‌ای از قطعات کامپیوتر ایجاد می‌کند",
+    "description": "توضیح افزونه"
+  },
+  "contextMenuTitle": {
+    "message": "ایجاد پیشنهاد قیمت",
+    "description": "عنوان آیتم منوی راست کلیک"
+  },
+  "apiKeyLabel": {
+    "message": "کلید API گوگل جیمینای",
+    "description": "برچسب برای فیلد ورودی کلید API"
+  },
+  "modelLabel": {
+    "message": "مدل",
+    "description": "برچسب برای انتخاب مدل"
+  },
+  "saveButton": {
+    "message": "ذخیره",
+    "description": "متن دکمه ذخیره"
+  },
+  "statusNoApiKey": {
+    "message": "لطفاً کلید API خود را وارد کنید",
+    "description": "پیام زمانی که کلید API وارد نشده است"
+  },
+  "indicatorAnalyzing": {
+    "message": "پیشنهاد قیمت شما در حال ایجاد است…",
+    "description": "پیام در حین تحلیل"
+  },
+  "errorFetchContent": {
+    "message": "محتوای صفحه قابل دریافت نیست",
+    "description": "خطا در دریافت محتوای صفحه"
+  },
+  "errorPageTooShort": {
+    "message": "صفحه حاوی محتوای بسیار کمی است",
+    "description": "خطا زمانی که صفحه خیلی کوتاه است"
+  },
+  "errorApi": {
+    "message": "خطای API: $error$",
+    "description": "پیام خطای عمومی API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "کلید API نامعتبر"
+      }
+    }
+  },
+  "price": {
+    "message": "قیمت",
+    "description": "قیمت مونتاژ"
+  },
+  "totalPriceLabel": {
+    "message": "قیمت نهایی:",
+    "description": "برچسب برای قیمت نهایی در پیشنهاد"
+  },
+  "saveOfferButton": {
+    "message": "ذخیره پیشنهاد",
+    "description": "متن دکمه 'ذخیره پیشنهاد'"
+  },
+  "changeImageButton": {
+    "message": "تغییر تصویر",
+    "description": "متن دکمه 'تغییر تصویر' در پاورقی"
+  }
+}

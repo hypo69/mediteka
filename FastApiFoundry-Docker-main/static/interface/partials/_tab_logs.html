@@ -1,0 +1,118 @@
+<div class="tab-pane fade" id="logs" role="tabpanel">
+  <div class="row mt-3 g-3">
+
+    <!-- ── Toolbar ── -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body py-2">
+          <div class="row g-2 align-items-center">
+
+            <!-- File selector -->
+            <div class="col-auto">
+              <select class="form-select form-select-sm" id="log-file-select" style="min-width:260px">
+                <option value="">No log files yet</option>
+              </select>
+            </div>
+
+            <!-- Level filter -->
+            <div class="col-auto">
+              <select class="form-select form-select-sm" id="log-level-filter" style="min-width:120px">
+                <option value="">All levels</option>
+                <option value="DEBUG">DEBUG</option>
+                <option value="INFO">INFO</option>
+                <option value="WARNING">WARNING</option>
+                <option value="ERROR">ERROR</option>
+              </select>
+            </div>
+
+            <!-- Search -->
+            <div class="col">
+              <div class="input-group input-group-sm">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="log-search" placeholder="Search…">
+                <button class="btn btn-outline-secondary" id="log-search-clear" title="Clear search">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Lines count -->
+            <div class="col-auto">
+              <select class="form-select form-select-sm" id="log-lines-count" style="min-width:90px">
+                <option value="100">100 lines</option>
+                <option value="200" selected>200 lines</option>
+                <option value="500">500 lines</option>
+                <option value="1000">1000 lines</option>
+              </select>
+            </div>
+
+            <!-- Auto-refresh -->
+            <div class="col-auto">
+              <div class="form-check form-switch mb-0 d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" id="log-auto-refresh" role="switch">
+                <label class="form-check-label small" for="log-auto-refresh">Auto</label>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="col-auto d-flex gap-1">
+              <button class="btn btn-sm btn-primary" id="log-refresh-btn" title="Refresh">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-secondary" id="log-download-btn" title="Download">
+                <i class="bi bi-download"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" id="log-clear-btn" title="Clear file">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+
+          </div>
+          <div class="row g-2 align-items-end mt-2 border-top pt-2">
+            <div class="col-auto">
+              <label class="form-label small text-muted mb-1" for="log-max-lines">Lines per file</label>
+              <input class="form-control form-control-sm" id="log-max-lines" type="number" min="100" max="200000" step="100" style="width:130px">
+            </div>
+            <div class="col-auto">
+              <label class="form-label small text-muted mb-1" for="log-retention-days">Days to keep</label>
+              <input class="form-control form-control-sm" id="log-retention-days" type="number" min="1" max="365" step="1" style="width:120px">
+            </div>
+            <div class="col-auto">
+              <button class="btn btn-sm btn-outline-primary" id="log-save-settings-btn" title="Save log settings">
+                <i class="bi bi-save"></i>
+              </button>
+            </div>
+            <div class="col small text-muted" id="log-dir-info"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Log output ── -->
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center py-1">
+          <span class="small text-muted" id="log-status">—</span>
+          <div class="d-flex gap-2 align-items-center">
+            <button class="btn btn-link btn-sm p-0 text-muted" id="log-scroll-bottom" title="Scroll to bottom">
+              <i class="bi bi-arrow-down-circle"></i>
+            </button>
+            <button class="btn btn-link btn-sm p-0 text-muted" id="log-wrap-toggle" title="Toggle word wrap">
+              <i class="bi bi-text-wrap"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div id="log-output" class="log-viewer"></div>
+        </div>
+        <div class="card-footer py-1 d-flex justify-content-between align-items-center">
+          <button class="btn btn-sm btn-outline-secondary" id="log-load-more" style="display:none">
+            <i class="bi bi-chevron-up"></i> Load older
+          </button>
+          <span class="small text-muted ms-auto" id="log-footer-info"></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

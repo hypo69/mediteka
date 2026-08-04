@@ -1,0 +1,320 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python run.py:*)",
+      "Bash(timeout 15 bash:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(foundry:*)",
+      "Bash(pkill:*)",
+      "Bash(python:*)",
+      "Bash(powershell -NoProfile -Command \".\\StartFastApiFoundry.ps1 -Help\")",
+      "Bash(taskkill:*)",
+      "Bash(timeout 2 python:*)",
+      "Bash(powershell -NoProfile -Command \"Get-ChildItem -Path ''C:\\Users\\user\\.ssh'' -File -Force | Select-Object Name, Length, LastWriteTime, Extension | Format-Table -AutoSize\")",
+      "Bash(powershell:*)",
+      "Bash(openssl version:*)",
+      "Bash(openssl req:*)",
+      "Bash(openssl x509:*)",
+      "Bash(timeout 10 python:*)",
+      "Bash(timeout 15 python:*)",
+      "Bash(timeout 12 python:*)",
+      "Bash(.venvScriptspython.exe -m pip install -r requirements.txt)",
+      "Bash(timeout 30 powershell:*)"
+    ]
+  },
+  "mcpServers": {
+    "_comment_Ai Assistant_ai": "=== Ai Assistant AI Models ===",
+    "Ai Assistant-foundary": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-foundary\\src\\server.py"
+      ],
+      "env": {
+        "FOUNDRY_BASE_URL": "http://127.0.0.1:54460/v1/",
+        "FOUNDRY_DEFAULT_MODEL": "deepseek-r1-distill-qwen-1.5b-cpu-int4-rtn-block-32-acc-level-4",
+        "FOUNDRY_TEMPERATURE": "0.6",
+        "FOUNDRY_TOP_P": "0.9",
+        "FOUNDRY_MAX_TOKENS": "2048",
+        "FOUNDRY_TIMEOUT": "300",
+        "RAG_ENABLED": "true",
+        "RAG_INDEX_DIR": "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-foundary\\rag_index"
+      },
+      "description": "Local AI via Foundry (DeepSeek-R1) + RAG - project context retrieval, code generation, documentation search"
+    },
+    "Ai Assistant-gemini": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-gemini\\src\\server.py"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "AIzaSyCH5vXODPMjhvRDdHLw-hXryjzVxZDeh2w",
+        "GEMINI_DEFAULT_MODEL": "gemini-2.5-flash-lite",
+        "GEMINI_TEMPERATURE": "0.7",
+        "GEMINI_MAX_TOKENS": "2048"
+      },
+      "description": "Google Gemini AI server - horoscope generation, AI Shaman consultations, text generation, token counting"
+    },
+    "Ai Assistant-huggingface": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-huggingface\\src\\server.py"
+      ],
+      "env": {
+        "HF_TOKEN": "hf_your_token_here",
+        "HF_DEFAULT_MODEL": "mistralai/Mistral-7B-Instruct-v0.2",
+        "HF_MAX_TOKENS": "2048",
+        "HF_TEMPERATURE": "0.7"
+      },
+      "description": "HuggingFace Inference API server - text generation with various models, horoscopes, chat completion"
+    },
+    "_comment_Ai Assistant_data": "=== Ai Assistant Data & Content ===",
+    "Ai Assistant-orchestrator": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-orchestrator\\src\\server.py"
+      ],
+      "env": {
+        "FOUNDRY_BASE_URL": "http://127.0.0.1:54460/v1/",
+        "FOUNDRY_DEFAULT_MODEL": "deepseek-r1-distill-qwen-1.5b-cpu-int4-rtn-block-32-acc-level-4",
+        "FOUNDRY_TEMPERATURE": "0.6",
+        "FOUNDRY_TOP_P": "0.9",
+        "FOUNDRY_MAX_TOKENS": "2048",
+        "FOUNDRY_TIMEOUT": "300",
+        "MARIADB_HOST": "77.37.35.16",
+        "MARIADB_PORT": "3306",
+        "MARIADB_USER": "u177424397_q0R9K",
+        "MARIADB_PASSWORD": "3LGMYwttFD",
+        "MARIADB_DATABASE": "u177424397_sfLhm",
+        "WORDPRESS_URL": "https://Ai Assistant.com",
+        "WP_CLI_PATH": "wp"
+      },
+      "description": "Orchestrator - трёхсторонняя интеграция MariaDB ↔ Foundry AI ↔ WordPress, workflow automation"
+    },
+    "Ai Assistant-mariadb": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-mariadb\\src\\server.py"
+      ],
+      "env": {
+        "MARIADB_HOST": "77.37.35.16",
+        "MARIADB_PORT": "3306",
+        "MARIADB_USER": "u177424397_q0R9K",
+        "MARIADB_PASSWORD": "3LGMYwttFD",
+        "MARIADB_DATABASE": "u177424397_sfLhm"
+      },
+      "description": "MariaDB database server для Ai Assistant - READ-only SQL, user personas, token stats, multisite (73 languages)"
+    },
+    "Ai Assistant-wordpress": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-wordpress\\src\\server.py"
+      ],
+      "env": {
+        "WP_SITE_URL": "https://Ai Assistant.com",
+        "WP_USERNAME": "admin",
+        "WP_APP_PASSWORD": "4Llw PBgl JJF0 XGhA tNPS E9te"
+      },
+      "description": "WordPress REST API server - posts, pages, users, plugins, horoscopes CPT, WooCommerce products"
+    },
+    "Ai Assistant-astro-systems": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-astro-systems\\src\\server.py"
+      ],
+      "description": "Astrological systems server - 25+ systems (Western, Vedic, Chinese), zodiac calculations, compatibility"
+    },
+    "_comment_Ai Assistant_auth": "=== Ai Assistant Authentication & Localization ===",
+    "Ai Assistant-user-login": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-user-login\\src\\server.py"
+      ],
+      "env": {
+        "WP_SITE_URL": "https://Ai Assistant.com",
+        "WP_REST_API_URL": "https://Ai Assistant.com/wp-json",
+        "LOGIN_REDIRECT_URL": "/dashboard",
+        "AJAX_LOGIN_NONCE_ACTION": "Ai Assistant_ajax_login",
+        "SESSION_TIMEOUT": "3600",
+        "MAX_LOGIN_ATTEMPTS": "5",
+        "LOCKOUT_DURATION": "900"
+      },
+      "description": "User authentication server - AJAX login, SSO tokens, session management, user profile validation, multisite support"
+    },
+    "Ai Assistant-language-detection": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-language-detection\\src\\server.py"
+      ],
+      "env": {
+        "WP_SITE_URL": "https://Ai Assistant.com",
+        "SUPPORTED_LANGUAGES": "en,ru,es,fr,de,it,pt,ja,zh,ar,hi,ko",
+        "DEFAULT_LANGUAGE": "en",
+        "REDIRECT_ENABLED": "true",
+        "REDIRECT_ANONYMOUS_ONLY": "true",
+        "COOKIE_NAME": "Ai Assistant_viewing_language",
+        "COOKIE_EXPIRY": "2592000",
+        "COOKIE_DOMAIN": ".Ai Assistant.com",
+        "MULTISITE_ENABLED": "true",
+        "TOTAL_SITES": "73"
+      },
+      "description": "Language detection and localization server - browser language detection, automatic redirect, cookie management, multisite support (73 languages)"
+    },
+    "Ai Assistant-translation": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-translation\\src\\server.py"
+      ],
+      "env": {
+        "LIBRETRANSLATE_API_URL": "https://api.libretranslate.de",
+        "LIBRETRANSLATE_API_KEY": "${LIBRETRANSLATE_API_KEY}",
+        "TRANSLATION_SERVICE": "libretranslate"
+      },
+      "description": "Translation server - LibreTranslate API, 23+ languages, horoscope translation, content localization"
+    },
+    "_comment_Ai Assistant_diagnostics": "=== Ai Assistant Admin Tools & Diagnostics ===",
+    "Ai Assistant-plugin-diagnostics": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-plugin-diagnostics\\src\\server.py"
+      ],
+      "env": {
+        "WP_PATH": "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html",
+        "WP_URL": "https://Ai Assistant.com"
+      },
+      "description": "Plugin diagnostics server - check all plugins status, analyze debug.log, system health, Gemini Connector verification, instant plugin status reports"
+    },
+    "Ai Assistant-php": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-php\\src\\server.py"
+      ],
+      "description": "PHP Server MCP - execute PHP code, manage WordPress"
+    },
+    "Ai Assistant-smtp": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-smtp\\src\\server.py"
+      ],
+      "description": "SMTP Server MCP - send emails, manage mail configuration"
+    },
+    "Ai Assistant-keepass": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\keepass\\src\\server.py"
+      ],
+      "env": {
+        "KDBX_PATH": "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\keepass\\Database.kdbx",
+        "KDBX_PASSWORD": "onela"
+      },
+      "description": "KeePass KDBX server - manage passwords, list entries, get credentials"
+    },
+    "database-backup": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\database-backup\\src\\database_backup_server.py"
+      ],
+      "description": "Database backup server - backup/restore MariaDB"
+    },
+    "clean-tempfiles": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\clean-tempfiles\\src\\server.py"
+      ],
+      "description": "Clean temporary files and cache"
+    },
+    "_comment_Ai Assistant_remote": "=== Ai Assistant Remote Access (SSH & FTP) ===",
+    "Ai Assistant-ssh": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-ssh\\McpSSHServer.ps1"
+      ],
+      "env": {
+        "SSH_HOST": "141.136.34.182",
+        "SSH_PORT": "65002",
+        "SSH_USER": "u177424397",
+        "SSH_PASSWORD": "syr+2\"xVXq:|",
+        "SSH_WORKING_DIR": "/home/u177424397/domains/Ai Assistant.com/public_html"
+      },
+      "description": "SSH remote access server - execute commands, file operations, WP-CLI, log monitoring"
+    },
+    "Ai Assistant-ftp": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-ftp\\McpFTPServer.ps1"
+      ],
+      "env": {
+        "FTP_HOST": "141.136.34.182",
+        "FTP_USER": "u177424397.Ai Assistant.com",
+        "FTP_PASSWORD": "s$%Ux8eA|+du"
+      },
+      "description": "FTP file transfer server - upload/download, directory management, WordPress backup"
+    },
+    "_comment_Ai Assistant_powershell": "=== Ai Assistant PowerShell Servers ===",
+    "powershell-stdio": {
+      "command": "python",
+      "args": [
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\powershell-stdio\\server.py"
+      ],
+      "description": "Custom PowerShell STDIO server for executing arbitrary commands with elevated privileges (Python wrapper)"
+    },
+    "Ai Assistant-powershell-https": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-powershell-https\\server.ps1"
+      ],
+      "description": "PowerShell HTTPS REST API server on port 8090"
+    },
+    "Ai Assistant-wordpress-cli": {
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "E:\\xampp\\htdocs\\domains\\Ai Assistant.com\\public_html\\mcp-servers\\Ai Assistant-wordpress-cli\\server.ps1"
+      ],
+      "description": "WordPress CLI server for WP-CLI commands"
+    },
+    "_comment_external": "=== External MCP Servers ===",
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "description": "GitHub API integration - repos, issues, PRs"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "description": "Sequential thinking and planning server"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "description": "Browser automation via Playwright"
+    }
+  }
+}

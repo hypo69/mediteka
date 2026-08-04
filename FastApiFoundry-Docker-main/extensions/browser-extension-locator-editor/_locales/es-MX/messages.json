@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Nombre de la extensión"
+  },
+  "extensionDescription": {
+    "message": "Crear contenido creativo a partir de la información de la página",
+    "description": "Descripción de la extensión"
+  },
+  "contextMenuTitle": {
+    "message": "Formar una propuesta de precio",
+    "description": "Título del elemento del menú contextual"
+  },
+  "apiKeyLabel": {
+    "message": "Clave de API de Google Gemini",
+    "description": "Etiqueta para el campo de entrada de la clave API"
+  },
+  "modelLabel": {
+    "message": "Modelo",
+    "description": "Etiqueta para la selección del modelo"
+  },
+  "saveButton": {
+    "message": "Guardar",
+    "description": "Texto del botón Guardar"
+  },
+  "statusNoApiKey": {
+    "message": "Por favor, introduzca su clave API",
+    "description": "Mensaje cuando no se introduce la clave API"
+  },
+  "indicatorAnalyzing": {
+    "message": "Se está generando su oferta de precio…",
+    "description": "Mensaje durante el análisis"
+  },
+  "errorFetchContent": {
+    "message": "No se pudo obtener el contenido de la página",
+    "description": "Error al obtener el contenido de la página"
+  },
+  "errorPageTooShort": {
+    "message": "La página contiene muy poco contenido",
+    "description": "Error cuando la página es demasiado corta"
+  },
+  "errorApi": {
+    "message": "Error de API: $error$",
+    "description": "Mensaje de error general de la API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Clave de API no válida"
+      }
+    }
+  },
+  "price": {
+    "message": "Precio",
+    "description": "Precio de la construcción"
+  },
+  "totalPriceLabel": {
+    "message": "Precio total:",
+    "description": "Etiqueta para el precio total en la oferta"
+  },
+  "saveOfferButton": {
+    "message": "Guardar oferta",
+    "description": "Texto del botón 'Guardar oferta'"
+  },
+  "changeImageButton": {
+    "message": "Cambiar imagen",
+    "description": "Texto del botón 'Cambiar imagen' en el pie de página"
+  }
+}

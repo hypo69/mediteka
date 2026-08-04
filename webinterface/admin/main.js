@@ -87,17 +87,27 @@ async function initInterface() {
   
   // Load all tabs
   await Promise.all([
-    loadTabContent('chat', '/html/chat/index.html'),
-    loadTabContent('torrents', '/html/torrents/index.html'),
-    loadTabContent('media', '/html/media/index.html'),
-    loadTabContent('admin', '/html/admin_tab/index.html'),
-    loadTabContent('models', '/html/models_tab/index.html'),
-    loadTabContent('logs', '/html/logs/index.html'),
-    loadTabContent('help', '/html/help/index.html'),
+    loadTabContent('chat', '/html/chat/index.html?v=20260804_v2'),
+    loadTabContent('torrents', '/html/torrents/index.html?v=20260804'),
+    loadTabContent('media', '/html/media/index.html?v=20260804'),
+    loadTabContent('admin', '/html/admin_tab/index.html?v=20260804'),
+    loadTabContent('models', '/html/models_tab/index.html?v=20260804'),
+    loadTabContent('logs', '/html/logs/index.html?v=20260804'),
+    loadTabContent('help', '/html/help/index.html?v=20260804'),
   ]);
   
   // Apply translations
   applyTranslations();
+  
+  // Фокусировать поле ввода при переключении на вкладку чата
+  document.addEventListener('shown.bs.tab', (e) => {
+    if (e.target.getAttribute('data-bs-target') === '#tab-chat') {
+      const msgInput = document.getElementById('message-input');
+      if (msgInput) {
+        msgInput.focus();
+      }
+    }
+  });
   
   console.log('Admin interface ready');
 }
@@ -164,7 +174,7 @@ async function loadTabContent(tabName, url) {
     
     // Load JS for the tab
     const script = document.createElement('script');
-    script.src = `/html/${tabName}/main.js?v=20260803`;
+    script.src = `/html/${tabName}/main.js?v=20260804_v2`;
     if (tabName === 'admin') {
       script.type = 'module';
     }
@@ -299,6 +309,14 @@ async function initAdminTab() {
         body: JSON.stringify({ model: selectedModel })
       });
       showNotification('Модель успешно обновлена на: ' + selectedModel, 'success');
+      
+      // Обновляем бейджи модели в реальном времени на странице
+      window.activeModelName = selectedModel;
+      const badges = document.querySelectorAll('#chat-model-badge, #chat-popup-model-badge');
+      badges.forEach(badge => {
+        badge.textContent = selectedModel;
+        badge.style.display = 'inline-block';
+      });
     } catch (err) {
       console.error('Ошибка сохранения модели:', err);
       showNotification('Ошибка сохранения: ' + err.message, 'danger');

@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "एक्सटेंशन का नाम"
+  },
+  "extensionDescription": {
+    "message": "कंप्यूटर घटकों के स्पष्ट और संरचित विवरण बनाता है",
+    "description": "एक्सटेंशन का विवरण"
+  },
+  "contextMenuTitle": {
+    "message": "मूल्य प्रस्ताव उत्पन्न करें",
+    "description": "संदर्भ मेनू आइटम का नाम"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini API कुंजी",
+    "description": "API कुंजी इनपुट फ़ील्ड के लिए लेबल"
+  },
+  "modelLabel": {
+    "message": "मॉडल",
+    "description": "मॉडल चयन के लिए लेबल"
+  },
+  "saveButton": {
+    "message": "सहेजें",
+    "description": "सहेजें बटन का टेक्स्ट"
+  },
+  "statusNoApiKey": {
+    "message": "कृपया अपनी API कुंजी दर्ज करें",
+    "description": "संदेश जब API कुंजी दर्ज नहीं की गई हो"
+  },
+  "indicatorAnalyzing": {
+    "message": "आपका मूल्य प्रस्ताव तैयार किया जा रहा है…",
+    "description": "विश्लेषण के दौरान संदेश"
+  },
+  "errorFetchContent": {
+    "message": "पृष्ठ सामग्री प्राप्त करने में विफल",
+    "description": "पृष्ठ सामग्री प्राप्त करने में त्रुटि"
+  },
+  "errorPageTooShort": {
+    "message": "पृष्ठ में बहुत कम सामग्री है",
+    "description": "त्रुटि जब पृष्ठ बहुत छोटा हो"
+  },
+  "errorApi": {
+    "message": "API त्रुटि: $error$",
+    "description": "सामान्य API त्रुटि संदेश",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "अमान्य API कुंजी"
+      }
+    }
+  },
+  "price": {
+    "message": "कीमत",
+    "description": "बिल्ड की कीमत"
+  },
+  "totalPriceLabel": {
+    "message": "कुल कीमत:",
+    "description": "प्रस्ताव में कुल कीमत के लिए लेबल"
+  },
+  "saveOfferButton": {
+    "message": "प्रस्ताव सहेजें",
+    "description": "'प्रस्ताव सहेजें' बटन का टेक्स्ट"
+  },
+  "changeImageButton": {
+    "message": "छवि बदलें",
+    "description": "फ़ुटर में 'छवि बदलें' बटन का टेक्स्ट"
+  }
+}

@@ -68,14 +68,15 @@ def init_router(model, plugins: dict) -> APIRouter:
     @router.get('/models')
     async def get_models() -> dict:
         """Получение списка доступных моделей."""
+        from src.ai.gemini.generative_ai import _AVAILABLE_MODELS
         import os
+        models = list(_AVAILABLE_MODELS)
         use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')
         if use_foundry:
             foundry_model_id = os.getenv('FOUNDRY_MODEL_ID', 'qwen3-0.6b-generic-cpu:4')
-            return {'models': [foundry_model_id]}
-        else:
-            from src.ai.gemini.generative_ai import _AVAILABLE_MODELS
-            return {'models': _AVAILABLE_MODELS}
+            if foundry_model_id not in models:
+                models.insert(0, foundry_model_id)
+        return {'models': models}
 
     @router.post('/code-helper')
     async def chat_code_helper(request: ChatRequest):
@@ -230,14 +231,16 @@ def init_router(model, plugins: dict) -> APIRouter:
                 full_response_text = ""
 
                 for plugin in plugins.values():
-                    if plugin.name == 'rag' and not is_media:
-                        continue
-                    if is_media and plugin.name != 'rag':
-                        continue
-
                     # Проверяем, может ли плагин обработать сообщение
-                    if hasattr(plugin, 'can_handle') and not plugin.can_handle(request.message):
-                        continue
+                    can_handle = False
+                    if hasattr(plugin, 'can_handle') and plugin.can_handle(request.message):
+                        can_handle = True
+
+                    if not can_handle:
+                        if plugin.name == 'rag' and not is_media:
+                            continue
+                        if is_media and plugin.name != 'rag':
+                            continue
 
                     plugin_name = plugin.__class__.__name__
                     yield f"data: {json.dumps({'status': f'Вызов плагина {plugin_name}...'})}\n\n"

@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "Názov rozšírenia"
+  },
+  "extensionDescription": {
+    "message": "Vytvára jasné a štruktúrované popisy počítačových komponentov",
+    "description": "Popis rozšírenia"
+  },
+  "contextMenuTitle": {
+    "message": "Vytvoriť cenovú ponuku",
+    "description": "Názov položky kontextového menu"
+  },
+  "apiKeyLabel": {
+    "message": "API kľúč Google Gemini",
+    "description": "Popis pre vstupné pole API kľúča"
+  },
+  "modelLabel": {
+    "message": "Model",
+    "description": "Popis pre výber modelu"
+  },
+  "saveButton": {
+    "message": "Uložiť",
+    "description": "Text tlačidla Uložiť"
+  },
+  "statusNoApiKey": {
+    "message": "Prosím, zadajte váš API kľúč",
+    "description": "Správa, keď nie je zadaný API kľúč"
+  },
+  "indicatorAnalyzing": {
+    "message": "Vaša cenová ponuka sa generuje…",
+    "description": "Správa počas analýzy"
+  },
+  "errorFetchContent": {
+    "message": "Nepodarilo sa získať obsah stránky",
+    "description": "Chyba pri získavaní obsahu stránky"
+  },
+  "errorPageTooShort": {
+    "message": "Stránka obsahuje príliš málo obsahu",
+    "description": "Chyba, keď je stránka príliš krátka"
+  },
+  "errorApi": {
+    "message": "Chyba API: $error$",
+    "description": "Všeobecná správa o chybe API",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Neplatný API kľúč"
+      }
+    }
+  },
+  "price": {
+    "message": "Cena",
+    "description": "Cena zostavy"
+  },
+  "totalPriceLabel": {
+    "message": "Celková cena:",
+    "description": "Popis pre celkovú cenu v ponuke"
+  },
+  "saveOfferButton": {
+    "message": "Uložiť ponuku",
+    "description": "Text tlačidla 'Uložiť ponuku'"
+  },
+  "changeImageButton": {
+    "message": "Zmeniť obrázok",
+    "description": "Text tlačidla 'Zmeniť obrázok' v pätičke"
+  }
+}

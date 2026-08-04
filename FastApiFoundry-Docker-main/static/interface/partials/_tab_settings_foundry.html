@@ -1,0 +1,91 @@
+<!-- ── FOUNDRY AI ──────────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--foundry">
+    <div class="settings-section-header text-success">
+        <i class="bi bi-robot"></i> <span data-i18n="settings.foundry_ai">Foundry AI</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.base_url">Base URL</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_foundry_url"></i>
+            </label>
+            <input type="url" id="config-foundry-url" class="form-control" placeholder="http://localhost:50477/v1/">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.dir_foundry">Models cache directory</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_dir_foundry"></i>
+            </label>
+            <input type="text" id="config-dir-foundry" class="form-control font-monospace" placeholder=".foundry/cache/models">
+        </div>
+        <div class="col-md-12">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.default_model">Default Model</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_foundry_model"></i>
+            </label>
+            <input type="text" id="config-foundry-model" class="form-control" placeholder="deepseek-r1-distill-qwen-7b-generic-cpu:3">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.temperature">Temperature</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_temperature"></i>
+            </label>
+            <input type="number" id="config-foundry-temp" class="form-control" step="0.1" min="0" max="2" placeholder="0.7">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label d-flex align-items-center gap-1">
+                <span data-i18n="settings.max_tokens">Max Tokens</span>
+                <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_max_tokens"></i>
+            </label>
+            <input type="number" id="config-foundry-tokens" class="form-control" placeholder="2048">
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="config-foundry-autoload">
+                <label class="form-check-label d-flex align-items-center gap-1" for="config-foundry-autoload">
+                    <span data-i18n="settings.auto_load">Auto-load default model on startup</span>
+                    <i class="bi bi-question-circle text-muted" style="cursor:help" data-i18n-title="settings.tip_foundry_autoload"></i>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── STARTUP MODEL ──────────────────────────────────────────────────── -->
+<div class="settings-section settings-section--startup">
+    <div class="settings-section-header" style="color:#20c997">
+        <i class="bi bi-play-circle"></i> <span data-i18n="settings.startup_model">Load on startup</span>
+    </div>
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="startup-model-mode" id="startup-mode-active" value="active">
+                <label class="form-check-label" for="startup-mode-active">
+                    <i class="bi bi-lightning-charge text-warning me-1"></i>
+                    <span data-i18n="settings.startup_active">Active model</span>
+                    <small class="text-muted ms-1" data-i18n="settings.startup_active_hint">(last loaded before shutdown)</small>
+                </label>
+            </div>
+            <div class="form-check mt-1">
+                <input class="form-check-input" type="radio" name="startup-model-mode" id="startup-mode-default" value="default" checked>
+                <label class="form-check-label" for="startup-mode-default">
+                    <i class="bi bi-star-fill text-primary me-1"></i>
+                    <span data-i18n="settings.startup_default">Default model</span>
+                    <small class="text-muted ms-1">(foundry_ai.default_model)</small>
+                </label>
+            </div>
+            <div class="form-check mt-1">
+                <input class="form-check-input" type="radio" name="startup-model-mode" id="startup-mode-custom" value="custom">
+                <label class="form-check-label" for="startup-mode-custom">
+                    <i class="bi bi-pencil text-secondary me-1"></i>
+                    <span data-i18n="settings.startup_custom">Custom model</span>
+                </label>
+            </div>
+        </div>
+        <div class="col-12" id="startup-custom-model-row" style="display:none">
+            <label class="form-label" data-i18n="settings.startup_custom_model">Model ID</label>
+            <input type="text" id="config-startup-custom-model" class="form-control"
+                   placeholder="deepseek-r1-distill-qwen-7b-generic-cpu:3">
+        </div>
+    </div>
+</div>

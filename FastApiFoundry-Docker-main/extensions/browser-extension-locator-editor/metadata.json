@@ -1,0 +1,5 @@
+{
+  "name": "Locator Editor",
+  "description": "A Chrome extension to create, edit, and manage JSON-based element locators for web pages.",
+  "requestFramePermissions": []
+}

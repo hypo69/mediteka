@@ -1,0 +1,168 @@
+{
+  "appName": {
+    "message": "Locator Editor",
+    "description": "The name of the extension."
+  },
+  "appDescription": {
+    "message": "A Chrome extension to create, edit, and manage JSON-based element locators for web pages.",
+    "description": "The description of the extension."
+  },
+  "popupTitle": {
+    "message": "Locator Editor",
+    "description": "Title for the popup window."
+  },
+  "openEditorBtn": {
+    "message": "Open Editor",
+    "description": "Button text in the popup to open the main editor UI."
+  },
+  "headerImportBtn": {
+    "message": "Import",
+    "description": "Button text for importing a JSON file."
+  },
+  "headerImportTitle": {
+    "message": "Import JSON",
+    "description": "Tooltip for the import button."
+  },
+  "headerExportBtn": {
+    "message": "Export",
+    "description": "Button text for exporting a JSON file."
+  },
+  "headerExportTitle": {
+    "message": "Export JSON",
+    "description": "Tooltip for the export button."
+  },
+  "sidebarSupplierPrefix": {
+    "message": "Supplier Prefix",
+    "description": "Label for the supplier prefix input field."
+  },
+  "sidebarNewLocatorBtn": {
+    "message": "New Locator",
+    "description": "Button text to create a new locator."
+  },
+  "sidebarLocatorsHeading": {
+    "message": "Locators",
+    "description": "Heading for the list of locators."
+  },
+  "sidebarDeleteLocatorTitle": {
+    "message": "Delete $key$",
+    "description": "Tooltip for the delete locator button.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "product_name"
+      }
+    }
+  },
+  "formCreateTitle": {
+    "message": "Create New Locator",
+    "description": "Title of the form when creating a new locator."
+  },
+  "formEditTitle": {
+    "message": "Editing: $key$",
+    "description": "Title of the form when editing an existing locator.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "product_name"
+      }
+    }
+  },
+  "formSaveChangesBtn": {
+    "message": "Save Changes",
+    "description": "Button text to save the locator form."
+  },
+  "formLabelKey": {
+    "message": "Locator Key",
+    "description": "Label for the locator key input field."
+  },
+  "formLabelSelector": {
+    "message": "Selector",
+    "description": "Label for the selector textarea field."
+  },
+  "formLabelDescription": {
+    "message": "Description",
+    "description": "Label for the locator description field."
+  },
+  "formLabelFindBy": {
+    "message": "Find By",
+    "description": "Label for the 'Find By' strategy dropdown."
+  },
+  "formLabelAttribute": {
+    "message": "Attribute to Get",
+    "description": "Label for the 'Attribute to Get' input field."
+  },
+  "formLabelIfList": {
+    "message": "If List Found",
+    "description": "Label for the 'If List Found' strategy dropdown."
+  },
+  "formLabelMultiSelectorStrategy": {
+    "message": "Strategy for Multiple Selectors",
+    "description": "Label for the multiple selector strategy input field."
+  },
+  "formLabelTimeout": {
+    "message": "Timeout (ms)",
+    "description": "Label for the timeout input field."
+  },
+  "formLabelTimeoutEvent": {
+    "message": "Timeout Event Type",
+    "description": "Label for the timeout event type input field."
+  },
+  "formLabelMandatory": {
+    "message": "Mandatory",
+    "description": "Label for the 'Mandatory' checkbox."
+  },
+  "formLabelIsEvent": {
+    "message": "Is Event?",
+    "description": "Label for the 'Is Event?' checkbox."
+  },
+  "formPlaceholderKey": {
+    "message": "e.g., product_name",
+    "description": "Placeholder text for the locator key input."
+  },
+  "formPlaceholderDescription": {
+    "message": "A brief description of this locator",
+    "description": "Placeholder text for the locator description."
+  },
+  "formErrorKeyEmpty": {
+    "message": "Locator key cannot be empty.",
+    "description": "Error message when the locator key is left empty."
+  },
+  "formCopyTooltip": {
+    "message": "Copy selector to clipboard",
+    "description": "Tooltip for the copy button next to the selector field."
+  },
+  "emptyStateSelectLocatorTitle": {
+    "message": "Select a locator to edit",
+    "description": "Main title in the empty state view."
+  },
+  "emptyStateSelectLocatorSubtitle": {
+    "message": "or create a new one.",
+    "description": "Subtitle in the empty state view."
+  },
+  "emptyStateNoLocatorsTitle": {
+    "message": "No Locators Found",
+    "description": "Title when the list of locators is completely empty."
+  },
+  "emptyStateNoLocatorsSubtitle": {
+    "message": "Click \"New Locator\" to get started.",
+    "description": "Subtitle when the list of locators is completely empty."
+  },
+  "alertInvalidJson": {
+    "message": "Invalid JSON file.",
+    "description": "Alert message shown when a user uploads a malformed JSON file."
+  },
+  "alertImportSuccess": {
+    "message": "File imported successfully!",
+    "description": "Alert message shown after a successful JSON file import."
+  },
+  "confirmDeleteLocator": {
+    "message": "Are you sure you want to delete the locator \"$key$\"?",
+    "description": "Confirmation message before deleting a locator.",
+    "placeholders": {
+      "key": {
+        "content": "$1",
+        "example": "product_name"
+      }
+    }
+  }
+}

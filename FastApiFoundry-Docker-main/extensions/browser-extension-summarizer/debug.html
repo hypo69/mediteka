@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Assistant — Server Debug</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <style>
+        html, body { height: 100%; overflow: hidden; }
+
+        .debug-shell {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Response panel — top, fixed height, scrollable ── */
+        .response-panel {
+            flex: 1 1 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 2px solid #dee2e6;
+            background: #fff;
+        }
+        .response-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            flex-shrink: 0;
+        }
+        .response-box {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 14px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #212529;
+            background: #fff;
+        }
+        .response-box.ok  { background: #f0fff4; }
+        .response-box.err { background: #fff5f5; }
+
+        /* ── Controls panel — bottom, fixed, no scroll ── */
+        .controls-panel {
+            flex-shrink: 0;
+            background: #fff;
+            overflow-y: auto;
+            max-height: 55vh;
+        }
+
+        /* ── Status pill ── */
+        .status-pill {
+            font-size: 11px; font-weight: 600;
+            padding: 2px 8px; border-radius: 10px;
+        }
+        .status-pill.ok  { background: #d1e7dd; color: #0a3622; }
+        .status-pill.err { background: #f8d7da; color: #58151c; }
+
+        /* ── Method badge ── */
+        .method-badge {
+            font-size: 10px; font-weight: 700;
+            padding: 1px 6px; border-radius: 3px;
+            font-family: monospace; flex-shrink: 0;
+        }
+        .method-get  { background: #cfe2ff; color: #084298; }
+        .method-post { background: #d1e7dd; color: #0a3622; }
+
+        /* ── Endpoint list ── */
+        .ep-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 5px 12px; cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            font-size: 12px;
+        }
+        .ep-row:hover { background: #f8f9fa; }
+        .ep-path { font-family: monospace; flex: 1; color: #0d6efd; }
+        .ep-label { color: #6c757d; white-space: nowrap; }
+
+        /* ── Tabs inside controls ── */
+        .ctrl-tabs { display: flex; border-bottom: 1px solid #dee2e6; background: #f8f9fa; }
+        .ctrl-tab {
+            padding: 6px 14px; border: none; background: none;
+            font-size: 12px; font-weight: 500; color: #6c757d;
+            cursor: pointer; border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .ctrl-tab.active { color: #0d6efd; border-bottom-color: #0d6efd; }
+        .ctrl-panel { display: none; padding: 10px 12px; }
+        .ctrl-panel.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="debug-shell">
+
+    <!-- Navbar -->
+    <div class="ext-navbar" style="flex-shrink:0">
+        <div class="brand">🔧 <span data-i18n="debug.title">Server Debug</span></div>
+        <div class="d-flex gap-2 ms-auto align-items-center">
+            <span id="conn-status" class="status-pill" style="display:none"></span>
+            <select class="lang-select form-select form-select-sm"
+                    style="width:auto;background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">
+                <option value="en">EN</option>
+                <option value="ru">RU</option>
+                <option value="he">HE</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Server URL bar -->
+    <div style="flex-shrink:0;padding:6px 10px;background:#fff;border-bottom:1px solid #dee2e6">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text" style="font-size:11px;color:#6c757d">URL</span>
+            <input type="text" id="base-url" class="form-control form-control-sm font-monospace"
+                   value="http://localhost:9696" style="max-width:260px">
+            <input type="text" id="api-key-input" class="form-control form-control-sm"
+                   placeholder="API key (optional)">
+            <button class="btn btn-primary btn-sm" id="btn-health" data-i18n="debug.check">Check</button>
+        </div>
+    </div>
+
+    <!-- ── RESPONSE PANEL (top, grows) ── -->
+    <div class="response-panel">
+        <div class="response-panel-header">
+            <span class="small fw-semibold" data-i18n="debug.response">Response</span>
+            <span id="resp-meta" class="text-muted small ms-1"></span>
+            <div class="ms-auto d-flex gap-1">
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2" id="btn-copy"
+                        data-i18n="debug.copy">Copy</button>
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2" id="btn-clear-resp"
+                        data-i18n="debug.clear">Clear</button>
+            </div>
+        </div>
+        <div id="response-box" class="response-box" data-i18n="debug.response_placeholder">
+Response will appear here…
+        </div>
+    </div>
+
+    <!-- ── CONTROLS PANEL (bottom) ── -->
+    <div class="controls-panel">
+
+        <!-- Tab bar -->
+        <div class="ctrl-tabs">
+            <button class="ctrl-tab active" data-ctrl="endpoints" data-i18n="debug.quick_tests">Endpoints</button>
+            <button class="ctrl-tab" data-ctrl="custom" data-i18n="debug.custom_request">Custom</button>
+            <button class="ctrl-tab" data-ctrl="chat" data-i18n="debug.chat_test">Chat</button>
+        </div>
+
+        <!-- Tab: quick endpoints -->
+        <div class="ctrl-panel active" id="ctrl-endpoints">
+            <div class="px-2 pt-2 pb-1">
+                <input type="search" id="ep-filter" class="form-control form-control-sm"
+                       placeholder="Filter endpoints…">
+            </div>
+            <div id="endpoint-list" style="max-height:38vh;overflow-y:auto"></div>
+        </div>
+
+        <!-- Tab: custom request -->
+        <div class="ctrl-panel" id="ctrl-custom">
+            <div class="row g-2 mb-2">
+                <div class="col-3">
+                    <select id="req-method" class="form-select form-select-sm">
+                        <option>GET</option>
+                        <option>POST</option>
+                        <option>PATCH</option>
+                        <option>DELETE</option>
+                    </select>
+                </div>
+                <div class="col-9">
+                    <input type="text" id="req-path" class="form-control form-control-sm font-monospace"
+                           value="/api/v1/health">
+                </div>
+            </div>
+            <textarea id="req-body" class="form-control form-control-sm font-monospace mb-2"
+                      rows="3" placeholder='{"prompt": "Hello"}' style="resize:vertical"></textarea>
+            <button class="btn btn-primary btn-sm w-100" id="btn-send" data-i18n="debug.send">Send</button>
+        </div>
+
+        <!-- Tab: chat test -->
+        <div class="ctrl-panel" id="ctrl-chat">
+            <div class="mb-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text" style="font-size:11px" data-i18n="debug.model">Model</span>
+                    <input type="text" id="chat-model" class="form-control form-control-sm font-monospace"
+                           placeholder="auto">
+                    <button class="btn btn-outline-secondary btn-sm" id="btn-load-models"
+                            data-i18n="debug.load_models">Load</button>
+                </div>
+            </div>
+            <textarea id="chat-prompt" class="form-control form-control-sm mb-2" rows="2"
+                      placeholder="Say hello in one sentence.">Say hello in one sentence.</textarea>
+            <button class="btn btn-success btn-sm w-100" id="btn-chat"
+                    data-i18n="debug.send_chat">Send chat request</button>
+        </div>
+
+    </div><!-- /controls-panel -->
+
+</div><!-- /debug-shell -->
+
+<script src="debug.js" type="module"></script>
+</body>
+</html>

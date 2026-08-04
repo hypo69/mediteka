@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<!--
+===============================================================================
+Process Name: QA Test Runner — API Coverage Page
+===============================================================================
+Description:
+    Browser-based QA runner that calls all /api/v1/* endpoints with all
+    documented request fields. Displays pass/fail per test with response details.
+    Runs against the local server (same origin, port 9696).
+
+File: static/qa.html
+Project: AI Assistant (ai_assist)
+Version: 0.7.1
+Changes in 0.7.1:
+    - Initial implementation
+Author: hypo69
+Copyright: © 2026 hypo69
+===============================================================================
+-->
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA — API Test Runner</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; font-size: 13px; }
+  header { background: #1a1d2e; padding: 16px 24px; border-bottom: 1px solid #2d3748; display: flex; align-items: center; gap: 16px; }
+  header h1 { font-size: 18px; font-weight: 600; }
+  .badge { background: #2d3748; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .controls { padding: 12px 24px; background: #141720; border-bottom: 1px solid #2d3748; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .controls label { font-size: 12px; color: #a0aec0; }
+  .controls input[type=text] { background: #1a1d2e; border: 1px solid #2d3748; color: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 12px; width: 220px; }
+  button { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  #btn-run  { background: #3b82f6; color: #fff; }
+  #btn-run:hover  { background: #2563eb; }
+  #btn-stop { background: #ef4444; color: #fff; display: none; }
+  #btn-clear { background: #374151; color: #e2e8f0; }
+  .summary { padding: 8px 24px; background: #141720; border-bottom: 1px solid #2d3748; font-size: 12px; color: #a0aec0; display: flex; gap: 20px; }
+  .summary span { font-weight: 700; }
+  #pass-count { color: #34d399; }
+  #fail-count { color: #f87171; }
+  #skip-count { color: #fbbf24; }
+  #total-count { color: #93c5fd; }
+  #progress-bar { height: 3px; background: #2d3748; }
+  #progress-fill { height: 3px; background: #3b82f6; width: 0; transition: width 0.2s; }
+  #results { padding: 12px 24px; display: flex; flex-direction: column; gap: 4px; }
+  .test-row { border-radius: 6px; overflow: hidden; border: 1px solid #2d3748; }
+  .test-header { display: flex; align-items: center; gap: 10px; padding: 7px 12px; cursor: pointer; user-select: none; background: #1a1d2e; }
+  .test-header:hover { background: #1e2235; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-pass { background: #34d399; }
+  .dot-fail { background: #f87171; }
+  .dot-skip { background: #fbbf24; }
+  .dot-run  { background: #60a5fa; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .test-name { flex: 1; font-weight: 500; }
+  .test-method { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 700; }
+  .method-GET    { background: #065f46; color: #6ee7b7; }
+  .method-POST   { background: #1e3a5f; color: #93c5fd; }
+  .method-DELETE { background: #4c1d1d; color: #fca5a5; }
+  .method-PATCH  { background: #3b2a00; color: #fcd34d; }
+  .method-PUT    { background: #2d1b4e; color: #c4b5fd; }
+  .test-path { color: #64748b; font-size: 11px; font-family: monospace; }
+  .test-ms { color: #64748b; font-size: 11px; margin-left: auto; }
+  .test-body { display: none; padding: 10px 12px; background: #0f1117; border-top: 1px solid #2d3748; }
+  .test-body.open { display: block; }
+  .test-body pre { font-size: 11px; font-family: 'Consolas', monospace; white-space: pre-wrap; word-break: break-all; color: #94a3b8; max-height: 300px; overflow-y: auto; }
+  .test-body .label { font-size: 10px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+  .test-body .section { margin-bottom: 8px; }
+  .err-msg { color: #f87171; font-size: 11px; }
+  .group-header { padding: 6px 12px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧪 QA — API Test Runner</h1>
+  <span class="badge" id="server-badge">http://localhost:9696</span>
+  <span class="badge" id="model-badge">model: auto</span>
+</header>
+
+<div class="controls">
+  <label>Base URL</label>
+  <input type="text" id="base-url" value="http://localhost:9696">
+  <label>Model (optional)</label>
+  <input type="text" id="model-input" placeholder="foundry::qwen3-0.6b (auto-detect)">
+  <button id="btn-run" onclick="runAll()">▶ Run All</button>
+  <button id="btn-stop" onclick="stopAll()">■ Stop</button>
+  <button id="btn-clear" onclick="clearResults()">✕ Clear</button>
+</div>
+
+<div class="summary">
+  <div>Total: <span id="total-count">0</span></div>
+  <div>✅ Pass: <span id="pass-count">0</span></div>
+  <div>❌ Fail: <span id="fail-count">0</span></div>
+  <div>⏭ Skip: <span id="skip-count">0</span></div>
+</div>
+<div id="progress-bar"><div id="progress-fill"></div></div>
+
+<div id="results"></div>
+
+<script>
+// =============================================================================
+// QA Test Runner — all /api/v1 endpoints with all documented fields
+// =============================================================================
+
+let _stop = false;
+let _model = '';
+let _sessionId = '';
+
+// ── Counters ──────────────────────────────────────────────────────────────────
+const cnt = { pass: 0, fail: 0, skip: 0, total: 0 };
+
+function updateCounters() {
+  document.getElementById('pass-count').textContent  = cnt.pass;
+  document.getElementById('fail-count').textContent  = cnt.fail;
+  document.getElementById('skip-count').textContent  = cnt.skip;
+  document.getElementById('total-count').textContent = cnt.total;
+}
+
+function setProgress(done, total) {
+  document.getElementById('progress-fill').style.width = total ? `${(done / total * 100).toFixed(1)}%` : '0%';
+}
+
+// ── HTTP helpers ──────────────────────────────────────────────────────────────
+async function api(method, path, body, timeoutMs = 30000) {
+  const base = document.getElementById('base-url').value.replace(/\/$/, '');
+  const ctrl = new AbortController();
+  const tid   = setTimeout(() => ctrl.abort(), timeoutMs);
+  const t0    = performance.now();
+  try {
+    const opts = { method, signal: ctrl.signal, headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const r    = await fetch(base + path, opts);
+    const ms   = Math.round(performance.now() - t0);
+    let data;
+    try { data = await r.json(); } catch { data = null; }
+    return { ok: r.ok, status: r.status, data, ms };
+  } catch (e) {
+    return { ok: false, status: 0, data: null, ms: Math.round(performance.now() - t0), error: e.message };
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
+// ── Result rendering ──────────────────────────────────────────────────────────
+function addGroupHeader(label) {
+  const el = document.createElement('div');
+  el.className = 'group-header';
+  el.textContent = label;
+  document.getElementById('results').appendChild(el);
+}
+
+function addTestRow(id, method, path, name) {
+  const row = document.createElement('div');
+  row.className = 'test-row';
+  row.id = `row-${id}`;
+  row.innerHTML = `
+    <div class="test-header" onclick="toggleBody('${id}')">
+      <div class="status-dot dot-run" id="dot-${id}"></div>
+      <span class="test-method method-${method}">${method}</span>
+      <span class="test-name">${name}</span>
+      <span class="test-path">${path}</span>
+      <span class="test-ms" id="ms-${id}"></span>
+    </div>
+    <div class="test-body" id="body-${id}">
+      <div class="section"><div class="label">Response</div><pre id="pre-${id}">running…</pre></div>
+    </div>`;
+  document.getElementById('results').appendChild(row);
+}
+
+function toggleBody(id) {
+  const b = document.getElementById(`body-${id}`);
+  b.classList.toggle('open');
+}
+
+function setResult(id, pass, ms, reqBody, resData, errMsg) {
+  const dot = document.getElementById(`dot-${id}`);
+  dot.className = `status-dot ${pass ? 'dot-pass' : 'dot-fail'}`;
+  document.getElementById(`ms-${id}`).textContent = `${ms}ms`;
+
+  const pre = document.getElementById(`pre-${id}`);
+  let html = '';
+  if (reqBody !== undefined) {
+    html += `<div class="section"><div class="label">Request body</div><pre>${JSON.stringify(reqBody, null, 2)}</pre></div>`;
+  }
+  html += `<div class="section"><div class="label">Response (${pass ? '✅ pass' : '❌ fail'})</div><pre>${JSON.stringify(resData, null, 2)}</pre></div>`;
+  if (errMsg) html += `<div class="err-msg">⚠ ${errMsg}</div>`;
+  document.getElementById(`body-${id}`).innerHTML = html;
+
+  if (pass) cnt.pass++; else cnt.fail++;
+  cnt.total++;
+  updateCounters();
+}
+
+function setSkip(id, reason) {
+  document.getElementById(`dot-${id}`).className = 'status-dot dot-skip';
+  document.getElementById(`pre-${id}`).textContent = `SKIP: ${reason}`;
+  cnt.skip++;
+  cnt.total++;
+  updateCounters();
+}
+
+// ── Test definitions ──────────────────────────────────────────────────────────
+// Each test: { id, method, path, name, body?, check?, timeoutMs?, needsModel? }
+function buildTests(model, sessionId) {
+  return [
+    // ── Health & System ──────────────────────────────────────────────────────
+    { group: 'Health & System' },
+    { id: 'health',        method: 'GET',  path: '/api/v1/health',        name: 'Health check',
+      check: d => d.status === 'healthy' },
+    { id: 'system_stats',  method: 'GET',  path: '/api/v1/system/stats',  name: 'System stats',
+      check: d => d.success === true },
+
+    // ── Models ───────────────────────────────────────────────────────────────
+    { group: 'Models' },
+    { id: 'models',            method: 'GET', path: '/api/v1/models',           name: 'All models',
+      check: d => d.success === true },
+    { id: 'models_connected',  method: 'GET', path: '/api/v1/models/connected', name: 'Connected models',
+      check: d => d.success === true },
+    { id: 'ai_models',         method: 'GET', path: '/api/v1/ai/models',        name: 'AI models (Foundry)',
+      check: d => d.success !== undefined },
+    { id: 'ai_models_rec',     method: 'GET', path: '/api/v1/ai/models/recommended', name: 'Recommended models',
+      check: d => d.success !== undefined },
+    { id: 'ai_health',         method: 'GET', path: '/api/v1/ai/health',        name: 'AI health',
+      check: d => d.success !== undefined },
+
+    // ── Foundry ──────────────────────────────────────────────────────────────
+    { group: 'Foundry' },
+    { id: 'foundry_status',    method: 'GET', path: '/api/v1/foundry/status',      name: 'Foundry status',
+      check: d => d.success !== undefined },
+    { id: 'foundry_models',    method: 'GET', path: '/api/v1/foundry/models/list', name: 'Foundry models list',
+      check: d => d.success !== undefined },
+
+    // ── Generate ─────────────────────────────────────────────────────────────
+    { group: 'Generate', needsModel: true },
+    { id: 'generate',          method: 'POST', path: '/api/v1/generate', name: 'Generate (all fields)',
+      needsModel: true, timeoutMs: 120000,
+      body: { prompt: 'Say OK', model, temperature: 0.1, max_tokens: 16,
+              use_rag: false, top_k: 3, translate_model_dialog: false, user_language: 'en' },
+      check: d => d.success === true && d.content },
+    { id: 'generate_rag',      method: 'POST', path: '/api/v1/generate', name: 'Generate with RAG',
+      needsModel: true, timeoutMs: 120000,
+      body: { prompt: 'What is RAG?', model, temperature: 0.2, max_tokens: 32, use_rag: true, top_k: 3 },
+      check: d => d.success === true },
+    { id: 'ai_generate',       method: 'POST', path: '/api/v1/ai/generate', name: 'AI generate (all fields)',
+      needsModel: true, timeoutMs: 120000,
+      body: { prompt: 'Say OK', model, temperature: 0.1, max_tokens: 16,
+              use_rag: false, min_score: 0.0 },
+      check: d => d.success === true },
+    { id: 'ai_chat',           method: 'POST', path: '/api/v1/ai/chat', name: 'AI chat (messages array)',
+      needsModel: true, timeoutMs: 120000,
+      body: { messages: [{ role: 'user', content: 'Say OK' }], model,
+              temperature: 0.1, max_tokens: 16, use_rag: false,
+              system_prompt: 'You are a helpful assistant.', min_score: 0.0 },
+      check: d => d.choices || d.success === true },
+    { id: 'ai_optimize',       method: 'POST', path: '/api/v1/ai/optimize', name: 'AI optimize',
+      body: { task_type: 'general', model_preference: 'balanced' },
+      check: d => d.success !== undefined },
+
+    // ── Chat sessions ─────────────────────────────────────────────────────────
+    { group: 'Chat Sessions' },
+    { id: 'chat_start',        method: 'POST', path: '/api/v1/chat/start', name: 'Chat start session',
+      body: { model: model || 'default' },
+      check: d => d.success === true && d.session_id },
+    { id: 'chat_message',      method: 'POST', path: '/api/v1/chat/message', name: 'Chat message',
+      needsModel: true, timeoutMs: 120000,
+      body: { session_id: sessionId, message: 'Say OK', model,
+              temperature: 0.1, max_tokens: 16, source_lang: 'auto', locale: 'en' },
+      check: d => d.success === true },
+    { id: 'chat_history_get',  method: 'GET',  path: `/api/v1/chat/history/${sessionId}`, name: 'Chat history GET',
+      check: d => d.success === true },
+    { id: 'chat_models',       method: 'GET',  path: '/api/v1/chat/models', name: 'Chat models',
+      check: d => d.success !== undefined },
+    { id: 'chat_history_list', method: 'GET',  path: '/api/v1/chat/history/list?limit=10&offset=0', name: 'Chat history list',
+      check: d => d.success === true },
+    { id: 'chat_history_save', method: 'POST', path: '/api/v1/chat/history/save', name: 'Chat history save',
+      body: { messages: [{ role: 'user', content: 'test' }], session_id: sessionId,
+              model: model || '', title: 'QA test', aborted: false },
+      check: d => d.success === true },
+    { id: 'chat_cleanup',      method: 'POST', path: '/api/v1/chat/history/cleanup', name: 'Chat history cleanup',
+      body: { retention_days: 90, max_size_mb: 100 },
+      check: d => d.success === true },
+    { id: 'chat_delete',       method: 'DELETE', path: `/api/v1/chat/session/${sessionId}`, name: 'Chat session DELETE',
+      check: d => d.success === true },
+
+    // ── RAG ──────────────────────────────────────────────────────────────────
+    { group: 'RAG' },
+    { id: 'rag_status',        method: 'GET',  path: '/api/v1/rag/status',  name: 'RAG status',
+      check: d => d.success === true },
+    { id: 'rag_dirs',          method: 'GET',  path: '/api/v1/rag/dirs',    name: 'RAG indexable dirs',
+      check: d => d.success === true },
+    { id: 'rag_cwd',           method: 'GET',  path: '/api/v1/rag/cwd',     name: 'RAG cwd',
+      check: d => d.success === true },
+    { id: 'rag_profiles',      method: 'GET',  path: '/api/v1/rag/profiles', name: 'RAG profiles',
+      check: d => d.success === true },
+    { id: 'rag_browse',        method: 'GET',  path: '/api/v1/rag/browse',  name: 'RAG browse filesystem',
+      check: d => d.success === true },
+    { id: 'rag_search',        method: 'POST', path: '/api/v1/rag/search',  name: 'RAG search',
+      body: { query: 'test query', top_k: 3, min_score: 0.0 },
+      check: d => d.success === true },
+    { id: 'rag_formats',       method: 'GET',  path: '/api/v1/rag/extract/formats', name: 'RAG supported formats',
+      check: d => d.success !== undefined },
+    { id: 'rag_docs_list',     method: 'GET',  path: '/api/v1/rag/documents', name: 'RAG documents list',
+      check: d => d.success === true },
+    { id: 'rag_docs_stats',    method: 'GET',  path: '/api/v1/rag/documents/stats', name: 'RAG documents stats',
+      check: d => d.success === true },
+
+    // ── Config ───────────────────────────────────────────────────────────────
+    { group: 'Config' },
+    { id: 'config_get',        method: 'GET',  path: '/api/v1/config',          name: 'Config GET',
+      check: d => d.success === true },
+    { id: 'config_raw',        method: 'GET',  path: '/api/v1/config/raw',      name: 'Config raw GET',
+      check: d => d.success === true },
+    { id: 'config_env_raw',    method: 'GET',  path: '/api/v1/config/env-raw',  name: 'Config env-raw GET',
+      check: d => d.success === true },
+    { id: 'config_export',     method: 'GET',  path: '/api/v1/config/export',   name: 'Config export',
+      check: d => d._meta || d.config_json },
+    { id: 'config_prov_keys',  method: 'GET',  path: '/api/v1/config/provider-keys', name: 'Config provider keys',
+      check: d => d.success === true },
+    { id: 'config_ext_export', method: 'GET',  path: '/api/v1/config/extension-export', name: 'Config extension export',
+      check: d => d.success === true },
+    { id: 'config_patch',      method: 'PATCH', path: '/api/v1/config',         name: 'Config PATCH (noop key)',
+      body: { '_qa_test_noop': true },
+      check: d => d.success === true },
+
+    // ── Translator ───────────────────────────────────────────────────────────
+    { group: 'Translator' },
+    { id: 'translate_cfg',     method: 'GET',  path: '/api/v1/translate/config', name: 'Translator config',
+      check: d => d.enabled !== undefined },
+    { id: 'translate_detect',  method: 'POST', path: '/api/v1/translate/detect', name: 'Detect language',
+      body: { text: 'Hello world' },
+      check: d => d.language !== undefined || d.success !== undefined },
+    { id: 'translate_text',    method: 'POST', path: '/api/v1/translate',        name: 'Translate text',
+      body: { text: 'Hello', source_lang: 'auto', target_lang: 'ru', provider: '', api_key: '' },
+      check: d => d.success !== undefined },
+
+    // ── Logs ─────────────────────────────────────────────────────────────────
+    { group: 'Logs' },
+    { id: 'logs_get',          method: 'GET',  path: '/api/v1/logs?lines=20',   name: 'Logs GET',
+      check: d => d.success !== undefined || Array.isArray(d) || d.logs !== undefined },
+
+    // ── HuggingFace ──────────────────────────────────────────────────────────
+    { group: 'HuggingFace' },
+    { id: 'hf_status',         method: 'GET',  path: '/api/v1/hf/status',       name: 'HF status',
+      check: d => d.success !== undefined },
+    { id: 'hf_models',         method: 'GET',  path: '/api/v1/hf/models',       name: 'HF models list',
+      check: d => d.success !== undefined },
+
+    // ── llama.cpp ────────────────────────────────────────────────────────────
+    { group: 'llama.cpp' },
+    { id: 'llama_status',      method: 'GET',  path: '/api/v1/llama/status',    name: 'llama.cpp status',
+      check: d => d.success !== undefined },
+    { id: 'llama_models',      method: 'GET',  path: '/api/v1/llama/models',    name: 'llama.cpp models',
+      check: d => d.success !== undefined },
+
+    // ── Ollama ───────────────────────────────────────────────────────────────
+    { group: 'Ollama' },
+    { id: 'ollama_status',     method: 'GET',  path: '/api/v1/ollama/status',   name: 'Ollama status',
+      check: d => d.success !== undefined },
+    { id: 'ollama_models',     method: 'GET',  path: '/api/v1/ollama/models',   name: 'Ollama models',
+      check: d => d.success !== undefined },
+  ];
+}
+
+// ── Auto-detect model ─────────────────────────────────────────────────────────
+async function detectModel() {
+  const r = await api('GET', '/api/v1/models', undefined, 10000);
+  if (!r.ok || !r.data) return '';
+  const models = r.data.models || [];
+  for (const m of models.slice(0, 8)) {
+    const id = (m.id || '').trim();
+    if (!id) continue;
+    // Quick probe
+    const probe = await api('POST', '/api/v1/generate',
+      { prompt: 'OK', model: id, temperature: 0.1, max_tokens: 4, use_rag: false }, 30000);
+    if (probe.ok && probe.data && probe.data.success) return id;
+  }
+  return '';
+}
+
+// ── Auto-create chat session ──────────────────────────────────────────────────
+async function createSession(model) {
+  const r = await api('POST', '/api/v1/chat/start', { model: model || 'default' }, 5000);
+  return (r.data && r.data.session_id) || 'qa-session-' + Date.now();
+}
+
+// ── Main runner ───────────────────────────────────────────────────────────────
+async function runAll() {
+  _stop = false;
+  clearResults();
+  document.getElementById('btn-run').style.display  = 'none';
+  document.getElementById('btn-stop').style.display = 'inline-block';
+
+  // Resolve model
+  const manualModel = document.getElementById('model-input').value.trim();
+  if (manualModel) {
+    _model = manualModel;
+  } else {
+    addGroupHeader('🔍 Auto-detecting model…');
+    _model = await detectModel();
+  }
+  document.getElementById('model-badge').textContent = `model: ${_model || 'none'}`;
+
+  // Create session for chat tests
+  _sessionId = await createSession(_model);
+
+  const tests = buildTests(_model, _sessionId);
+
+  // Pre-render all rows
+  let testCount = 0;
+  for (const t of tests) {
+    if (t.group) continue;
+    testCount++;
+  }
+
+  clearResults();
+  let rendered = 0;
+  for (const t of tests) {
+    if (t.group) { addGroupHeader(t.group); continue; }
+    addTestRow(t.id, t.method, t.path, t.name);
+    rendered++;
+  }
+
+  // Run tests sequentially
+  let done = 0;
+  for (const t of tests) {
+    if (t.group) continue;
+    if (_stop) { setSkip(t.id, 'stopped by user'); cnt.total++; updateCounters(); continue; }
+
+    if (t.needsModel && !_model) {
+      setSkip(t.id, 'no model available');
+      done++;
+      setProgress(done, testCount);
+      continue;
+    }
+
+    const r = await api(t.method, t.path, t.body, t.timeoutMs || 15000);
+    const pass = r.ok && t.check ? t.check(r.data) : r.ok;
+    const errMsg = r.error || (!r.ok ? `HTTP ${r.status}` : (!pass ? 'check failed' : ''));
+    setResult(t.id, pass, r.ms, t.body, r.data, errMsg);
+    done++;
+    setProgress(done, testCount);
+
+    // Small delay to avoid hammering
+    await new Promise(res => setTimeout(res, 80));
+  }
+
+  document.getElementById('btn-run').style.display  = 'inline-block';
+  document.getElementById('btn-stop').style.display = 'none';
+  setProgress(testCount, testCount);
+}
+
+function stopAll() { _stop = true; }
+
+function clearResults() {
+  document.getElementById('results').innerHTML = '';
+  cnt.pass = cnt.fail = cnt.skip = cnt.total = 0;
+  updateCounters();
+  setProgress(0, 1);
+}
+</script>
+</body>
+</html>

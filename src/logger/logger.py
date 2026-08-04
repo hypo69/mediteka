@@ -118,6 +118,9 @@ class Logger(metaclass=SingletonMeta):
     debug_log_path: Path
     errors_log_path: Path
     json_log_path: Path
+    fastapi_log_path: Path
+    gemini_log_path: Path
+    playwright_log_path: Path
 
     def __init__(
         self,
@@ -133,6 +136,9 @@ class Logger(metaclass=SingletonMeta):
         self.debug_log_path = self.log_files_path / (debug_log_path or "debug.log")
         self.errors_log_path = self.log_files_path / (errors_log_path or "errors.log")
         self.json_log_path = self.log_files_path / (json_log_path or "log.json")
+        self.fastapi_log_path = self.log_files_path / "fastapi.log"
+        self.gemini_log_path = self.log_files_path / "gemini.log"
+        self.playwright_log_path = self.log_files_path / "playwright.log"
 
         # Ensure directories exist
         self.log_files_path.mkdir(parents=True, exist_ok=True)
@@ -142,6 +148,9 @@ class Logger(metaclass=SingletonMeta):
         self.debug_log_path.touch(exist_ok=True)
         self.errors_log_path.touch(exist_ok=True)
         self.json_log_path.touch(exist_ok=True)
+        self.fastapi_log_path.touch(exist_ok=True)
+        self.gemini_log_path.touch(exist_ok=True)
+        self.playwright_log_path.touch(exist_ok=True)
 
         # Console logger
         self.logger_console = logging.getLogger(name="logger_console")
@@ -178,6 +187,29 @@ class Logger(metaclass=SingletonMeta):
         errors_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         self.logger_file_errors.addHandler(errors_handler)
 
+        # Module specific loggers
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        
+        self.logger_fastapi = logging.getLogger("logger_fastapi")
+        self.logger_fastapi.setLevel(logging.DEBUG)
+        self.logger_fastapi.propagate = False
+        fastapi_handler = logging.FileHandler(self.fastapi_log_path, encoding='utf-8')
+        fastapi_handler.setFormatter(formatter)
+        self.logger_fastapi.addHandler(fastapi_handler)
+
+        self.logger_gemini = logging.getLogger("logger_gemini")
+        self.logger_gemini.setLevel(logging.DEBUG)
+        self.logger_gemini.propagate = False
+        gemini_handler = logging.FileHandler(self.gemini_log_path, encoding='utf-8')
+        gemini_handler.setFormatter(formatter)
+        self.logger_gemini.addHandler(gemini_handler)
+
+        self.logger_playwright = logging.getLogger("logger_playwright")
+        self.logger_playwright.setLevel(logging.DEBUG)
+        self.logger_playwright.propagate = False
+        playwright_handler = logging.FileHandler(self.playwright_log_path, encoding='utf-8')
+        playwright_handler.setFormatter(formatter)
+        self.logger_playwright.addHandler(playwright_handler)
 
         # JSON file logger
         self.logger_file_json = logging.getLogger(name='logger_json')
@@ -253,6 +285,38 @@ class Logger(metaclass=SingletonMeta):
 
         if level in [logging.ERROR, logging.CRITICAL] and self.logger_file_errors:
             self.logger_file_errors.log(level, formatted_message)
+
+        # Перенаправление логов по модулям на основе стека вызовов
+        try:
+            stack = inspect.stack()
+            caller_file = ""
+            for frame in stack:
+                filename = frame.filename.lower()
+                if "logger.py" not in filename:
+                    caller_file = filename
+                    break
+
+            if caller_file:
+                clean_msg = str(message)
+                if ex:
+                    clean_msg += f" {ex}"
+                
+                # FastAPI routing
+                if "fastapi" in caller_file or "main.py" in caller_file:
+                    if self.logger_fastapi:
+                        self.logger_fastapi.log(level, clean_msg)
+                
+                # Gemini / AI routing
+                if "gemini" in caller_file or "src/ai" in caller_file or "src\\ai" in caller_file:
+                    if self.logger_gemini:
+                        self.logger_gemini.log(level, clean_msg)
+                
+                # Playwright routing
+                if "playwright" in caller_file or "torrent_playwright" in caller_file:
+                    if self.logger_playwright:
+                        self.logger_playwright.log(level, clean_msg)
+        except Exception as e:
+            pass
 
     def info(self, message, ex=None, exc_info=False, text_color: str = "green", bg_color: str = ""):
         """

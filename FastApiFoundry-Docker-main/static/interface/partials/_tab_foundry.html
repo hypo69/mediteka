@@ -1,0 +1,106 @@
+<div class="tab-pane fade" id="foundry" role="tabpanel">
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" data-i18n="foundry.service">Foundry Service</h5>
+                    <div>
+                        <span id="foundry-port-indicator" class="badge bg-secondary me-2">
+                            <span data-i18n="foundry.port">Port</span>: <span data-i18n="foundry.unknown">Unknown</span>
+                        </span>
+                        <span id="foundry-service-status" class="badge bg-secondary" data-i18n="foundry.unknown">Unknown</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   id="foundry-toggle-switch" style="width:3em;height:1.5em;cursor:pointer"
+                                   onchange="toggleFoundryService(this.checked)">
+                            <label class="form-check-label fw-semibold" for="foundry-toggle-switch"
+                                   id="foundry-toggle-label" data-i18n="foundry.start">Start Foundry</label>
+                        </div>
+                        <span class="badge bg-secondary text-wrap" style="font-size:.75em;font-weight:400;max-width:220px"
+                              title="Foundry — внешний сервис Microsoft. Управляйте им только если он не запущен автоматически.">
+                            ℹ️ внешний сервис, обычно не требует перезапуска
+                        </span>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="checkFoundryStatus()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div id="foundry-service-info" class="text-muted">
+                        <small data-i18n="foundry.status_placeholder">Service status will appear here</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" data-i18n="foundry.downloaded">Downloaded Models</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Бейдж: Foundry не активен -->
+                    <div id="foundry-inactive-badge" style="display:none" class="alert alert-warning py-2 px-3 mb-3">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong data-i18n="foundry.inactive_title">Foundry не активен.</strong>
+                        <span data-i18n="foundry.inactive_hint">Чтобы получить список моделей — запустите Foundry с помощью переключателя выше.</span>
+                    </div>
+
+                    <div class="form-text mb-2" data-i18n="foundry.downloaded_hint">Only already downloaded models can be loaded.</div>
+                    <div id="foundry-downloaded-models-list" style="max-height:220px;overflow-y:auto">
+                        <div class="text-muted text-center p-3"><small data-i18n="foundry.downloaded_placeholder">Click Refresh Downloaded to see cached models</small></div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <select id="foundry-downloaded-model-select" class="form-select form-select-sm" onchange="if(this.value) selectFoundryModel(this.value)">
+                            <option value="" data-i18n="foundry.downloaded_placeholder">Select a downloaded model...</option>
+                        </select>
+                        <button class="btn btn-success btn-sm" onclick="loadSelectedFoundryModel()" style="white-space:nowrap">
+                            <i class="bi bi-play-fill"></i> Load &amp; Use
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="listCachedFoundryModels()" style="white-space:nowrap">
+                            <i class="bi bi-arrow-clockwise"></i> <span data-i18n="foundry.refresh_downloaded">Refresh</span>
+                        </button>
+                    </div>
+                    <div id="foundry-load-status" class="mt-2 small"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0" data-i18n="foundry.available_models">Available Models</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 d-flex align-items-center gap-3">
+                        <button class="btn btn-primary" onclick="listFoundryModels()">
+                            <i class="bi bi-cloud-download"></i> <span data-i18n="foundry.list_models_download">List Models for Download</span>
+                        </button>
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" id="foundry-include-gpu-models">
+                            <label class="form-check-label" for="foundry-include-gpu-models" data-i18n="foundry.include_gpu">Include GPU models</label>
+                        </div>
+                    </div>
+                    <div id="foundry-models-list" style="max-height:320px;overflow-y:auto">
+                        <div class="text-muted text-center p-3"><small data-i18n="foundry.models_placeholder">Click List Models to see available models</small></div>
+                    </div>
+                    <div class="alert alert-info mt-3 mb-0">
+                        <div class="fw-semibold mb-2" data-i18n="foundry.cli_howto">How to download a model via Foundry CLI</div>
+                        <ol class="mb-2 ps-3 small">
+                            <li data-i18n="foundry.cli_step1">Open PowerShell or Terminal.</li>
+                            <li data-i18n="foundry.cli_step2">List models: <code>foundry model list</code></li>
+                            <li data-i18n="foundry.cli_step3">Download: <code>foundry model download &lt;model-id&gt;</code></li>
+                            <li data-i18n="foundry.cli_step4">Load: <code>foundry model load &lt;model-id&gt;</code></li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

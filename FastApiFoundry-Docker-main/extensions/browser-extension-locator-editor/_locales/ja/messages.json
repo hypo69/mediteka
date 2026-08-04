@@ -1,0 +1,68 @@
+{
+  "extensionName": {
+    "message": "SEOai",
+    "description": "拡張機能の名前"
+  },
+  "extensionDescription": {
+    "message": "明確で構造化されたコンピューターコンポーネントの説明を作成します",
+    "description": "拡張機能の説明"
+  },
+  "contextMenuTitle": {
+    "message": "価格提案を作成する",
+    "description": "コンテキストメニュー項目のタイトル"
+  },
+  "apiKeyLabel": {
+    "message": "Google Gemini APIキー",
+    "description": "APIキー入力フィールドのラベル"
+  },
+  "modelLabel": {
+    "message": "モデル",
+    "description": "モデル選択のラベル"
+  },
+  "saveButton": {
+    "message": "保存",
+    "description": "保存ボタンのテキスト"
+  },
+  "statusNoApiKey": {
+    "message": "APIキーを入力してください",
+    "description": "APIキーが入力されていない場合のメッセージ"
+  },
+  "indicatorAnalyzing": {
+    "message": "価格提案を作成中…",
+    "description": "分析中のメッセージ"
+  },
+  "errorFetchContent": {
+    "message": "ページコンテンツの取得に失敗しました",
+    "description": "ページコンテンツの取得エラー"
+  },
+  "errorPageTooShort": {
+    "message": "ページコンテンツが短すぎます",
+    "description": "ページが短すぎる場合のエラー"
+  },
+  "errorApi": {
+    "message": "APIエラー: $error$",
+    "description": "一般的なAPIエラーメッセージ",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "無効なAPIキー"
+      }
+    }
+  },
+  "price": {
+    "message": "価格",
+    "description": "ビルドの価格"
+  },
+  "totalPriceLabel": {
+    "message": "合計価格:",
+    "description": "提案の合計価格のラベル"
+  },
+  "saveOfferButton": {
+    "message": "提案を保存",
+    "description": "「提案を保存」ボタンのテキスト"
+  },
+  "changeImageButton": {
+    "message": "画像を変更",
+    "description": "フッターの「画像を変更」ボタンのテキスト"
+  }
+}

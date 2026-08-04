@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+===============================================================================
+Process Name: RAG Storage — управление страницами для индексации
+===============================================================================
+Description:
+    Страница просмотра и отправки сохранённых страниц в RAG-индекс FastAPI Foundry.
+    Пользователь выбирает записи чекбоксами и нажимает "Send to RAG".
+
+File: rag-storage.html
+Project: AI Assistant (ai_assist)
+Version: 0.8.0
+Author: hypo69
+Copyright: © 2026 hypo69
+===============================================================================
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RAG Storage</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <style>
+        body { min-width: 700px; }
+        .page-wrap { display: flex; flex-direction: column; height: 100vh; }
+        .toolbar { padding: 10px 16px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .toolbar .server-url { flex: 1; min-width: 200px; }
+        .entries-area { flex: 1; overflow-y: auto; padding: 16px; }
+        .entry-card { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #dee2e6; border-radius: 6px; margin-bottom: 8px; background: #fff; }
+        .entry-card:hover { background: #f8f9fa; }
+        .entry-card.selected { border-color: #0d6efd; background: #e7f1ff; }
+        .entry-meta { flex: 1; min-width: 0; }
+        .entry-title { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .entry-url   { font-size: 11px; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .entry-date  { font-size: 11px; color: #adb5bd; }
+        .badge-status { font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+        .badge-ready  { background: #d1e7dd; color: #0f5132; }
+        .badge-pending{ background: #fff3cd; color: #664d03; }
+        .badge-error  { background: #f8d7da; color: #842029; }
+        .empty-state  { text-align: center; color: #adb5bd; padding: 60px 20px; font-size: 14px; }
+        .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
+        #status-bar { padding: 8px 16px; font-size: 12px; border-top: 1px solid #dee2e6; background: #f8f9fa; min-height: 34px; }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+
+    <!-- Navbar -->
+    <div class="ext-navbar">
+        <div class="brand">📚 <span data-i18n="rag.title">RAG Storage</span></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <input type="text" id="server-url" class="form-control form-control-sm server-url"
+               placeholder="http://localhost:9696" value="http://localhost:9696">
+        <button class="btn btn-sm btn-outline-secondary" id="btn-select-all"  data-i18n="rag.select_all">Select All</button>
+        <button class="btn btn-sm btn-outline-secondary" id="btn-deselect-all" data-i18n="rag.deselect_all">Deselect All</button>
+        <button class="btn btn-sm btn-danger"            id="btn-delete"       data-i18n="rag.delete_selected">🗑 Delete</button>
+        <button class="btn btn-sm btn-primary"           id="btn-send"         data-i18n="rag.send_to_rag">📤 Send to RAG</button>
+    </div>
+
+    <!-- How it works info badge -->
+    <div style="margin: 12px 16px 0; padding: 10px 14px; background: #cff4fc; border: 1px solid #b6effb; border-radius: 6px; font-size: 12px; color: #055160; line-height: 1.7;">
+        <strong>ℹ️ Как работает:</strong><br>
+        <b>1.</b> ПКМ на любой странице → <b>RAG Storage → Save Page to RAG</b> — извлекает текст и сохраняет локально.<br>
+        <b>2.</b> ПКМ → <b>Open RAG Storage</b> (или кнопка в popup) — открывает этот список.<br>
+        <b>3.</b> Выбери записи чекбоксами, укажи URL сервера, нажми <b>Send to RAG</b> — отправит <code>POST /api/v1/rag/build</code>.
+    </div>
+
+    <!-- Entries list -->
+    <div class="entries-area" id="entries-area">
+        <div class="empty-state" id="empty-state">
+            <div class="icon">📭</div>
+            <div data-i18n="rag.empty">No saved pages yet.<br>Right-click any page → RAG Storage → Save Page to RAG.</div>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div id="status-bar"></div>
+
+</div>
+<script src="rag-storage.js" type="module"></script>
+</body>
+</html>

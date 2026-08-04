@@ -109,8 +109,9 @@ if ($Action -eq 'start') {
             if (-not (Test-Path $logsDir)) {
                 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
             }
-            $logFilePath = Join-Path $logsDir "foundry.log"
-            Start-Process -FilePath "foundry" -ArgumentList "server", "start" -RedirectStandardOutput $logFilePath -RedirectStandardError $logFilePath -WindowStyle Minimized
+            $logOutPath = Join-Path $logsDir "foundry_stdout.log"
+            $logErrPath = Join-Path $logsDir "foundry_stderr.log"
+            Start-Process -FilePath "foundry" -ArgumentList "server", "start" -RedirectStandardOutput $logOutPath -RedirectStandardError $logErrPath -WindowStyle Minimized
             
             for ($i = 1; $i -le 15; $i++) {
                 Start-Sleep -Seconds 2

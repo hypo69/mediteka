@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Foundry</title>
+    <link rel="icon" type="image/png" sizes="16x16"   href="/static/assets/icons/icon16.png">
+    <link rel="icon" type="image/png" sizes="48x48"   href="/static/assets/icons/icon48.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/static/assets/icons/icon128.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .chat-container { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; }
+        .message { margin-bottom: 15px; }
+        .message.user { text-align: right; }
+        .message .content { 
+            display: inline-block; 
+            padding: 8px 15px; 
+            border-radius: 15px; 
+            max-width: 70%; 
+        }
+        .message.user .content { background-color: #007bff; color: white; }
+        .message.assistant .content { background-color: #f8f9fa; border: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>FastAPI Foundry</h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>AI Chat</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-messages" class="chat-container mb-3">
+                            <div class="text-muted text-center">Start a conversation</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="chat-input" class="form-control" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
+                            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>Settings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label>Model</label>
+                            <select id="chat-model" class="form-select">
+                                <option value="">Auto-select</option>
+                            </select>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="use-rag" checked>
+                            <label class="form-check-label">Use RAG</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6>Status</h6>
+                    </div>
+                    <div class="card-body" id="status">
+                        <div>API: <span id="api-status" class="badge bg-secondary">Unknown</span></div>
+                        <div>Foundry: <span id="foundry-status" class="badge bg-secondary">Unknown</span></div>
+                        <div>RAG: <span id="rag-status" class="badge bg-secondary">Unknown</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8002/api/v1';
+        
+        // Load models and status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadModels();
+            checkStatus();
+            setInterval(checkStatus, 30000);
+        });
+        
+        async function loadModels() {
+            try {
+                const response = await fetch(`${API_BASE}/models`);
+                const data = await response.json();
+                
+                const select = document.getElementById('chat-model');
+                select.innerHTML = '<option value="">Auto-select</option>';
+                
+                if (data.success && data.models) {
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.id;
+                        option.textContent = model.id;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load models:', error);
+            }
+        }
+        
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('api-status').className = `badge ${data.status === 'healthy' ? 'bg-success' : 'bg-danger'}`;
+                document.getElementById('api-status').textContent = data.status;
+                
+                document.getElementById('foundry-status').className = `badge ${data.foundry_status === 'healthy' ? 'bg-success' : 'bg-danger'}`;
+                document.getElementById('foundry-status').textContent = data.foundry_status;
+                
+                document.getElementById('rag-status').className = `badge ${data.rag_loaded ? 'bg-success' : 'bg-warning'}`;
+                document.getElementById('rag-status').textContent = data.rag_loaded ? 'Loaded' : 'Not Loaded';
+            } catch (error) {
+                console.error('Status check failed:', error);
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage('user', message);
+            input.value = '';
+            
+            const typingId = addMessage('assistant', 'Typing...');
+            
+            try {
+                const requestData = {
+                    prompt: message,
+                    model: document.getElementById('chat-model').value || undefined,
+                    use_rag: document.getElementById('use-rag').checked
+                };
+                
+                console.log('Sending request:', requestData);
+                
+                const response = await fetch(`${API_BASE}/generate`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                document.getElementById(typingId).remove();
+                
+                if (data.success && data.content) {
+                    addMessage('assistant', data.content);
+                } else {
+                    addMessage('assistant', `Error: ${data.error || 'Failed to generate response'}`);
+                }
+            } catch (error) {
+                console.error('Request failed:', error);
+                document.getElementById(typingId).remove();
+                addMessage('assistant', `Error: ${error.message}`);
+            }
+        }
+        
+        function addMessage(role, content) {
+            const container = document.getElementById('chat-messages');
+            const messageId = 'msg-' + Date.now();
+            
+            if (container.children.length === 1 && container.children[0].classList.contains('text-muted')) {
+                container.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = `<div class="content">${content}</div>`;
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            return messageId;
+        }
+    </script>
+</body>
+</html>
