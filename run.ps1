@@ -45,10 +45,31 @@ try {
 }
 
 # ============================================
+# ЗАПУСК CLOUDFLARE TUNNEL (через Run-Cloudflared.ps1)
+# ============================================
+Write-Host ""
+Write-Host "[3/6] Запуск Cloudflare Tunnel..." -ForegroundColor Cyan
+$cloudflaredScript = Join-Path $scriptDir "Run-Cloudflared.ps1"
+if (Test-Path $cloudflaredScript) {
+    Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
+    & $cloudflaredScript
+    
+    # Ожидание инициализации туннеля
+    Write-Host "[INFO] Ожидание 10 секунд для инициализации туннеля..." -ForegroundColor Cyan
+    Start-Sleep -Seconds 10
+    
+    # Открываем браузер на внешнем домене заранее
+    Start-Process "https://kino.davidka.net"
+    Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
+} else {
+    Write-Host "    [WARN] Run-Cloudflared.ps1 не найден: $cloudflaredScript" -ForegroundColor Yellow
+}
+
+# ============================================
 # ЗАГРУЗКА КОНФИГУРАЦИИ И ОКРУЖЕНИЯ (.env)
 # ============================================
 Write-Host ""
-Write-Host "[3/6] Загрузка конфигурации..." -ForegroundColor Cyan
+Write-Host "[4/6] Загрузка конфигурации..." -ForegroundColor Cyan
 $configPath = Join-Path $scriptDir "src\fastapi\config.json"
 $envFile = Join-Path $scriptDir ".env"
 $host_ = "0.0.0.0"
@@ -122,19 +143,6 @@ if ($occupied) {
 }
 
 # ============================================
-# ЗАПУСК CLOUDFLARE TUNNEL (через Run-Cloudflared.ps1)
-# ============================================
-Write-Host ""
-Write-Host "[4.1] Запуск Cloudflare Tunnel..." -ForegroundColor Cyan
-$cloudflaredScript = Join-Path $scriptDir "Run-Cloudflared.ps1"
-if (Test-Path $cloudflaredScript) {
-    Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
-    & $cloudflaredScript
-} else {
-    Write-Host "    [WARN] Run-Cloudflared.ps1 не найден: $cloudflaredScript" -ForegroundColor Yellow
-}
-
-# ============================================
 # ЗАПУСК LOCAL FOUNDRY SERVICE
 # ============================================
 if ($useFoundry) {
@@ -169,12 +177,6 @@ Write-Host "        Локальный адрес: $url" -ForegroundColor Cyan
 Write-Host ""
 
 # Ожидание инициализации туннеля
-Write-Host "[INFO] Ожидание 10 секунд для инициализации туннеля..." -ForegroundColor Cyan
-Start-Sleep -Seconds 10
-
-# Открываем браузер на внешнем домене заранее
-Start-Process "https://kino.davidka.net"
-Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
 Write-Host "[INFO] Запускаем uvicorn в текущем окне. Для остановки нажмите Ctrl+C." -ForegroundColor Cyan
 Write-Host ""
 
