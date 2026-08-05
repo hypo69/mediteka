@@ -110,40 +110,101 @@ async function initModelsTab() {
       }
     };
   }
+
+  // --- 4. Load System Instruction ---
+  await loadSystemInstruction();
+  const saveBtnInstr = document.getElementById('btn-save-instruction');
+  const reloadBtnInstr = document.getElementById('btn-reload-instruction');
+  if (saveBtnInstr) saveBtnInstr.onclick = saveSystemInstruction;
+  if (reloadBtnInstr) reloadBtnInstr.onclick = loadSystemInstruction;
 }
 
 // Helper to load models list
 async function loadTabModels(modelSelect, saveBtn) {
+  const providerSelect = document.getElementById('provider-tab-select');
+  if (providerSelect) providerSelect.innerHTML = '';
   modelSelect.innerHTML = '';
-  let models = [];
+  
+  let modelsGrouped = {};
   
   try {
     const modelsData = await window.api.fetch('/api/chat/models');
-    models = modelsData.models || [];
+    modelsGrouped = modelsData.models || {};
+    if (Array.isArray(modelsGrouped)) {
+      modelsGrouped = { 'gemini': modelsGrouped };
+    }
   } catch (err) {
     console.error('Ошибка загрузки моделей:', err);
     showModelsNotification('Ошибка загрузки моделей AI: ' + err.message, 'danger');
   }
 
-  if (models.length === 0) {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = 'Нет доступных моделей';
-    modelSelect.appendChild(option);
+  const providers = Object.keys(modelsGrouped).filter(p => modelsGrouped[p] && modelsGrouped[p].length > 0);
+
+  if (providers.length === 0) {
+    if (providerSelect) {
+      providerSelect.innerHTML = '<option value="">Нет доступных провайдеров</option>';
+    }
+    modelSelect.innerHTML = '<option value="">Нет доступных моделей</option>';
     saveBtn.disabled = true;
-  } else {
-    models.forEach(modelName => {
+    return;
+  }
+  
+  if (providerSelect) {
+    providerSelect.innerHTML = '';
+    providers.forEach(p => {
       const option = document.createElement('option');
-      option.value = modelName;
-      option.textContent = modelName;
-      modelSelect.appendChild(option);
+      option.value = p;
+      option.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+      providerSelect.appendChild(option);
     });
-    saveBtn.disabled = false;
+  }
+
+  const populateModels = (provider) => {
+    modelSelect.innerHTML = '';
+    const providerModels = modelsGrouped[provider] || [];
+    if (providerModels.length === 0) {
+      modelSelect.innerHTML = '<option value="">Нет моделей</option>';
+      saveBtn.disabled = true;
+    } else {
+      providerModels.forEach(modelName => {
+        const option = document.createElement('option');
+        option.value = modelName;
+        option.textContent = modelName;
+        modelSelect.appendChild(option);
+      });
+      saveBtn.disabled = false;
+    }
+  };
+
+  if (providerSelect) {
+    providerSelect.onchange = () => populateModels(providerSelect.value);
+    populateModels(providerSelect.value);
+  } else {
+    let allModels = [];
+    providers.forEach(p => allModels = allModels.concat(modelsGrouped[p]));
+    allModels.forEach(modelName => {
+        const option = document.createElement('option');
+        option.value = modelName;
+        option.textContent = modelName;
+        modelSelect.appendChild(option);
+    });
+    saveBtn.disabled = allModels.length === 0;
   }
 
   try {
     const settingsData = await window.api.fetch('/auth/settings');
     if (settingsData && settingsData.model) {
+      let foundProvider = null;
+      for (const p of providers) {
+        if (modelsGrouped[p].includes(settingsData.model)) {
+          foundProvider = p;
+          break;
+        }
+      }
+      if (foundProvider && providerSelect) {
+        providerSelect.value = foundProvider;
+        populateModels(foundProvider);
+      }
       modelSelect.value = settingsData.model;
     }
   } catch (err) {
@@ -355,22 +416,3 @@ async function saveSystemInstruction() {
   }
 }
 
-// Hook system instruction editor after initModelsTab
-const _origInitModelsTab = window.initModelsTab;
-window.initModelsTab = async function() {
-  await _origInitModelsTab();
-  
-  // Load system instruction
-  await loadSystemInstruction();
-
-  // Bind save/reload buttons
-  const saveBtn = document.getElementById('btn-save-instruction');
-  const reloadBtn = document.getElementById('btn-reload-instruction');
-
-  if (saveBtn) {
-    saveBtn.onclick = saveSystemInstruction;
-  }
-  if (reloadBtn) {
-    reloadBtn.onclick = loadSystemInstruction;
-  }
-};

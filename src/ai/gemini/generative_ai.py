@@ -199,13 +199,32 @@ class GoogleGenerativeAI:
 
     def _build_content_config(self, instruction: str = "", tools: list = (), generation_config: dict = {}) -> types.GenerateContentConfig:
         cfg_kwargs = {}
+        gen_cfg = {}
+        if isinstance(self.generation_config, dict):
+            gen_cfg.update(self.generation_config)
+        if generation_config:
+            gen_cfg.update(generation_config)
+            
+        response_type = gen_cfg.pop('response_type', 'both')
+
         inst = instruction or self.system_instruction or ""
         if inst:
-            format_rule = (
-                "\n\nCRITICAL: You must format your response exactly as follows, with no extra text outside these blocks:\n"
-                "[CHAT]\n<detailed styled markdown response in Russian for the user to read>\n"
-                "[VOICE]\n<very concise, clear speech-friendly Russian text for the narrator, using only Russian letters, no markdown, no special symbols, write all numbers as words>"
-            )
+            if response_type == 'chat':
+                format_rule = (
+                    "\n\nCRITICAL: You must format your response for reading on a screen.\n"
+                    "Provide a detailed styled markdown response in Russian for the user to read."
+                )
+            elif response_type == 'voice':
+                format_rule = (
+                    "\n\nCRITICAL: You must format your response for a voice narrator (TTS).\n"
+                    "Provide a very concise, clear speech-friendly Russian text, using only Russian letters, no markdown, no special symbols, write all numbers as words."
+                )
+            else:
+                format_rule = (
+                    "\n\nCRITICAL: You must format your response exactly as follows, with no extra text outside these blocks:\n"
+                    "[CHAT]\n<detailed styled markdown response in Russian for the user to read>\n"
+                    "[VOICE]\n<very concise, clear speech-friendly Russian text for the narrator, using only Russian letters, no markdown, no special symbols, write all numbers as words>"
+                )
             inst += format_rule
             cfg_kwargs['system_instruction'] = inst
         all_tools = list(tools) if tools else []
@@ -214,12 +233,6 @@ class GoogleGenerativeAI:
             all_tools.append(types.Tool(google_search=types.GoogleSearch()))
         cfg_kwargs['tools'] = all_tools
         
-        gen_cfg = {}
-        if isinstance(self.generation_config, dict):
-            gen_cfg.update(self.generation_config)
-        if generation_config:
-            gen_cfg.update(generation_config)
-
         if gen_cfg:
             for k in ['temperature', 'top_p', 'top_k', 'response_mime_type']:
                 val = gen_cfg.get(k)

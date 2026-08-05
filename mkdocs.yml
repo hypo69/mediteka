@@ -47,6 +47,10 @@ nav:
       - dev/plugins.md
       - dev/development.md
       - dev/deployment.md
+      - dev/project_overview.md
+      - dev/MODEL_SCRIPT_EXECUTION_GUIDE.md
+      - dev/media_organizer_workflow.md
+      - dev/legacy_project_knowledge.md
       - skills.md
   - Модули:
       - modules/ai.md

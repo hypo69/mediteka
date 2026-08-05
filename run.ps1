@@ -54,13 +54,34 @@ if (Test-Path $cloudflaredScript) {
     Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
     & $cloudflaredScript
     
-    # Ожидание инициализации туннеля
-    Write-Host "[INFO] Ожидание 10 секунд для инициализации туннеля..." -ForegroundColor Cyan
-    Start-Sleep -Seconds 10
+    # Ожидание доступности туннеля
+    $targetUrl = "https://kino.davidka.net"
+    $maxRetries = 20
+    $retryDelay = 5
+    $isUp = $false
     
-    # Открываем браузер на внешнем домене заранее
-    Start-Process "https://kino.davidka.net"
-    Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
+    Write-Host "[INFO] Ожидание доступности туннеля $targetUrl..." -ForegroundColor Cyan
+    for ($i = 1; $i -le $maxRetries; $i++) {
+        try {
+            $response = Invoke-WebRequest -Uri $targetUrl -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
+            if ($response.StatusCode -eq 200) {
+                Write-Host "    [OK] Туннель доступен!" -ForegroundColor Green
+                $isUp = $true
+                break
+            }
+        } catch {
+            # Ошибка при попытке соединения — продолжаем цикл
+        }
+        Write-Host "    [INFO] Попытка ${i}/${maxRetries}: Туннель еще не готов..." -ForegroundColor DarkGray
+        Start-Sleep -Seconds $retryDelay
+    }
+    
+    if ($isUp) {
+        Start-Process $targetUrl
+        Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
+    } else {
+        Write-Host "[WARN] Туннель не стал доступен за отведенное время." -ForegroundColor Yellow
+    }
 } else {
     Write-Host "    [WARN] Run-Cloudflared.ps1 не найден: $cloudflaredScript" -ForegroundColor Yellow
 }

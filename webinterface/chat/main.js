@@ -410,6 +410,40 @@ async function sendMessage() {
     chatHistory.push({ role: 'user', parts: [msg] });
     chatHistory.push({ role: 'model', parts: [reply] });
 
+    // Добавляем кнопку "Сохранить в RAG"
+    const ragBtnContainer = document.createElement('div');
+    ragBtnContainer.className = 'mt-2 text-end';
+    
+    const ragBtn = document.createElement('button');
+    ragBtn.className = 'btn btn-sm btn-outline-secondary';
+    ragBtn.innerHTML = '💾 Сохранить в RAG';
+    ragBtn.onclick = async () => {
+      ragBtn.disabled = true;
+      ragBtn.innerHTML = '⏳ Сохранение...';
+      try {
+        const r = await fetch('/api/chat/save-rag', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ query: msg, chat_text: reply, voice_text: voiceReply })
+        });
+        if (r.ok) {
+          ragBtn.innerHTML = '✅ Сохранено';
+          ragBtn.classList.remove('btn-outline-secondary');
+          ragBtn.classList.add('btn-success');
+        } else {
+          const errData = await r.json().catch(() => ({}));
+          alert('Ошибка при сохранении в RAG: ' + (errData.detail || r.statusText));
+          ragBtn.innerHTML = '❌ Ошибка';
+          ragBtn.disabled = false;
+        }
+      } catch (err) {
+        alert('Ошибка сети: ' + err.message);
+        ragBtn.innerHTML = '❌ Ошибка сети';
+        ragBtn.disabled = false;
+      }
+    };
+    ragBtnContainer.appendChild(ragBtn);
+    botMessageEl.appendChild(ragBtnContainer);
 
     if (typeof fullReply === 'string' && !card) {
       await parseFilmTags(fullReply);

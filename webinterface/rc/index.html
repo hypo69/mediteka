@@ -1141,7 +1141,7 @@
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: query })
+          body: JSON.stringify({ message: query, generation_config: { is_rc: true } })
         });
         
         if (!response.ok) {
@@ -1359,7 +1359,7 @@
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, generation_config: { is_rc: true } })
       });
       if (!response.ok) {
         throw new Error('Не удалось получить ответ от AI');

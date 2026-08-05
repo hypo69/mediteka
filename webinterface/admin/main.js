@@ -85,17 +85,18 @@ async function initInterface() {
   // Initialize HELP content
   initHelpContent();
   
+  const cb = Date.now();
   // Load all tabs
   await Promise.all([
-    loadTabContent('chat', '/html/chat/index.html?v=20260804_v2'),
-    loadTabContent('torrents', '/html/torrents/index.html?v=20260804'),
-    loadTabContent('media', '/html/media/index.html?v=20260804'),
-    loadTabContent('admin', '/html/admin_tab/index.html?v=20260804', '/html/admin_tab/main.js?v=20260804'),
-    loadTabContent('models', '/html/models_tab/index.html?v=20260804'),
-    loadTabContent('tts', '/html/tts_tab/index.html?v=20260804', '/html/tts_tab/main.js?v=20260804'),
-    loadTabContent('sources', '/html/sources_tab/index.html?v=20260804'),
-    loadTabContent('logs', '/html/logs/index.html?v=20260804'),
-    loadTabContent('help', '/html/help/index.html?v=20260804'),
+    loadTabContent('chat', `/html/chat/index.html?v=${cb}`),
+    loadTabContent('torrents', `/html/torrents/index.html?v=${cb}`),
+    loadTabContent('media', `/html/media/index.html?v=${cb}`),
+    loadTabContent('admin', `/html/admin_tab/index.html?v=${cb}`, `/html/admin_tab/main.js?v=${cb}`),
+    loadTabContent('models', `/html/models_tab/index.html?v=${cb}`),
+    loadTabContent('tts', `/html/tts_tab/index.html?v=${cb}`, `/html/tts_tab/main.js?v=${cb}`),
+    loadTabContent('sources', `/html/sources_tab/index.html?v=${cb}`),
+    loadTabContent('logs', `/html/logs/index.html?v=${cb}`),
+    loadTabContent('help', `/html/help/index.html?v=${cb}`),
   ]);
   
   // Apply translations
@@ -176,7 +177,8 @@ async function loadTabContent(tabName, url, jsOverrideSrc) {
     
     // Load JS for the tab (use override path if provided)
     const script = document.createElement('script');
-    script.src = jsOverrideSrc || `/html/${tabName}/main.js?v=20260804_v2`;
+    const cacheBuster = Date.now();
+    script.src = jsOverrideSrc || `/html/${tabName}/main.js?v=${cacheBuster}`;
     script.onload = () => {
       if (window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]) {
         window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]();
@@ -261,7 +263,13 @@ async function initAdminTab() {
   // 2. Загружаем доступные модели
   try {
     const modelsData = await window.api.fetch('/api/chat/models');
-    models = modelsData.models || [];
+    let modelsGrouped = modelsData.models || {};
+    if (Array.isArray(modelsGrouped)) {
+      modelsGrouped = { 'gemini': modelsGrouped };
+    }
+    Object.values(modelsGrouped).forEach(arr => {
+      models = models.concat(arr);
+    });
   } catch (err) {
     console.error('Ошибка загрузки моделей:', err);
     showNotification('Ошибка загрузки моделей AI: ' + err.message, 'danger');

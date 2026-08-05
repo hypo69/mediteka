@@ -1,25 +1,26 @@
-# Обновленная архитектура проекта mediteka (август 2026)
+# Архитектура проекта mediteka (исторический документ)
 
-## Точка входа - обновленная
+**⚠️ Этот документ содержит историческую информацию о проекте.**
+**Для актуальной информации смотрите `project_overview.md`**
+
+## Точка входа (историческая версия)
 
 `main.py` — FastAPI-сервер с автологином локальных пользователей и 10 плагинами.
 
-### Что делает main.py в 2026:
-- Читает конфиг из `src/fastapi/config.json` → `_cfg` (host: 0.0.0.0, port: 3000)
-- Читает `.env`: `GEMINI_API_KEY_NAMES`, `USE_FOUNDRY`, `FOUNDRY_MODEL_ID`
-- Читает системную инструкцию из `.ai_instructions/prompts/chat/system_instruction.md`
-- Создаёт `UnifiedChatModel` (Gemini + Foundry)
-- Загружает 10 плагинов через `load_plugins(model)`
-- Подключает 9 роутеров FastAPI
+### Что делал main.py (старая версия):
+- Читал конфиг из `src/fastapi/config.json` → `_cfg` (host: 0.0.0.0, port: 3000)
+- Читал `.env`: `GEMINI_API_KEY_NAMES`, `USE_FOUNDRY`, `FOUNDRY_MODEL_ID`
+- Читал системную инструкцию из `.ai_instructions/prompts/chat/system_instruction.md`
+- Создавал `UnifiedChatModel` (Gemini + Foundry)
+- Загружал 10 плагинов через `load_plugins(model)`
+- Подключал 9 роутеров FastAPI
 - Автологин для localhost → user_id=1 через JWT cookie
-- Поддерживает SSL сертификаты из `~/.certs/`
+- Поддерживал SSL сертификаты из `~/.certs/`
 - При старте: сканирование дисков, запуск анализатора логов, предзагрузка Silero TTS
 
----
+## Конфигурация (историческая)
 
-## Конфигурация 2026
-
-### `.env` (основные переменные):
+### `.env` (старые переменные):
 ```
 # AI
 GEMINI_API_KEY_NAMES=имя1,имя2,...
@@ -42,7 +43,7 @@ USE_SSL=true
 DISABLED_PLUGINS=plugin1,plugin2
 ```
 
-### `src/fastapi/config.json`:
+### `src/fastapi/config.json` (старый):
 ```json
 {
   "host": "0.0.0.0",
@@ -63,14 +64,12 @@ DISABLED_PLUGINS=plugin1,plugin2
 }
 ```
 
----
-
-## Обновленная структура модуля AI
+## Модуль AI (историческая структура)
 
 ### `src/ai/unified_chat.py` — `UnifiedChatModel`
 **Унифицированный интерфейс для AI моделей:**
 
-- **Поддерживает**: Google Gemini и Microsoft AI Foundry
+- **Поддерживал**: Google Gemini и Microsoft AI Foundry
 - **Автоматическое переключение**: при ошибках Gemini → Foundry
 - **Управление ключами**: ротация Gemini API ключей
 - **Методы**:
@@ -84,24 +83,22 @@ DISABLED_PLUGINS=plugin1,plugin2
 
 - **Локальная модель**: qwen3-0.6b-generic-cpu:4
 - **HTTP API**: интеграция через Foundry Base URL
-- **Fallback**: используется при недоступности Gemini
+- **Fallback**: использовался при недоступности Gemini
 
-### `src/ai/gemini/generative_ai.py` — `GoogleGenerativeAI` (обновленный)
-**Поддержка новых моделей Gemini 2.0:**
+### `src/ai/gemini/generative_ai.py` — `GoogleGenerativeAI` (старая версия)
+**Поддержка старых моделей Gemini:**
 
 - **Модели**: gemini-2.0-flash-exp, gemini-2.0-pro-exp
 - **Streaming**: поддержка потокового вывода
 - **Function Calling**: интеграция с инструментами плагинов
 - **Retry-логика**: улучшенная обработка квот и ошибок
 
----
-
-## Расширенная структура путей 2026
+## Структура путей (историческая)
 
 ```
 mediteka/
 ├── main.py                          # Точка входа FastAPI
-├── header.py                        # Определяет __root__ проекта
+├── header.py                        # Определял __root__ проекта
 ├── .env                             # Переменные окружения
 ├── .ai_instructions/                # Инструкции для AI
 │   ├── knowledge/                   # Знания о проекте
@@ -109,7 +106,7 @@ mediteka/
 │   └── plans/                       # Дорожная карта
 ├── src/
 │   ├── ai/                          # AI модели
-│   │   ├── unified_chat.py          # UnifiedChatModel ← НОВЫЙ
+│   │   ├── unified_chat.py          # UnifiedChatModel
 │   │   ├── foundry_chat.py          # Microsoft AI Foundry
 │   │   ├── gemini/generative_ai.py  # GoogleGenerativeAI
 │   │   ├── gemini/rag.py            # GeminiRAG
@@ -119,7 +116,7 @@ mediteka/
 │   │   ├── router_qbittorrent.py    # Управление торрентами
 │   │   ├── router_media.py          # Медиа-управление
 │   │   ├── router_auth.py           # Google OAuth + JWT
-│   │   ├── router_control.py        # Веб-сокет управление ← НОВЫЙ
+│   │   ├── router_control.py        # Веб-сокет управление
 │   │   ├── router_tts.py            # Text-to-Speech
 │   │   ├── router_logs.py           # Логирование
 │   │   ├── router_keys.py           # Управление ключами
@@ -129,65 +126,61 @@ mediteka/
 │   ├── tts/                         # Text-to-Speech (Silero)
 │   └── utils/                       # Утилиты
 ├── plugins/                         # 10 ПЛАГИНОВ
-│   ├── __init__.py                  # load_plugins() ← обновлен
+│   ├── __init__.py                  # load_plugins()
 │   ├── plugin.py                    # BasePlugin ABC
 │   ├── media_organizer/             # Управление медиатекой
-│   ├── rag/                         # RAG-поиск ← НОВЫЙ
+│   ├── rag/                         # RAG-поиск
 │   ├── media_layer/                 # Простой медиа-слой
-│   ├── web_search/                  # Веб-поиск ← НОВЫЙ
-│   ├── torrent_playwright/          # Поиск торрентов ← НОВЫЙ
-│   ├── movie_search_sources/        # Источники для просмотра ← НОВЫЙ
+│   ├── web_search/                  # Веб-поиск
+│   ├── torrent_playwright/          # Поиск торрентов
+│   ├── movie_search_sources/        # Источники для просмотра
 │   ├── qbittorrent/                 # Управление qBittorrent
 │   ├── telegram_bot/                # Telegram Mini App
-│   ├── user_manager_tool/           # Управление пользователями ← НОВЫЙ
-│   ├── code_helper/                 # Помощь по кодовой базе ← НОВЫЙ
-│   └── yt_dlp/                      # Скачивание видео/аудио ← НОВЫЙ
+│   ├── user_manager_tool/           # Управление пользователями
+│   ├── code_helper/                 # Помощь по кодовой базе
+│   └── yt_dlp/                      # Скачивание видео/аудио
 ├── webinterface/                    # 6 веб-интерфейсов
 │   ├── user/                        # Пользовательский интерфейс
 │   ├── admin/                       # Админка (пароль: onela)
 │   ├── rc/                          # Пульт ДУ (голос+TTS)
 │   ├── tgmini/                      # Telegram Mini App
-│   ├── tv/                          # Телевизионный интерфейс ← НОВЫЙ
-│   └── user_tts/                    # Тестирование TTS ← НОВЫЙ
+│   ├── tv/                          # Телевизионный интерфейс
+│   └── user_tts/                    # Тестирование TTS
 ├── logs/                            # Логи приложения
 ├── tests/                           # Тесты Pytest
 └── docs/                            # Документация MkDocs
 ```
 
----
-
-## Обновленная система плагинов
+## Система плагинов (историческая)
 
 ### Базовый класс `BasePlugin` (`plugins/plugin.py`)
-**Улучшенная архитектура:**
+**Старая архитектура:**
 ```python
 class BasePlugin(ABC):
     name: str = 'base'
     
     def can_handle(self, message: str) -> bool:
-        # Определяет, может ли плагин обработать сообщение
+        # Определял, может ли плагин обработать сообщение
         return True
     
     async def handle(self, message: str, **kwargs) -> str:
         # Основной метод обработки с перехватом исключений
-        # Поддерживает async generator для потокового вывода
+        # Поддерживал async generator для потокового вывода
     
     @abstractmethod
     async def _handle(self, message: str, **kwargs) -> str:
         # Реализация в каждом плагине
-        # Может возвращать async generator
+        # Мог возвращать async generator
 ```
 
 ### `load_plugins(model)` (`plugins/__init__.py`)
-**Улучшения 2026:**
+**Старые функции:**
 - **Динамическая загрузка** всех 10 плагинов
 - **Отключение плагинов**: через `DISABLED_PLUGINS` в `.env`
 - **Логирование ошибок**: при загрузке проблемных плагинов
-- **Возвращает**: `dict[str, BasePlugin]` {имя: экземпляр}
+- **Возвращал**: `dict[str, BasePlugin]` {имя: экземпляр}
 
----
-
-## Новые плагины (добавлены с 2024)
+## Плагины (исторический список)
 
 ### 1. `rag` (`plugins/rag/__init__.py`)
 **RAG-поиск по медиатеке с Function Calling:**
@@ -243,7 +236,7 @@ class BasePlugin(ABC):
 - **Функции**: семантический поиск по коду, документации
 - **CLI интерфейс**: `python plugins/code_helper/rag/chat_interface.py`
 
-### 7. `yt_dlp` (`plugins/yt_dlp/`) ← **САМЫЙ НОВЫЙ**
+### 7. `yt_dlp` (`plugins/yt_dlp/`) 
 **Скачивание видео/аудио через yt-dlp:**
 
 - **Триггеры**: "скачай", "скачать", "youtube", "mp3", "аудио"
@@ -255,13 +248,11 @@ class BasePlugin(ABC):
 - **Прогресс**: Streaming статусы загрузки
 - **HTML карточки**: результаты с обложками, метаданными
 
----
-
-## Обновленная база данных медиатеки
+## База данных медиатеки (историческая)
 
 ### Таблицы в `media.db`:
 
-1. **Основная таблица `media`** (улучшена):
+1. **Основная таблица `media`** (старая версия):
 ```sql
 CREATE TABLE media (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -297,7 +288,7 @@ CREATE TABLE media (
 );
 ```
 
-2. **Новая таблица `media_vector`** для RAG:
+2. **Таблица `media_vector`** для RAG:
 ```sql
 CREATE TABLE media_vector (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -317,9 +308,7 @@ CREATE TABLE search_history (
 );
 ```
 
----
-
-## Управление пользователями 2026
+## Управление пользователями (историческое)
 
 ### База данных `users.db` (`src/user_manager/`):
 ```sql
@@ -349,11 +338,9 @@ CREATE TABLE user_activity_log (
 - **Активность**: логирование действий пользователей
 - **Автологин**: для localhost (user_id=1)
 
----
+## Веб-интерфейсы (исторические)
 
-## Веб-интерфейсы 2026
-
-### 6 специализированных интерфейсов:
+### 6 специализирован��ых интерфейсов:
 
 | Интерфейс | URL | Описание | Особенности |
 |-----------|-----|----------|-------------|
@@ -362,52 +349,7 @@ CREATE TABLE user_activity_log (
 | **Telegram Mini App** | `/tgmini` | Telegram Web App | Оптимизирован для мобильных, удалённый доступ |
 | **Admin Panel** | `/admin` | Административный контроль | Полный контроль медиатеки, логи, ключи |
 | **TV Interface** | `/tv` | Телевизионный интерфейс | Упрощённый для больших экранов, пульт ДУ |
-| **TTS Test** | `/user_tts` | Тестирование TTS | Эксперименты с голосовым синтезом |
-
----
-
-## Тестирование и документация
-
-### 1. **Pytest** (`tests/`):
-- **Конфигурация**: `pytest.ini`, `conftest.py`
-- **Фикстуры**: `mock_ai_model`, `mock_db`, `mock_qbt_client`
-- **Маркеры**: `unit`, `integration`, `slow`, `database`, `api`, `asyncio`
-- **Покрытие**: `--cov=src --cov=plugins --cov-report=term-missing`
-
-### 2. **MkDocs документация** (`docs/`):
-- **Конфигурация**: `mkdocs.yml`
-- **Навигация**: 6 разделов (Пользователь, Разработчик, Модули, Интеграции, QA, Troubleshooting)
-- **Тема**: Material Design
-- **Деплой**: GitHub Pages (https://hypo69.github.io/mediteka/)
-
-### 3. **AI инструкции** (`.ai_instructions/`):
-- **Промпты**: `prompts/chat/`, `prompts/media_organizer/`
-- **Знания**: `knowledge/` (этот файл)
-- **Правила**: `rules/CODE_RULES.md`
-- **Планы**: `plans/roadmap.md`
-
----
-
-## API ключи и безопасность
-
-### Управление Gemini API ключами:
-1. **Хранение**: `src/secrets/gemini_keys.json` (в .gitignore)
-2. **Имена ключей**: в `.env` как `GEMINI_API_KEY_NAMES=имя1,имя2,...`
-3. **Статусы**: `active`, `regional restriction`, `exhausted_at`
-4. **Ротация**: автоматическая при квотах/ошибках
-
-### JWT аутентификация:
-- **Секрет**: `JWT_SECRET` в `.env`
-- **Токены**: 30 дней для автологина localhost
-- **Cookies**: `auth_token`, `admin_password_verified`
-- **Верификация**: в middleware FastAPI
-
-### SSL/TLS:
-- **Сертификаты**: `~/.certs/localhost+2.pem`, `~/.certs/localhost+2-key.pem`
-- **Конфигурация**: `USE_SSL=true` в `.env`
-- **Запуск**: автоматическое определение наличия сертификатов
-
----
+| **TTS Test** | `/user_tts` | Тестирование TTS | Эксперименты с голосовым с��нтезом |
 
 ## Изменения с предыдущей версии (2024 → 2026)
 
@@ -426,66 +368,5 @@ CREATE TABLE user_activity_log (
 
 ---
 
-## Быстрый старт (обновленный)
-
-```bash
-# Клонирование и установка
-git clone https://github.com/hypo69/mediteka.git
-cd mediteka
-
-# Установка зависимостей (теперь с yt-dlp)
-pip install -r requirements.txt
-
-# Настройка окружения
-cp .env.example .env
-# Редактируем .env:
-# - GEMINI_API_KEY_NAMES (имена ключей из gemini_keys.json)
-# - TELEGRAM_BOT_TOKEN (если нужен Telegram)
-# - USE_FOUNDRY (true/false)
-
-# Создание сертификатов SSL (опционально)
-# mkdir ~/.certs
-# mkcert localhost
-
-# Запуск сервера
-python main.py
-
-# Тестирование
-pytest  # все тесты
-pytest tests/test_ai.py  # тесты AI
-pytest --cov=src --cov-report=html  # покрытие кода
-
-# Документация
-mkdocs serve  # локальная документация
-```
-
----
-
-## Основные команды для AI
-
-1. **Для разработки:**
-   ```
-   "покажи архитектуру проекта" → описание из этого файла
-   "какие плагины есть" → список 10 плагинов
-   "как работает RAG" → описание RAG-поиска
-   ```
-
-2. **Для пользователей:**
-   ```
-   "посоветуй фильм" → RAG плагин
-   "скачай видео" → yt_dlp плагин
-   "найди в интернете" → web_search плагин
-   "где посмотреть" → movie_search_sources плагин
-   ```
-
-3. **Для администраторов:**
-   ```
-   "!list_users" → user_manager_tool плагин
-   "ревизия медиатеки" → media_organizer плагин
-   "категории торрентов" → qbittorrent плагин
-   ```
-
----
-
-**Последнее обновление: август 2026**  
-*Актуализировано после расширения проекта до 10 плагинов и добавления yt_dlp, web_search, movie_search_sources и других новых компонентов.*
+**⚠️ Этот документ сохранен для исторической справки.**
+**Для актуальной информации используйте `project_overview.md`.**

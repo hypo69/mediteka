@@ -67,7 +67,7 @@ body {
 }
 
 /* Fix overlap in admin panel chat tab */
-#tab-chat {
+#tab-chat.active {
   display: flex;
   flex-direction: column;
 }

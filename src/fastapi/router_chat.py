@@ -41,6 +41,12 @@ class ChatRequest(BaseModel):
     generation_config: dict = {}
 
 
+class SaveRagRequest(BaseModel):
+    query: str
+    chat_text: str
+    voice_text: str
+
+
 def get_chat_model(selected_model_name: str, system_instruction: str = None):
     """Dynamically construct/retrieve the appropriate AI model instance."""
     is_gemini = selected_model_name.startswith('gemini-') or 'gemini' in selected_model_name.lower()
@@ -67,16 +73,27 @@ def init_router(model, plugins: dict) -> APIRouter:
 
     @router.get('/models')
     async def get_models() -> dict:
-        """Получение списка доступных моделей."""
+        """Получение списка доступных моделей, сгруппированных по провайдеру."""
         from src.ai.gemini.generative_ai import _AVAILABLE_MODELS
         import os
-        models = list(_AVAILABLE_MODELS)
+        
+        gemini_models = list(_AVAILABLE_MODELS)
+        foundry_models = []
+        
         use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')
         if use_foundry:
             foundry_model_id = os.getenv('FOUNDRY_MODEL_ID', 'qwen3-0.6b-generic-cpu:4')
-            if foundry_model_id not in models:
-                models.insert(0, foundry_model_id)
-        return {'models': models}
+            foundry_models.append(foundry_model_id)
+            
+        agy_models = ['agy-flash', 'agy-pro']
+        
+        return {
+            'models': {
+                'gemini': gemini_models,
+                'foundry': foundry_models,
+                'agy': agy_models
+            }
+        }
 
     @router.post('/code-helper')
     async def chat_code_helper(request: ChatRequest):
@@ -88,6 +105,44 @@ def init_router(model, plugins: dict) -> APIRouter:
             return {"text": response_text}
         except Exception as e:
             logger.error("Ошибка чата Code Helper", e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @router.post('/save-rag')
+    async def save_to_rag(request: SaveRagRequest, fastapi_req: Request):
+        """Ручное сохранение ответа (текст + голос) в персональный RAG пользователя."""
+        try:
+            token = fastapi_req.cookies.get('auth_token')
+            user_identifier = None
+            if token:
+                from src.fastapi.router_auth import verify_jwt_token
+                user_data = verify_jwt_token(token)
+                if user_data:
+                    from src.user_manager import user_manager
+                    db_user = await asyncio.to_thread(user_manager.get_user_by_email, user_data.email)
+                    if db_user:
+                        user_identifier = db_user['id']
+
+            if not user_identifier:
+                client_ip = fastapi_req.client.host if fastapi_req.client else 'unknown'
+                user_identifier = f"anon_{client_ip}"
+
+            api_key = getattr(model, 'api_key', '') or ''
+            if not api_key:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+
+            combined_response = f"Текст для чата:\n{request.chat_text}\n\nТекст для диктора:\n{request.voice_text}"
+
+            success = await asyncio.to_thread(
+                index_user_query, user_identifier, api_key, request.query, combined_response
+            )
+            
+            if success:
+                return {"status": "success", "message": "Успешно сохранено в RAG"}
+            else:
+                raise HTTPException(status_code=500, detail="Ошибка сохранения в RAG")
+        except Exception as e:
+            logger.error("Ошибка при ручном сохранении в RAG", e)
             raise HTTPException(status_code=500, detail=str(e))
 
     @router.post('')
@@ -293,55 +348,52 @@ def init_router(model, plugins: dict) -> APIRouter:
                     yield f"data: {json.dumps({'error': 'Не удалось найти информацию в базе данных медиатеки'})}\n\n"
                     return
 
-                yield f"data: {json.dumps({'status': 'Обращение к ИИ-модели...'})}\n\n"
-                chat_kwargs = kwargs.copy()
-                chat_kwargs.pop('room_id', None)
-                chat_kwargs['generation_config'] = request.generation_config
+                is_rc = request.generation_config.get('is_rc', False)
+                targets = ['voice', 'chat'] if is_rc else ['chat', 'voice']
+
+                yield f"data: {json.dumps({'status': 'Генерация (этап 1)...'})}\n\n"
                 
-                stream_generator = active_model.chat_stream(request.message, **chat_kwargs)
-                buffer = ""
-                current_channel = "text"
+                chat_kwargs_1 = kwargs.copy()
+                chat_kwargs_1.pop('room_id', None)
+                gen_cfg_1 = request.generation_config.copy()
+                gen_cfg_1['response_type'] = targets[0]
+                chat_kwargs_1['generation_config'] = gen_cfg_1
                 
-                async for chunk in stream_generator:
-                    if not chunk:
-                        continue
+                stream_generator_1 = active_model.chat_stream(request.message, **chat_kwargs_1)
+                
+                response_1 = ""
+                key_1 = "voice" if targets[0] == "voice" else "text"
+                async for chunk in stream_generator_1:
+                    if chunk:
+                        c = chunk.replace("[CHAT]", "").replace("[VOICE]", "")
+                        if c:
+                            response_1 += c
+                            yield f"data: {json.dumps({key_1: c})}\n\n"
+                
+                if response_1:
+                    yield f"data: {json.dumps({'status': 'Генерация (этап 2)...'})}\n\n"
                     
-                    if current_channel == "text":
-                        buffer += chunk
-                        if "[VOICE]" in buffer:
-                            parts = buffer.split("[VOICE]", 1)
-                            text_part = parts[0].replace("[CHAT]", "").strip()
-                            if text_part:
-                                full_response_text += text_part
-                                yield f"data: {json.dumps({'text': text_part})}\n\n"
-                            current_channel = "voice"
-                            buffer = parts[1]
-                            
-                            # Немедленно отправляем ту часть, которая уже попала в voice
-                            clean_voice = buffer.replace("[VOICE]", "").strip()
-                            if clean_voice:
-                                yield f"data: {json.dumps({'voice': clean_voice})}\n\n"
-                            buffer = "" # очищаем буфер, для voice он не нужен
-                        else:
-                            if len(buffer) > 7:
-                                output_len = len(buffer) - 7
-                                to_output = buffer[:output_len].replace("[CHAT]", "")
-                                if to_output:
-                                    full_response_text += to_output
-                                    yield f"data: {json.dumps({'text': to_output})}\n\n"
-                                buffer = buffer[output_len:]
-                    else:
-                        clean_voice = chunk.replace("[VOICE]", "")
-                        if clean_voice:
-                            yield f"data: {json.dumps({'voice': clean_voice})}\n\n"
-                
-                # Выталкиваем остатки буфера
-                if buffer:
-                    if current_channel == "text":
-                        to_output = buffer.replace("[CHAT]", "").strip()
-                        if to_output:
-                            full_response_text += to_output
-                            yield f"data: {json.dumps({'text': to_output})}\n\n"
+                    chat_kwargs_2 = kwargs.copy()
+                    chat_kwargs_2.pop('room_id', None)
+                    gen_cfg_2 = request.generation_config.copy()
+                    gen_cfg_2['response_type'] = targets[1]
+                    chat_kwargs_2['generation_config'] = gen_cfg_2
+                    
+                    q2 = f"{request.message}\n\nОпираясь на твой предыдущий ответ:\n{response_1}\n\nСгенерируй версию для {'диктора' if targets[1] == 'voice' else 'чата'}."
+                    stream_generator_2 = active_model.chat_stream(q2, **chat_kwargs_2)
+                    
+                    response_2 = ""
+                    key_2 = "voice" if targets[1] == "voice" else "text"
+                    async for chunk in stream_generator_2:
+                        if chunk:
+                            c = chunk.replace("[CHAT]", "").replace("[VOICE]", "")
+                            if c:
+                                response_2 += c
+                                yield f"data: {json.dumps({key_2: c})}\n\n"
+                    
+                    full_response_text = response_1 if targets[0] == 'chat' else response_2
+                else:
+                    full_response_text = ""
 
                 # Автоматическая индексация успешного ответа в User RAG (fire-and-forget, не блокирует ответ)
                 if full_response_text and api_key and user_identifier:
