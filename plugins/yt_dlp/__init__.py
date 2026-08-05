@@ -79,7 +79,9 @@ class YtDlpPlugin(BasePlugin):
     def can_handle(self, message: str) -> bool:
         low = message.lower()
         all_keywords = _DOWNLOAD_KEYWORDS + _INFO_KEYWORDS + _SEARCH_KEYWORDS
-        return any(kw in low for kw in all_keywords) or YtDlpClient.is_url(message)
+        has_keyword = any(kw in low for kw in all_keywords)
+        has_url = YtDlpClient.is_url(message)
+        return has_keyword or has_url
 
     def _detect_intent(self, message: str) -> str:
         """Определяет намерение: download_video | download_audio | info | search."""
@@ -234,18 +236,28 @@ class YtDlpPlugin(BasePlugin):
         cards = []
         for r in results:
             url = r.get("url") or r.get("webpage_url") or f"https://www.youtube.com/watch?v={r.get('id', '')}"
+            video_id = ""
+            if "watch?v=" in url:
+                video_id = url.split("watch?v=")[1].split("&")[0]
+            elif "youtu.be/" in url:
+                video_id = url.split("youtu.be/")[1].split("?")[0]
+            else:
+                video_id = r.get("id", "")
+
             title = r.get("title", "—")
             duration = YtDlpClient.format_duration(r.get("duration"))
             uploader = r.get("uploader") or r.get("channel", "")
             thumb = r.get("thumbnail") or r.get("thumbnails", [{}])[-1].get("url", "")
+            if not thumb and video_id:
+                thumb = f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg"
 
             card = (
-                f'<div style="border:1px solid #ddd;border-radius:8px;padding:10px;margin:8px 0;display:flex;gap:12px;">'
-                f'  {"<img src=" + repr(thumb) + " style=\"width:120px;height:68px;object-fit:cover;border-radius:4px;\" />" if thumb else ""}'
+                f'<div style="border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:10px;margin:8px 0;display:flex;gap:12px;background:rgba(88,166,255,0.02);align-items:center;">'
+                f'  {"<a href=" + repr(url) + " target=\"_blank\"><img src=" + repr(thumb) + " style=\"width:120px;height:68px;object-fit:cover;border-radius:4px;\" /></a>" if thumb else ""}'
                 f'  <div>'
-                f'    <a href="{url}" target="_blank" style="font-weight:bold;text-decoration:none;">{title}</a><br/>'
-                f'    <span style="color:#666;font-size:0.85em;">{uploader} · {duration}</span><br/>'
-                f'    <a href="{url}" target="_blank" style="font-size:0.8em;color:#888;">{url}</a>'
+                f'    <a href="{url}" target="_blank" style="font-weight:bold;text-decoration:none;color:#58a6ff;">{title}</a><br/>'
+                f'    <span style="color:#8b949e;font-size:0.85em;">{uploader} · {duration}</span><br/>'
+                f'    <a href="{url}" target="_blank" style="font-size:0.8em;color:#c9d1d9;">{url}</a>'
                 f'  </div>'
                 f'</div>'
             )
@@ -254,7 +266,7 @@ class YtDlpPlugin(BasePlugin):
         return (
             '<div>'
             + "".join(cards)
-            + (f'<div style="margin-top:12px;padding:10px;background:#f5f5f5;border-radius:6px;">'
+            + (f'<div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.05);border-radius:6px;border-left:4px solid #58a6ff;">'
                f'<b>Комментарий AI:</b><br/>{ai_comment}</div>' if ai_comment else "")
             + '</div>'
         )

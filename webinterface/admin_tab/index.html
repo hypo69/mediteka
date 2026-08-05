@@ -1,14 +1,18 @@
 <!-- Admin Tab -->
 <div class="container-fluid">
-  <div class="alert alert-info">
-    <h5 data-i18n="admin.title">⚙️ Управление медиатекой</h5> <button class="btn btn-sm btn-outline-primary ms-2" onclick="showHelpModal('scan')">?</button>
-    <p data-i18n="admin.description">Полный функционал: полное сканирование, аудит, восстановление из JSON, RAG-индекс.</p>
-    <button class="btn btn-outline-primary btn-sm" onclick="assignCategoriesFromDB()">
-      🏷 Назначить категории торрентам
-    </button>
-    <button class="btn btn-outline-info btn-sm" onclick="rescanStorage()">
-      🔄 Пересканировать диски
-    </button>
+  <div class="alert alert-info d-flex flex-wrap align-items-center gap-2">
+    <div class="flex-grow-1">
+      <h5 class="mb-1" data-i18n="admin.title">⚙️ Управление медиатекой</h5>
+      <p class="mb-0 small" data-i18n="admin.description">Полный функционал: полное сканирование, аудит, восстановление из JSON, RAG-индекс.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btn btn-outline-primary btn-sm" onclick="assignCategoriesFromDB()">
+        🏷 Категории торрентам
+      </button>
+      <button class="btn btn-outline-info btn-sm" onclick="rescanStorage()">
+        🔄 Пересканировать диски
+      </button>
+    </div>
   </div>
 
 <script>
@@ -16,7 +20,7 @@ async function rescanStorage() {
   try {
     showNotification('Пересканирование дисков...', 'info');
     const result = await window.api.fetch('/api/control/rescan', { method: 'GET' });
-    showNotification('Диски обновлены: ' + result.drives, 'success');
+    showNotification('Диски обновлены: ' + (result.drives || 'OK'), 'success');
   } catch (e) {
     showNotification('Ошибка: ' + e.message, 'danger');
   }
@@ -25,90 +29,94 @@ async function rescanStorage() {
 
   <div class="row g-3">
     <!-- LEFT: диск и пути -->
-    <div class="col-md-4">
+    <div class="col-4">
       <div class="card">
-        <div class="card-header" data-i18n="admin.disk">
-          💾 Диск <button class="btn btn-sm btn-outline-primary ms-2" onclick="showHelpModal('scan')">?</button>
+        <div class="card-header">
+          💾 Диск
+          <button class="btn btn-sm btn-outline-primary ms-2" onclick="showHelpModal('scan')">?</button>
         </div>
         <div class="card-body">
           <div class="input-group input-group-sm mb-2">
-            <span class="input-group-text" data-i18n="admin.disk">Диск</span>
+            <span class="input-group-text">Диск</span>
             <input type="text" class="form-control" id="admin-disk-input" value="1">
           </div>
           <div class="mb-2">
-            <label class="form-label small text-muted" data-i18n="admin.paths">Пути</label>
+            <label class="form-label small text-muted">Пути сканирования</label>
             <div id="admin-paths-list" class="border rounded p-2" style="max-height:200px;overflow-y:auto;">
-              <div class="text-muted small" data-i18n="admin.noPaths">Нет путей</div>
+              <div class="text-muted small">Нет путей</div>
             </div>
             <div class="input-group input-group-sm mt-1">
-              <input type="text" class="form-control" id="admin-path-input" data-i18n-placeholder="admin.addPathPlaceholder" placeholder="D:\Series">
-              <button class="btn btn-outline-primary" id="btn-admin-add-path" data-i18n="media.addPath">+</button>
+              <input type="text" class="form-control" id="admin-path-input" placeholder="D:\Series">
+              <button class="btn btn-outline-primary" id="btn-admin-add-path">+</button>
             </div>
           </div>
           <div class="d-grid gap-1">
-            <button class="btn btn-primary btn-sm" id="btn-admin-scan" data-i18n="admin.fullScan">🔍 Полное сканирование</button>
+            <button class="btn btn-primary btn-sm" id="btn-admin-scan">🔍 Полное сканирование</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- CENTER: аудит и восстановление -->
-    <div class="col-md-4">
+    <div class="col-4">
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span data-i18n="admin.dbAudit">🗂 Аудит БД</span>
-          <button class="btn btn-sm btn-outline-primary me-2" onclick="showHelpModal('audit')">?</button>
-          <button class="btn btn-outline-warning btn-sm" id="btn-admin-audit" data-i18n="admin.run">Запустить</button>
+          <span>🗂 Аудит БД</span>
+          <div>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="showHelpModal('audit')">?</button>
+            <button class="btn btn-outline-warning btn-sm" id="btn-admin-audit">Запустить</button>
+          </div>
         </div>
         <div class="card-body p-2">
-          <div id="admin-audit-body" class="small" data-i18n="admin.auditHint">Сверяет таблицу media с файлами на диске</div>
+          <div id="admin-audit-body" class="small text-muted">Сверяет таблицу media с файлами на диске</div>
         </div>
       </div>
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span data-i18n="admin.rebuild">🔧 Восстановление</span>
-          <button class="btn btn-sm btn-outline-primary me-2" onclick="showHelpModal('rebuild')">?</button>
-          <button class="btn btn-outline-success btn-sm" id="btn-admin-rebuild" data-i18n="admin.rebuild">Восстановить</button>
+          <span>🔧 Восстановление БД</span>
+          <div>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="showHelpModal('rebuild')">?</button>
+            <button class="btn btn-outline-success btn-sm" id="btn-admin-rebuild">Восстановить</button>
+          </div>
         </div>
         <div class="card-body p-2">
-          <div id="admin-rebuild-body" class="small" data-i18n="admin.rebuildHint">Восстанавливает БД из JSON</div>
+          <div id="admin-rebuild-body" class="small text-muted">Консолидация дублирующихся записей в БД</div>
         </div>
       </div>
     </div>
 
-    <!-- RIGHT: RAG и ключи -->
-    <div class="col-md-4">
+    <!-- RIGHT: RAG -->
+    <div class="col-4">
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <span data-i18n="admin.ragIndex">🧠 RAG-индекс</span>
-          <button class="btn btn-sm btn-outline-primary me-2" onclick="showHelpModal('rag')">?</button>
-          <button class="btn btn-outline-info btn-sm" id="btn-admin-rag-build" data-i18n="media.buildIndex">Построить</button>
+          <span>🧠 RAG-индекс</span>
+          <div class="d-flex align-items-center">
+            <div class="form-check form-switch me-3 mb-0">
+              <input class="form-check-input" type="checkbox" id="admin-rag-toggle" checked onchange="toggleRag(this.checked)">
+              <label class="form-check-label small" for="admin-rag-toggle">Вкл</label>
+            </div>
+            <button class="btn btn-sm btn-outline-primary me-1" onclick="showHelpModal('rag')">?</button>
+            <button class="btn btn-outline-info btn-sm" id="btn-admin-rag-build">Построить</button>
+          </div>
         </div>
         <div class="card-body p-2">
-          <p class="small" data-i18n="admin.semanticSearch">Семантический поиск по медиатеке</p>
-          <div class="input-group input-group-sm mb-1">
-            <input type="text" class="form-control" id="admin-rag-query" data-i18n-placeholder="admin.searchPlaceholder" placeholder="Поиск...">
-            <button class="btn btn-outline-primary" id="btn-admin-rag-search" data-i18n="common.search">Поиск</button>
+          <!-- RAG Status badges -->
+          <div id="admin-rag-status" class="mb-2">
+            <span class="badge bg-secondary">Загрузка...</span>
           </div>
-          <div id="admin-rag-results" class="small text-muted mt-1"></div>
-        </div>
-      </div>
 
-      <!-- AI Model Selection Card -->
-      <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span data-i18n="admin.aiModelTitle">🤖 AI Модель</span>
-        </div>
-        <div class="card-body p-2">
-          <p class="small text-muted" data-i18n="admin.aiModelHint">Выберите модель по умолчанию для общения с ассистентом</p>
-          <div class="mb-2">
-            <select class="form-select form-select-sm" id="admin-model-select">
-              <option value="" data-i18n="common.loading">Загрузка...</option>
-            </select>
+          <p class="small text-muted mb-2">Семантический поиск по медиатеке</p>
+
+          <!-- RAG Search -->
+          <div class="input-group input-group-sm mb-1">
+            <input type="text" class="form-control" id="admin-rag-query"
+              placeholder="Введите запрос (напр: фильм про войну)">
+            <button class="btn btn-outline-primary" id="btn-admin-rag-search">🔍 Поиск</button>
           </div>
-          <div class="d-grid">
-            <button class="btn btn-primary btn-sm" id="btn-admin-save-model" data-i18n="common.save">Сохранить</button>
-          </div>
+
+          <!-- RAG Search Results -->
+          <div id="admin-rag-results" class="small text-muted mt-1"
+            style="max-height:240px; overflow-y:auto;"></div>
         </div>
       </div>
     </div>

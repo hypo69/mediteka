@@ -121,6 +121,7 @@ class Logger(metaclass=SingletonMeta):
     fastapi_log_path: Path
     gemini_log_path: Path
     playwright_log_path: Path
+    yt_dlp_log_path: Path
 
     def __init__(
         self,
@@ -139,6 +140,7 @@ class Logger(metaclass=SingletonMeta):
         self.fastapi_log_path = self.log_files_path / "fastapi.log"
         self.gemini_log_path = self.log_files_path / "gemini.log"
         self.playwright_log_path = self.log_files_path / "playwright.log"
+        self.yt_dlp_log_path = self.log_files_path / "yt_dlp.log"
 
         # Ensure directories exist
         self.log_files_path.mkdir(parents=True, exist_ok=True)
@@ -151,6 +153,7 @@ class Logger(metaclass=SingletonMeta):
         self.fastapi_log_path.touch(exist_ok=True)
         self.gemini_log_path.touch(exist_ok=True)
         self.playwright_log_path.touch(exist_ok=True)
+        self.yt_dlp_log_path.touch(exist_ok=True)
 
         # Console logger
         self.logger_console = logging.getLogger(name="logger_console")
@@ -210,6 +213,13 @@ class Logger(metaclass=SingletonMeta):
         playwright_handler = logging.FileHandler(self.playwright_log_path, encoding='utf-8')
         playwright_handler.setFormatter(formatter)
         self.logger_playwright.addHandler(playwright_handler)
+
+        self.logger_yt_dlp = logging.getLogger("logger_yt_dlp")
+        self.logger_yt_dlp.setLevel(logging.DEBUG)
+        self.logger_yt_dlp.propagate = False
+        yt_dlp_handler = logging.FileHandler(self.yt_dlp_log_path, encoding='utf-8')
+        yt_dlp_handler.setFormatter(formatter)
+        self.logger_yt_dlp.addHandler(yt_dlp_handler)
 
         # JSON file logger
         self.logger_file_json = logging.getLogger(name='logger_json')
@@ -315,6 +325,11 @@ class Logger(metaclass=SingletonMeta):
                 if "playwright" in caller_file or "torrent_playwright" in caller_file:
                     if self.logger_playwright:
                         self.logger_playwright.log(level, clean_msg)
+
+                # Yt-dlp routing
+                if "yt_dlp" in caller_file or "yt-dlp" in caller_file:
+                    if self.logger_yt_dlp:
+                        self.logger_yt_dlp.log(level, clean_msg)
         except Exception as e:
             pass
 

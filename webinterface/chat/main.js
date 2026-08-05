@@ -60,13 +60,297 @@ function initChatTab() {
   if (msgInput) msgInput.addEventListener('keypress', e => { if (e.key==='Enter') sendMessage(); });
 
   // Media controls handlers
-  document.getElementById('btn-open-player')?.addEventListener('click', openMediaPlayer);
+  document.getElementById('btn-toggle-player-body')?.addEventListener('click', togglePlayerBody);
   document.getElementById('btn-close-player')?.addEventListener('click', closeMediaControls);
+
+  // Initialize CosmicPlayer
+  initCosmicPlayer();
 }
 
 // Export init function for main.js
 if (typeof window !== 'undefined') {
   window.initChatTab = initChatTab;
+}
+
+function togglePlayerBody() {
+  const body = document.getElementById('media-player-body');
+  const btn = document.getElementById('btn-toggle-player-body');
+  if (body.classList.contains('d-none')) {
+    body.classList.remove('d-none');
+    btn.textContent = 'Свернуть плеер';
+  } else {
+    body.classList.add('d-none');
+    btn.textContent = 'Развернуть плеер';
+  }
+}
+
+let cosmicHls = null;
+let cosmicHistory = [];
+
+function initCosmicPlayer() {
+  const streamForm = document.getElementById('cosmic-stream-form');
+  const streamUrlInput = document.getElementById('cosmic-stream-url');
+  const badges = document.querySelectorAll('#cosmic-provider-badges [data-prov]');
+  
+  if (streamForm) {
+    streamForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = streamUrlInput.value.trim();
+      if (url) loadCosmicVideo(url);
+    });
+  }
+
+  badges.forEach(badge => {
+    badge.addEventListener('click', () => {
+      const prov = badge.getAttribute('data-prov');
+      let demo = '';
+      if (prov === 'youtube') demo = 'https://www.youtube.com/watch?v=aqz-KE-bpKQ';
+      else if (prov === 'vk') demo = 'https://vk.com/video-22822305_456239018';
+      else if (prov === 'rutube') demo = 'https://rutube.ru/video/e7cfcb8cb4310d54026fb4bd56e828d1/';
+      else if (prov === 'direct') demo = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+      
+      if (demo) {
+        streamUrlInput.value = demo;
+        loadCosmicVideo(demo);
+      }
+    });
+  });
+
+  // Load history from localStorage
+  try {
+    cosmicHistory = JSON.parse(localStorage.getItem('cosmic_history_chat') || '[]');
+  } catch(e) {}
+  renderCosmicHistory();
+
+  // Custom Controls Event Listeners
+  const playBtn = document.getElementById('cosmic-play-btn');
+  const stopBtn = document.getElementById('cosmic-stop-btn');
+  const muteBtn = document.getElementById('cosmic-mute-btn');
+  const volSlider = document.getElementById('cosmic-volume-slider');
+  const speedSel = document.getElementById('cosmic-speed-select');
+  const fullBtn = document.getElementById('cosmic-fullscreen-btn');
+  const progContainer = document.getElementById('cosmic-progress-container');
+  const videoEl = document.getElementById('cosmic-video-element');
+
+  if (videoEl) {
+    videoEl.addEventListener('timeupdate', () => {
+      const cur = videoEl.currentTime;
+      const dur = videoEl.duration || 0;
+      if (dur > 0) {
+        document.getElementById('cosmic-progress-bar').style.width = `${(cur / dur) * 100}%`;
+      }
+      document.getElementById('cosmic-time-current').textContent = formatTime(cur);
+      document.getElementById('cosmic-time-duration').textContent = formatTime(dur);
+    });
+
+    videoEl.addEventListener('loadedmetadata', () => {
+      document.getElementById('cosmic-time-duration').textContent = formatTime(videoEl.duration);
+    });
+  }
+
+  playBtn?.addEventListener('click', () => {
+    if (videoEl.paused) {
+      videoEl.play();
+      playBtn.textContent = '⏸';
+    } else {
+      videoEl.pause();
+      playBtn.textContent = '▶';
+    }
+  });
+
+  stopBtn?.addEventListener('click', () => {
+    videoEl.pause();
+    videoEl.currentTime = 0;
+    playBtn.textContent = '▶';
+  });
+
+  volSlider?.addEventListener('input', (e) => {
+    videoEl.volume = e.target.value;
+    if (muteBtn) muteBtn.textContent = e.target.value === '0' ? '🔇' : '🔊';
+  });
+
+  muteBtn?.addEventListener('click', () => {
+    if (videoEl.muted) {
+      videoEl.muted = false;
+      volSlider.value = videoEl.volume;
+      muteBtn.textContent = '🔊';
+    } else {
+      videoEl.muted = true;
+      volSlider.value = 0;
+      muteBtn.textContent = '🔇';
+    }
+  });
+
+  speedSel?.addEventListener('change', (e) => {
+    videoEl.playbackRate = parseFloat(e.target.value);
+  });
+
+  progContainer?.addEventListener('click', (e) => {
+    const rect = progContainer.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    videoEl.currentTime = pct * videoEl.duration;
+  });
+
+  fullBtn?.addEventListener('click', () => {
+    const wrapper = document.getElementById('cosmic-video-wrapper');
+    if (!document.fullscreenElement) {
+      wrapper.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  });
+}
+
+function formatTime(sec) {
+  if (isNaN(sec)) return '0:00';
+  const mins = Math.floor(sec / 60);
+  const secs = Math.floor(sec % 60);
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+function loadCosmicVideo(url, title = null) {
+  // Clear existing HLS or frames
+  const embed = document.getElementById('cosmic-embed-player');
+  const videoWrapper = document.getElementById('cosmic-video-wrapper');
+  const placeholder = document.getElementById('cosmic-player-placeholder');
+  const videoEl = document.getElementById('cosmic-video-element');
+  const glow = document.getElementById('cosmic-ambient-glow');
+
+  embed.classList.add('hidden');
+  embed.src = '';
+  videoWrapper.classList.add('hidden');
+  videoEl.pause();
+  videoEl.src = '';
+  placeholder.classList.add('hidden');
+
+  if (cosmicHls) {
+    cosmicHls.destroy();
+    cosmicHls = null;
+  }
+
+  // Parse URL
+  const parsed = parseVideoUrl(url);
+  const resolvedTitle = title || parsed.defaultTitle;
+  
+  document.getElementById('now-playing-title').textContent = resolvedTitle;
+
+  const colors = {
+    youtube: 'radial-gradient(circle, rgba(255, 0, 0, 0.15) 0%, transparent 60%)',
+    vk: 'radial-gradient(circle, rgba(74, 118, 168, 0.15) 0%, transparent 60%)',
+    rutube: 'radial-gradient(circle, rgba(235, 95, 30, 0.15) 0%, transparent 60%)',
+    direct: 'radial-gradient(circle, rgba(121, 40, 202, 0.15) 0%, transparent 60%)'
+  };
+  glow.style.background = colors[parsed.provider] || colors.direct;
+
+  if (parsed.type === 'embed') {
+    embed.src = parsed.embedUrl;
+    embed.classList.remove('hidden');
+  } else if (parsed.type === 'html5') {
+    videoWrapper.classList.remove('hidden');
+    if (url.includes('.m3u8')) {
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+        cosmicHls = new Hls();
+        cosmicHls.loadSource(url);
+        cosmicHls.attachMedia(videoEl);
+        cosmicHls.on(Hls.Events.MANIFEST_PARSED, () => videoEl.play());
+      } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+        videoEl.src = url;
+        videoEl.play();
+      }
+    } else {
+      videoEl.src = url;
+      videoEl.play();
+    }
+  } else {
+    // Iframe fallback
+    embed.src = url;
+    embed.classList.remove('hidden');
+  }
+
+  // Save to history list
+  addToCosmicHistory(url, resolvedTitle, parsed.provider);
+}
+
+function parseVideoUrl(url) {
+  const ytReg = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const ytMatch = url.match(ytReg);
+  if (ytMatch) {
+    return {
+      provider: 'youtube',
+      type: 'embed',
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`,
+      defaultTitle: `YouTube (${ytMatch[1]})`
+    };
+  }
+
+  const vkReg = /vk\.com\/video(-?\d+)_(\d+)/;
+  const vkMatch = url.match(vkReg);
+  if (vkMatch) {
+    return {
+      provider: 'vk',
+      type: 'embed',
+      embedUrl: `https://vk.com/video_ext.php?oid=${vkMatch[1]}&id=${vkMatch[2]}&autoplay=1`,
+      defaultTitle: `VK Video (${vkMatch[1]}_${vkMatch[2]})`
+    };
+  }
+
+  const rutubeReg = /rutube\.ru\/(?:video|play\/embed)\/([a-f0-9]{32})/;
+  const rutubeMatch = url.match(rutubeReg);
+  if (rutubeMatch) {
+    return {
+      provider: 'rutube',
+      type: 'embed',
+      embedUrl: `https://rutube.ru/play/embed/${rutubeMatch[1]}?autoplay=1`,
+      defaultTitle: `RuTube Video`
+    };
+  }
+
+  if (url.includes('.m3u8') || url.includes('.mp4')) {
+    return {
+      provider: 'direct',
+      type: 'html5',
+      defaultTitle: url.includes('.m3u8') ? 'Поток HLS' : 'Прямой файл MP4'
+    };
+  }
+
+  return {
+    provider: 'direct',
+    type: 'iframe_fallback',
+    defaultTitle: 'Веб-фрейм'
+  };
+}
+
+function addToCosmicHistory(url, title, provider) {
+  cosmicHistory = cosmicHistory.filter(h => h.url !== url);
+  cosmicHistory.unshift({ url, title, provider });
+  if (cosmicHistory.length > 5) cosmicHistory.pop();
+  localStorage.setItem('cosmic_history_chat', JSON.stringify(cosmicHistory));
+  renderCosmicHistory();
+}
+
+function renderCosmicHistory() {
+  const container = document.getElementById('cosmic-history-list');
+  if (!container) return;
+  
+  if (cosmicHistory.length === 0) {
+    container.innerHTML = '<div class="text-muted small text-center py-2">История пуста</div>';
+    return;
+  }
+
+  container.innerHTML = cosmicHistory.map(h => `
+    <div class="p-1 border rounded bg-dark small cursor-pointer text-truncate cosmic-hist-item" style="cursor:pointer; font-size:0.75rem;" data-url="${h.url}" data-title="${h.title.replace(/"/g, '&quot;')}">
+      📁 [${h.provider.toUpperCase()}] ${h.title}
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.cosmic-hist-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const url = item.getAttribute('data-url');
+      const title = item.getAttribute('data-title');
+      document.getElementById('cosmic-stream-url').value = url;
+      loadCosmicVideo(url, title);
+    });
+  });
 }
 
 async function sendMessage() {
@@ -91,6 +375,9 @@ async function sendMessage() {
   let fullReply = '';
   let started = false;
 
+  const modeSelector = document.getElementById('chat-mode-selector');
+  const chatMode = modeSelector ? modeSelector.value : 'story';
+
   try {
     const replyObj = await window.chatService.sendChatMessage(msg, (chunk, status, voice) => {
       if (status) {
@@ -105,7 +392,7 @@ async function sendMessage() {
         textDiv.innerHTML = parseContentToHtml(fullReply);
       }
       win.scrollTop = win.scrollHeight;
-    }, chatHistory);
+    }, chatHistory, { chat_mode: chatMode });
 
     const reply = replyObj.text;
     const voiceReply = replyObj.voice || reply;
@@ -203,8 +490,15 @@ window.playMovieDirect = async (title) => {
     if (r.ok) {
       const data = await r.json();
       if (data.path) {
-        const encoded = encodeURIComponent(data.path);
-        window.open(`/html/player/index.html?file=${encoded}`, '_blank');
+        // Expand player bar
+        const body = document.getElementById('media-player-body');
+        const btn = document.getElementById('btn-toggle-player-body');
+        body.classList.remove('d-none');
+        btn.textContent = 'Свернуть плеер';
+        
+        // Load direct stream or file path
+        const streamUrl = `/api/media/stream?path=${encodeURIComponent(data.path)}`;
+        loadCosmicVideo(streamUrl, data.title || title);
       } else {
         alert(`Файл для фильма "${title}" не найден.`);
       }
@@ -291,6 +585,15 @@ async function findAndShowMedia(title) {
     const controls = document.getElementById('media-controls');
     document.getElementById('now-playing-title').textContent = data.title || title;
     controls.classList.remove('d-none');
+    
+    // Automatically trigger toggle for previewing
+    const body = document.getElementById('media-player-body');
+    const btn = document.getElementById('btn-toggle-player-body');
+    body.classList.remove('d-none');
+    btn.textContent = 'Свернуть плеер';
+    
+    const streamUrl = `/api/media/stream?path=${encodeURIComponent(data.path)}`;
+    loadCosmicVideo(streamUrl, data.title || title);
   } catch (e) {
     console.error('findAndShowMedia:', e);
   }

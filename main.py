@@ -30,7 +30,7 @@ from fastapi.staticfiles import StaticFiles
 import header
 from header import __root__
 from src.ai import GoogleGenerativeAI
-from src.fastapi import init_auth_router, init_chat_router, init_control_router, init_media_router, init_qbt_router, init_tts_router, init_logs_router, init_keys_router
+from src.fastapi import init_auth_router, init_chat_router, init_control_router, init_media_router, init_qbt_router, init_tts_router, init_logs_router, init_keys_router, init_admin_router
 from src.logger import logger
 from src.utils.file import read_text_file
 from src.utils.jjson import j_loads_ns
@@ -122,6 +122,7 @@ app.include_router(init_control_router())
 app.include_router(init_tts_router())
 app.include_router(init_logs_router())
 app.include_router(init_keys_router())
+app.include_router(init_admin_router())
 
 
 @app.on_event("startup")

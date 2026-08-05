@@ -14,8 +14,6 @@ class PlaywrightWebSearcher:
         logger.info(f"[playwright_searcher] Инициализация поиска: '{query}'")
         
         encoded_query = urllib.parse.quote_plus(query)
-        search_url = f"https://html.duckduckgo.com/html/?q={encoded_query}"
-        
         extracted_data = []
 
         try:
@@ -25,27 +23,31 @@ class PlaywrightWebSearcher:
                 context = await browser.new_context(ignore_https_errors=True)
                 page = await context.new_page()
                 
-                # 1. Поиск в DuckDuckGo
-                logger.info(f"[playwright_searcher] Загрузка результатов поиска DuckDuckGo...")
-                await page.goto(search_url, timeout=20000)
-                html = await page.content()
+                # 1. Поиск в DuckDuckGo Lite (через urllib для надежности)
+                logger.info(f"[playwright_searcher] Загрузка результатов поиска DuckDuckGo Lite...")
                 
-                # Парсинг результатов поиска
-                soup = BeautifulSoup(html, "html.parser")
+                import urllib.request as urllib_req
+                
+                url = 'https://lite.duckduckgo.com/lite/'
+                data = urllib.parse.urlencode({'q': query}).encode('utf-8')
+                req = urllib.request.Request(url, data=data, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
                 results = []
-                for a in soup.find_all("a", class_="result__url"):
-                    href = a.get("href")
-                    if href:
-                        # Извлечение реального URL из DDG редиректа, если нужно
-                        # Обычно в HTML версии ссылка прямая или простая
-                        parsed_url = urllib.parse.urlparse(href)
-                        if parsed_url.netloc == "duckduckgo.com" and "uddg=" in parsed_url.query:
-                            qs = urllib.parse.parse_qs(parsed_url.query)
-                            real_url = qs.get("uddg", [None])[0]
-                            if real_url:
-                                results.append(real_url)
-                        else:
+                
+                try:
+                    import asyncio
+                    # Выполняем синхронный urllib запрос в отдельном потоке
+                    def fetch_ddg():
+                        with urllib_req.urlopen(req, timeout=10) as response:
+                            return response.read().decode('utf-8', errors='ignore')
+                            
+                    html = await asyncio.to_thread(fetch_ddg)
+                    soup = BeautifulSoup(html, "html.parser")
+                    for a in soup.find_all("a"):
+                        href = a.get("href")
+                        if href and href.startswith("http") and "duckduckgo.com" not in href:
                             results.append(href)
+                except Exception as e:
+                    logger.error(f"[playwright_searcher] Ошибка поиска DDG: {e}")
                             
                 # Фильтруем уникальные ссылки
                 unique_links = []

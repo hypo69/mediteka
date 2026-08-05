@@ -309,4 +309,68 @@ async function loadFoundryConfig() {
   }
 }
 
-window.initModelsTab = initModelsTab;
+// ── System Instruction Editor ─────────────────────────────────────────────
+
+async function loadSystemInstruction() {
+  const editor = document.getElementById('system-instruction-editor');
+  if (!editor) return;
+  
+  editor.value = 'Загрузка...';
+  editor.disabled = true;
+  
+  try {
+    const data = await window.api.fetch('/api/admin/system_instruction');
+    editor.value = data.content || '';
+    editor.disabled = false;
+  } catch (err) {
+    console.error('Ошибка загрузки системной инструкции:', err);
+    editor.value = '';
+    editor.disabled = false;
+    showModelsNotification('Ошибка загрузки системной инструкции: ' + err.message, 'danger');
+  }
+}
+
+async function saveSystemInstruction() {
+  const editor = document.getElementById('system-instruction-editor');
+  const saveBtn = document.getElementById('btn-save-instruction');
+  if (!editor || !saveBtn) return;
+
+  const originalHtml = saveBtn.innerHTML;
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Сохранение...';
+
+  try {
+    await window.api.fetch('/api/admin/system_instruction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editor.value })
+    });
+    showModelsNotification('✅ Системная инструкция успешно сохранена', 'success');
+  } catch (err) {
+    console.error('Ошибка сохранения системной инструкции:', err);
+    showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalHtml;
+  }
+}
+
+// Hook system instruction editor after initModelsTab
+const _origInitModelsTab = window.initModelsTab;
+window.initModelsTab = async function() {
+  await _origInitModelsTab();
+  
+  // Load system instruction
+  await loadSystemInstruction();
+
+  // Bind save/reload buttons
+  const saveBtn = document.getElementById('btn-save-instruction');
+  const reloadBtn = document.getElementById('btn-reload-instruction');
+
+  if (saveBtn) {
+    saveBtn.onclick = saveSystemInstruction;
+  }
+  if (reloadBtn) {
+    reloadBtn.onclick = loadSystemInstruction;
+  }
+};

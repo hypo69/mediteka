@@ -90,6 +90,11 @@ class PreferenceRequest(BaseModel):
     category: str = None
 
 
+class RagBuildRequest(BaseModel):
+    key: str = ''
+
+
+
 def init_router(prefix: str = '/api/media') -> APIRouter:
     router = APIRouter(prefix=prefix, tags=['media'])
 
@@ -337,5 +342,157 @@ def init_router(prefix: str = '/api/media') -> APIRouter:
             raise HTTPException(status_code=404, detail='File not found')
         return FileResponse(file_path, media_type='video/mp4')
 
+    @router.get('/rag/status')
+    async def get_rag_status_endpoint() -> dict:
+        """Получение статуса RAG-индекса и количества документов."""
+        try:
+            db = _db()
+            records = db.export_all()
+            total_records = len(records)
+            movies_count = sum(1 for r in records if r.get('type') != 'series')
+            series_count = sum(1 for r in records if r.get('type') == 'series')
+            
+            from plugins.media_organizer.core.media_rag import get_media_rag
+            api_key = ''
+            keys_file = Path(__file__).parent.parent / 'secrets' / 'gemini_keys.json'
+            if keys_file.exists():
+                import json
+                keys_data = json.loads(keys_file.read_text(encoding='utf-8'))
+                for entry in keys_data.values():
+                    if entry.get('status') == 'active' and entry.get('api_key'):
+                        api_key = entry.get('api_key')
+                        break
+            if not api_key:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+                
+            rag_docs = 0
+            if api_key:
+                try:
+                    rag = get_media_rag(api_key)
+                    rag_docs = rag.count()
+                except Exception as e:
+                    logger.error(f"Error getting RAG count: {e}")
+                    
+            return {
+                "database": {
+                    "total_records": total_records,
+                    "by_type": {
+                        "movie": movies_count,
+                        "series": series_count
+                    }
+                },
+                "rag_index": {
+                    "documents": rag_docs
+                }
+            }
+        except Exception as ex:
+            logger.error(f"Error in RAG status: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post('/rag/build')
+    async def build_rag_endpoint(req: RagBuildRequest) -> dict:
+        """Перестроение RAG-индекса."""
+        try:
+            api_key = ''
+            if req.key:
+                keys_file = Path(__file__).parent.parent / 'secrets' / 'gemini_keys.json'
+                if keys_file.exists():
+                    import json
+                    keys_data = json.loads(keys_file.read_text(encoding='utf-8'))
+                    entry = keys_data.get(req.key)
+                    if entry:
+                        api_key = entry.get('api_key')
+            
+            if not api_key:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+                
+            if not api_key:
+                raise HTTPException(status_code=400, detail="Gemini API key is not configured or not found.")
+                
+            from plugins.media_organizer.core.media_rag import build_media_rag
+            rag = build_media_rag(api_key)
+            count = rag.count()
+            return {"success": True, "count": count}
+        except Exception as ex:
+            logger.error(f"Error building RAG index: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post('/rag/search')
+    async def search_rag_endpoint(
+        query: str,
+        top_k: int = 10,
+        key: str = ''
+    ) -> dict:
+        """Поиск по RAG-индексу."""
+        try:
+            api_key = ''
+            if key:
+                keys_file = Path(__file__).parent.parent / 'secrets' / 'gemini_keys.json'
+                if keys_file.exists():
+                    import json
+                    keys_data = json.loads(keys_file.read_text(encoding='utf-8'))
+                    entry = keys_data.get(key)
+                    if entry:
+                        api_key = entry.get('api_key')
+                        
+            if not api_key:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+                
+            if not api_key:
+                raise HTTPException(status_code=400, detail="Gemini API key is not configured or not found.")
+                
+            from plugins.media_organizer.core.media_rag import get_media_rag
+            rag = get_media_rag(api_key)
+            if rag.count() == 0:
+                return {"results": []}
+                
+            search_results = rag.search(query, top_k=top_k, threshold=0.3)
+            
+            formatted_results = []
+            for r in search_results:
+                meta = r.get('meta', {})
+                formatted_results.append({
+                    "title": meta.get('title', r.get('id', '').split('::')[-1] if '::' in r.get('id', '') else r.get('id', '')),
+                    "type": meta.get('type', ''),
+                    "category": meta.get('main_category', ''),
+                    "year": meta.get('year', ''),
+                    "disk_name": meta.get('disk_name', ''),
+                    "score": r.get('score', 0.0)
+                })
+                
+            return {"results": formatted_results}
+        except Exception as ex:
+            logger.error(f"Error searching RAG index: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post('/audit')
+    async def run_audit_endpoint() -> dict:
+        """Запуск аудита медиатеки."""
+        try:
+            db = _db()
+            from plugins.media_organizer.core.media_auditor import MediaAuditor
+            auditor = MediaAuditor(db)
+            issues = await auditor.audit()
+            return {"status": "ok", "issues": issues}
+        except Exception as ex:
+            logger.error(f"Error running audit: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post('/rebuild')
+    async def run_rebuild_endpoint() -> dict:
+        """Восстановление (консолидация) БД."""
+        try:
+            from plugins.media_organizer.core.media_rebuild import rebuild_db
+            db = _db()
+            result_msg = rebuild_db(db)
+            return {"status": "ok", "result": result_msg}
+        except Exception as ex:
+            logger.error(f"Error running rebuild: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
     return router
+
 

@@ -165,7 +165,7 @@ def get_media_card(disk_name: str, title: str, media_type: str) -> str:
     """Получение полной карточки фильма/сериала из базы."""
     try:
         db = MediaDatabase(_DB_FILE)
-        record = db.get_media(disk_name, title, media_type)
+        record = db.get_media(disk_name, title)
 
         if not record:
             return json.dumps({

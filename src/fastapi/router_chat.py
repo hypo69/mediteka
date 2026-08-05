@@ -230,21 +230,35 @@ def init_router(model, plugins: dict) -> APIRouter:
 
                 full_response_text = ""
 
+                # Извлекаем режим чата (story или download) из настроек запроса
+                chat_mode = request.generation_config.get('chat_mode', 'story')
+
                 for plugin in plugins.values():
+                    # В режиме "сюжет" мы полностью пропускаем плагин yt-dlp (поиск/скачивание видео на YouTube)
+                    if chat_mode == 'story' and plugin.name == 'yt_dlp':
+                        continue
+
+                    # Жесткая маршрутизация для RAG-плагина
+                    if is_media and plugin.name != 'rag':
+                        continue
+                    if not is_media and plugin.name == 'rag':
+                        continue
+
                     # Проверяем, может ли плагин обработать сообщение
                     can_handle = False
                     if hasattr(plugin, 'can_handle') and plugin.can_handle(request.message):
                         can_handle = True
 
                     if not can_handle:
-                        if plugin.name == 'rag' and not is_media:
-                            continue
-                        if is_media and plugin.name != 'rag':
-                            continue
+                        continue
 
                     plugin_name = plugin.__class__.__name__
                     yield f"data: {json.dumps({'status': f'Вызов плагина {plugin_name}...'})}\n\n"
-                    response = await plugin.handle(request.message, **kwargs)
+                    
+                    # Передаем режим чата в параметры плагина
+                    plugin_kwargs = kwargs.copy()
+                    plugin_kwargs['chat_mode'] = chat_mode
+                    response = await plugin.handle(request.message, **plugin_kwargs)
 
                     import inspect
                     if inspect.isasyncgen(response):
@@ -291,9 +305,9 @@ def init_router(model, plugins: dict) -> APIRouter:
                 async for chunk in stream_generator:
                     if not chunk:
                         continue
-                    buffer += chunk
                     
                     if current_channel == "text":
+                        buffer += chunk
                         if "[VOICE]" in buffer:
                             parts = buffer.split("[VOICE]", 1)
                             text_part = parts[0].replace("[CHAT]", "").strip()
@@ -302,6 +316,12 @@ def init_router(model, plugins: dict) -> APIRouter:
                                 yield f"data: {json.dumps({'text': text_part})}\n\n"
                             current_channel = "voice"
                             buffer = parts[1]
+                            
+                            # Немедленно отправляем ту часть, которая уже попала в voice
+                            clean_voice = buffer.replace("[VOICE]", "").strip()
+                            if clean_voice:
+                                yield f"data: {json.dumps({'voice': clean_voice})}\n\n"
+                            buffer = "" # очищаем буфер, для voice он не нужен
                         else:
                             if len(buffer) > 7:
                                 output_len = len(buffer) - 7
@@ -312,7 +332,8 @@ def init_router(model, plugins: dict) -> APIRouter:
                                 buffer = buffer[output_len:]
                     else:
                         clean_voice = chunk.replace("[VOICE]", "")
-                        yield f"data: {json.dumps({'voice': clean_voice})}\n\n"
+                        if clean_voice:
+                            yield f"data: {json.dumps({'voice': clean_voice})}\n\n"
                 
                 # Выталкиваем остатки буфера
                 if buffer:
@@ -321,10 +342,6 @@ def init_router(model, plugins: dict) -> APIRouter:
                         if to_output:
                             full_response_text += to_output
                             yield f"data: {json.dumps({'text': to_output})}\n\n"
-                    else:
-                        to_output = buffer.replace("[VOICE]", "").strip()
-                        if to_output:
-                            yield f"data: {json.dumps({'voice': to_output})}\n\n"
 
                 # Автоматическая индексация успешного ответа в User RAG (fire-and-forget, не блокирует ответ)
                 if full_response_text and api_key and user_identifier:

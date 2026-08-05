@@ -77,11 +77,10 @@ window.chatService = {
             if (data.text || data.status || data.voice) {
               if (data.text) fullText += data.text;
               if (data.voice) {
-                fullText += data.voice;
                 voiceText += data.voice;
               }
               if (onChunk) {
-                onChunk(data.text || data.voice || '', data.status || '', data.voice || '');
+                onChunk(data.text || '', data.status || '', data.voice || '');
               }
             }
           } catch (e) {
@@ -98,10 +97,9 @@ window.chatService = {
         if (data.text || data.status || data.voice) {
           if (data.text) fullText += data.text;
           if (data.voice) {
-            fullText += data.voice;
             voiceText += data.voice;
           }
-          if (onChunk) onChunk(data.text || data.voice || '', data.status || '', data.voice || '');
+          if (onChunk) onChunk(data.text || '', data.status || '', data.voice || '');
         }
       } catch (e) {}
     }

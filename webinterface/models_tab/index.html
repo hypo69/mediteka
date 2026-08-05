@@ -7,7 +7,7 @@
 
   <div class="row g-3">
     <!-- LEFT: Default Model settings -->
-    <div class="col-md-4">
+    <div class="col-4">
       <div class="card mb-3">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
           <span>🤖 Выбор модели по умолчанию</span>
@@ -80,15 +80,15 @@
     </div>
 
     <!-- RIGHT: API Keys List -->
-    <div class="col-md-8">
-      <div class="card">
+    <div class="col-8">
+      <div class="card mb-3">
         <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
           <span>🔑 Активные ключи в пуле ротации</span>
           <button class="btn btn-xs btn-outline-light btn-sm" id="btn-refresh-keys"><i class="bi bi-arrow-clockwise"></i> Обновить</button>
         </div>
         <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-striped table-hover align-middle mb-0" id="keys-table">
+          <div style="height: 400px; overflow-y: scroll; overflow-x: auto;">
+            <table class="table table-striped table-hover align-middle mb-0" id="keys-table" style="min-width: 600px;">
               <thead class="table-dark">
                 <tr>
                   <th scope="col" style="width: 20%;">Название</th>
@@ -105,6 +105,39 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL-WIDTH: System Instruction Editor -->
+  <div class="row mt-2">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+          <span>📝 Системная инструкция для ИИ-модели</span>
+          <div class="d-flex align-items-center gap-2">
+            <span id="system-instruction-status" class="badge bg-secondary" style="display:none!important;"></span>
+            <button class="btn btn-outline-light btn-sm" id="btn-reload-instruction">
+              <i class="bi bi-arrow-clockwise"></i> Обновить
+            </button>
+            <button class="btn btn-success btn-sm" id="btn-save-instruction">
+              <i class="bi bi-floppy"></i> Сохранить
+            </button>
+          </div>
+        </div>
+        <div class="card-body p-2">
+          <p class="small text-muted mb-2">
+            Редактируйте глобальную системную инструкцию для ИИ-ассистента. Изменения вступят в силу при следующем сообщении.
+            Поддерживается Markdown-форматирование.
+          </p>
+          <textarea
+            id="system-instruction-editor"
+            class="form-control font-monospace"
+            style="min-height: 400px; resize: vertical; font-size: 0.85rem; line-height: 1.5;"
+            placeholder="Загрузка системной инструкции..."
+            spellcheck="false"
+          ></textarea>
         </div>
       </div>
     </div>

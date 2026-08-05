@@ -54,6 +54,7 @@ class RAGPlugin(BasePlugin):
     """
 
     name = "rag"
+    enabled = True
 
     def __init__(self, ai_model):
         """Инициализация RAG-плагина."""
@@ -61,7 +62,9 @@ class RAGPlugin(BasePlugin):
         self._tools = get_media_tools()
 
     def _is_media_query(self, message: str) -> bool:
-        """Определение медиа-запроса по ключевым словам."""
+        """Проверяет, является ли запрос медиа-запросом общего характера."""
+        if not getattr(self, 'enabled', True):
+            return False
         low = message.lower()
         return any(kw in low for kw in _MEDIA_KEYWORDS)
 

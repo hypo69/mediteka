@@ -90,8 +90,10 @@ async function initInterface() {
     loadTabContent('chat', '/html/chat/index.html?v=20260804_v2'),
     loadTabContent('torrents', '/html/torrents/index.html?v=20260804'),
     loadTabContent('media', '/html/media/index.html?v=20260804'),
-    loadTabContent('admin', '/html/admin_tab/index.html?v=20260804'),
+    loadTabContent('admin', '/html/admin_tab/index.html?v=20260804', '/html/admin_tab/main.js?v=20260804'),
     loadTabContent('models', '/html/models_tab/index.html?v=20260804'),
+    loadTabContent('tts', '/html/tts_tab/index.html?v=20260804', '/html/tts_tab/main.js?v=20260804'),
+    loadTabContent('sources', '/html/sources_tab/index.html?v=20260804'),
     loadTabContent('logs', '/html/logs/index.html?v=20260804'),
     loadTabContent('help', '/html/help/index.html?v=20260804'),
   ]);
@@ -164,7 +166,7 @@ async function verifyPassword() {
   }
 }
 
-async function loadTabContent(tabName, url) {
+async function loadTabContent(tabName, url, jsOverrideSrc) {
   try {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -172,12 +174,9 @@ async function loadTabContent(tabName, url) {
     const container = document.getElementById(`tab-${tabName}`);
     container.innerHTML = html;
     
-    // Load JS for the tab
+    // Load JS for the tab (use override path if provided)
     const script = document.createElement('script');
-    script.src = `/html/${tabName}/main.js?v=20260804_v2`;
-    if (tabName === 'admin') {
-      script.type = 'module';
-    }
+    script.src = jsOverrideSrc || `/html/${tabName}/main.js?v=20260804_v2`;
     script.onload = () => {
       if (window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]) {
         window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]();

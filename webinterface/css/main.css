@@ -65,6 +65,17 @@ body {
   padding: 8px; 
   background: var(--card-bg);
 }
+
+/* Fix overlap in admin panel chat tab */
+#tab-chat {
+  display: flex;
+  flex-direction: column;
+}
+#tab-chat .chat-window {
+  height: auto;
+  flex: 1;
+  min-height: 0;
+}
 .message { margin-bottom: 6px; padding: 6px 10px; border-radius: 4px; }
 .user-message { 
   background: var(--chat-user-bg); 

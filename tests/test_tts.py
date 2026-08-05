@@ -23,6 +23,13 @@ from unittest.mock import Mock, patch, AsyncMock
 from pathlib import Path
 
 
+try:
+    import torch
+    has_torch = True
+except ImportError:
+    has_torch = False
+
+
 class TestTTSEdge:
     """Тесты edge.py TTS."""
 
@@ -48,6 +55,7 @@ class TestTTSGTTS:
             assert callable(synthesize)
 
 
+@pytest.mark.skipif(not has_torch, reason="torch is not installed")
 class TestTTSSilero:
     """Тесты silero.py TTS."""
 
@@ -86,7 +94,7 @@ class TestTTSIntegration:
     @pytest.mark.asyncio
     async def test_synthesize_all_systems(self, tmp_path):
         """Тест синтеза для всех систем."""
-        from src.tts import synthesize_speech
+        import src.tts
         
         test_file = tmp_path / 'test.mp3'
         text = "Тестовый текст для синтеза речи"
@@ -94,6 +102,7 @@ class TestTTSIntegration:
         with patch('src.tts.synthesize_speech') as mock_synth:
             mock_synth.return_value = AsyncMock()
             
-            result = await synthesize_speech(text, test_file, "edge-tts", "ru-RU-DmitryNeural")
+            result = await src.tts.synthesize_speech(text, test_file, "edge-tts", "ru-RU-DmitryNeural")
             
             mock_synth.assert_called_once()
+

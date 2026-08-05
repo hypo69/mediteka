@@ -1,0 +1,322 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "description": "Каталог внешних источников для поиска, стриминга и метаданных фильмов и сериалов"
+  },
+  "metadata_apis": [
+    {
+      "id": "tmdb",
+      "name": "TMDb (The Movie Database)",
+      "url": "https://www.themoviedb.org",
+      "api_url": "https://api.themoviedb.org/3",
+      "docs": "https://developer.themoviedb.org",
+      "description": "Основная база метаданных фильмов и сериалов (TMDB ID, постеры, описания, рейтинги)",
+      "enabled": true,
+      "requires_api_key": true,
+      "api_key_env": "TMDB_API_KEY",
+      "priority": 1
+    },
+    {
+      "id": "omdb",
+      "name": "OMDb API",
+      "url": "https://www.omdbapi.com",
+      "api_url": "https://www.omdbapi.com",
+      "description": "Open Movie Database — IMDb ID, рейтинги, метаданные",
+      "enabled": true,
+      "requires_api_key": true,
+      "api_key_env": "OMDB_API_KEY",
+      "priority": 2
+    },
+    {
+      "id": "imdb",
+      "name": "IMDb",
+      "url": "https://www.imdb.com",
+      "description": "Крупнейшая база данных фильмов",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 3
+    }
+  ],
+  "streaming_search": [
+    {
+      "id": "justwatch",
+      "name": "JustWatch",
+      "url": "https://www.justwatch.com",
+      "description": "Показывает, на каких стриминговых сервисах доступен фильм или сериал",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 1
+    },
+    {
+      "id": "reelgood",
+      "name": "Reelgood",
+      "url": "https://reelgood.com",
+      "description": "Аналог JustWatch — агрегатор стриминговых сервисов",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 2
+    }
+  ],
+  "video_search": [
+    {
+      "id": "yandex_video",
+      "name": "Yandex Video",
+      "url": "https://yandex.ru/video",
+      "description": "Поиск видео через Яндекс — часто находит фильмы на различных сайтах",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 1
+    },
+    {
+      "id": "google_video",
+      "name": "Google Video Search",
+      "url": "https://www.google.com/videohp",
+      "description": "Поиск видеостраниц через Google",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 2
+    }
+  ],
+  "iframe_players": [
+    {
+      "id": "vidsrc_cc",
+      "name": "VidSrc.cc",
+      "url": "https://www.vidsrc.cc",
+      "embed_template_imdb": "https://vidsrc.cc/v2/embed/movie/{imdb_id}",
+      "embed_template_tmdb": "https://vidsrc.cc/v2/embed/movie/{tmdb_id}",
+      "description": "API и iframe-плеер по IMDb/TMDB ID",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 1
+    },
+    {
+      "id": "vidsrc_io",
+      "name": "VidSrc.io",
+      "url": "https://vidsrc.io",
+      "embed_template_imdb": "https://vidsrc.io/embed/movie?imdb={imdb_id}",
+      "embed_template_tmdb": "https://vidsrc.io/embed/movie?tmdb={tmdb_id}",
+      "description": "Актуальная документация и новые домены VidSrc",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 2
+    },
+    {
+      "id": "vidsrc_link",
+      "name": "VidSrc.link",
+      "url": "https://www.vidsrc.link",
+      "embed_template_imdb": "https://vidsrc.link/embed/movie/{imdb_id}",
+      "embed_template_tmdb": "https://vidsrc.link/embed/movie/{tmdb_id}",
+      "description": "Современная версия VidSrc API с поддержкой IMDb и TMDB",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 3
+    },
+    {
+      "id": "vidsrc_ru",
+      "name": "VidSrc.ru",
+      "url": "https://vidsrc.ru",
+      "description": "Официальный вариант инфраструктуры VidSrc",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 4
+    },
+    {
+      "id": "2embed",
+      "name": "2Embed",
+      "url": "https://2embed.org",
+      "embed_template_imdb": "https://2embed.org/embed/{imdb_id}",
+      "description": "API и встраиваемые iframe-плееры по IMDb ID",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 5
+    },
+    {
+      "id": "superembed",
+      "name": "SuperEmbed",
+      "url": "https://superembed.stream",
+      "description": "Сервис встраиваемых плееров",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 6
+    },
+    {
+      "id": "vidcore",
+      "name": "VidCore",
+      "url": "https://www.vidcore.org",
+      "description": "Совместимый с VidSrc API для iframe-плееров",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 7
+    },
+    {
+      "id": "ezvidapi",
+      "name": "EZVidAPI",
+      "url": "https://ezvidapi.com",
+      "description": "Предоставляет iframe и HLS-потоки, стабильная альтернатива VidSrc",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 8
+    }
+  ],
+  "direct_sites": [
+    {
+      "id": "seasonvar",
+      "name": "Seasonvar",
+      "url": "https://seasonvar.ru",
+      "description": "Русскоязычный сайт с плеерами для сериалов",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 1,
+      "supports_ytdlp": true
+    },
+    {
+      "id": "hdvb",
+      "name": "HDVB",
+      "url": "https://hdvb.ru",
+      "description": "Встроенные плееры для фильмов и сериалов",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 2
+    },
+    {
+      "id": "rezka",
+      "name": "Rezka (HDRezka)",
+      "url": "https://rezka.ag",
+      "description": "Зеркала HDRezka — широкий выбор фильмов и сериалов",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 3
+    },
+    {
+      "id": "hdrezka_film",
+      "name": "HDREZKA (Официальный)",
+      "url": "https://hdrezka.film",
+      "description": "Официальный сайт HDRezka",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 4,
+      "supports_ytdlp": true
+    },
+    {
+      "id": "kinogo",
+      "name": "Kinogo.ec",
+      "url": "https://kinogo.ec",
+      "description": "Кинолента с различными зеркалами",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 5
+    },
+    {
+      "id": "kinogo_biz",
+      "name": "Kinogo.biz",
+      "url": "https://kinogo.biz",
+      "description": "Популярное зеркало Kinogo",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 6,
+      "supports_ytdlp": true
+    },
+    {
+      "id": "youtube",
+      "name": "YouTube",
+      "url": "https://youtube.com",
+      "description": "Крупнейший видеохостинг",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 7,
+      "supports_ytdlp": true
+    },
+    {
+      "id": "rutube",
+      "name": "Rutube",
+      "url": "https://rutube.ru",
+      "description": "Российский видеохостинг",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 8,
+      "supports_ytdlp": true
+    },
+    {
+      "id": "vk_video",
+      "name": "VK Video",
+      "url": "https://vk.com/video",
+      "description": "Видеоплатформа ВКонтакте",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 9,
+      "supports_ytdlp": true
+    }
+  ],
+  "torrent_trackers": [
+    {
+      "id": "rutracker",
+      "name": "Rutracker",
+      "url": "https://rutracker.org",
+      "search_url": "https://rutracker.org/forum/tracker.php?nm={query}",
+      "description": "Крупнейший русскоязычный торрент-трекер",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 1
+    },
+    {
+      "id": "nnmclub",
+      "name": "NNMClub",
+      "url": "https://nnmclub.to",
+      "description": "NNM-Club — русскоязычный трекер с HD-контентом",
+      "enabled": true,
+      "requires_api_key": false,
+      "priority": 2
+    }
+  ],
+  "infrastructure": [],
+  "open_source_tools": [
+    {
+      "id": "yt_dlp",
+      "name": "yt-dlp",
+      "url": "https://github.com/yt-dlp/yt-dlp",
+      "description": "Извлечение видео и потоков со множества сайтов (Python)",
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "id": "mediafusion",
+      "name": "MediaFusion",
+      "url": "https://github.com/mhdzumair/MediaFusion",
+      "description": "Агрегатор источников для фильмов и сериалов",
+      "enabled": true,
+      "priority": 2
+    },
+    {
+      "id": "jackett",
+      "name": "Jackett",
+      "url": "https://github.com/Jackett/Jackett",
+      "description": "Единый API для множества индексаторов",
+      "enabled": true,
+      "priority": 3
+    },
+    {
+      "id": "prowlarr",
+      "name": "Prowlarr",
+      "url": "https://github.com/Prowlarr/Prowlarr",
+      "description": "Современный агрегатор индексаторов",
+      "enabled": true,
+      "priority": 4
+    },
+    {
+      "id": "tmdbsimple",
+      "name": "tmdbsimple",
+      "url": "https://github.com/celiao/tmdbsimple",
+      "description": "Python-библиотека для TMDb API",
+      "enabled": true,
+      "priority": 5
+    },
+    {
+      "id": "cinemagoer",
+      "name": "IMDbPY (Cinemagoer)",
+      "url": "https://github.com/cinemagoer/cinemagoer",
+      "description": "Python-библиотека для доступа к данным IMDb",
+      "enabled": true,
+      "priority": 6
+    }
+  ]
+}
