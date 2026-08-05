@@ -50,8 +50,15 @@ class SaveRagRequest(BaseModel):
 def get_chat_model(selected_model_name: str, system_instruction: str = None):
     """Dynamically construct/retrieve the appropriate AI model instance."""
     is_gemini = selected_model_name.startswith('gemini-') or 'gemini' in selected_model_name.lower()
+    is_agy = selected_model_name.startswith('agy-') or 'agy' in selected_model_name.lower()
     
-    if not is_gemini:
+    if is_agy:
+        from src.ai.agy_chat import AgyChatBase
+        return AgyChatBase(
+            model_id=selected_model_name,
+            system_prompt=system_instruction or "You are a helpful AI assistant.",
+        )
+    elif not is_gemini:
         from src.ai.foundry_chat import FoundryChatBase
         return FoundryChatBase(
             model_id=selected_model_name,

@@ -396,6 +396,7 @@ async function sendMessage() {
 
     const reply = replyObj.text;
     const voiceReply = replyObj.voice || reply;
+    const followUp = replyObj.followUp;
 
     const card = tryParseMovieCard(reply);
     if (card) {
@@ -447,6 +448,15 @@ async function sendMessage() {
 
     if (typeof fullReply === 'string' && !card) {
       await parseFilmTags(fullReply);
+    }
+    
+    // Automatically trigger follow-up query to emulate a dialog
+    if (followUp) {
+      document.getElementById('message-input').value = followUp;
+      setTimeout(() => {
+        const btn = document.getElementById('send-button');
+        if (btn && !btn.disabled) btn.click();
+      }, 1500);
     }
   } catch (err) {
     if (!started) {

@@ -1,7 +1,7 @@
 {
   "user_id": "2",
   "created_at": 1784708469.367987,
-  "updated_at": 1785853097.9653625,
+  "updated_at": 1785934513.317032,
   "watch_history": {},
   "last_watched": null,
   "search_history": [
@@ -192,6 +192,18 @@
     {
       "query": "Сваты",
       "timestamp": 1785853097.9653523
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785934404.232488
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785934466.4628155
+    },
+    {
+      "query": "Сваты",
+      "timestamp": 1785934513.317025
     }
   ],
   "preferences": {

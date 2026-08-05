@@ -104,7 +104,15 @@ window.chatService = {
       } catch (e) {}
     }
     
-    return { text: fullText, voice: voiceText };
+    let followUpQuery = null;
+    const nextQueryRegex = /\[NEXT_QUERY\](.*?)\[\/NEXT_QUERY\]/i;
+    const match = fullText.match(nextQueryRegex);
+    if (match) {
+      followUpQuery = match[1].trim();
+      fullText = fullText.replace(match[0], '');
+    }
+
+    return { text: fullText, voice: voiceText, followUp: followUpQuery };
   },
 
 

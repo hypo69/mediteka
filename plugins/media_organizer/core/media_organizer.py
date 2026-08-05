@@ -26,8 +26,8 @@ from src.logger import logger
 
 from plugins.media_organizer.core import (
     DEFAULT_CATEGORIES, MEDIA_DB, REPORTS_DIR, OUTPUT_DIR,
-    INSTRUCTION_FILE, TORRENTS_FILE, DB_FILE, CONFIG_DIR,
-    SYSTEM_INSTRUCTION
+    TORRENTS_FILE, DB_FILE, CONFIG_DIR,
+    SYSTEM_INSTRUCTION_RESEARCH, SYSTEM_INSTRUCTION_CHAT, SYSTEM_INSTRUCTION_TTS
 )
 from plugins.media_organizer.core.database import MediaDatabase
 from plugins.media_organizer.core.media_tools import MEDIA_TOOLS, dispatch_tool_call
@@ -40,7 +40,7 @@ from plugins.media_organizer.core.media_tracker import (
     load_media_paths, _filter_paths_by_disk, _normalize_disk_name
 )
 
-INSTRUCTION = SYSTEM_INSTRUCTION
+INSTRUCTION = SYSTEM_INSTRUCTION_RESEARCH
 
 TRIGGERS = ("фильм", "сериал", "кино", "movie", "film", "series", "медиа", "media",
             "скан", "scan", "отчет", "report", "библиотек", "медиатек", "ревизи", "audit",
@@ -117,9 +117,9 @@ class MediaOrganizerPlugin(BasePlugin):
         # Режим rebuild_rag — перестройка RAG-индекса
         if 'rebuild_rag' in message.lower():
             from plugins.media_organizer.core.media_rag import build_media_rag
-            api_key = os.getenv('GEMINI_API_KEY', '')
+            api_key = getattr(self.ai, 'api_key', '') or os.getenv('GEMINI_API_KEY', '')
             if not api_key:
-                return '❌ GEMINI_API_KEY не найден в .env'
+                return '❌ GEMINI_API_KEY не найден (требуется для векторизации текста)'
             rag = build_media_rag(api_key)
             return f'✅ RAG-индекс построен: {rag.count()} документов'
 
@@ -142,7 +142,31 @@ class MediaOrganizerPlugin(BasePlugin):
             lines = [f"⚠️ Найдено несовпадений: {len(issues)}. Начинаю автоматическое дополнение..."]
             
             # Инициализируем классификатор для дозаполнения
-            classifier = PersistentGenreClassifier(TMDBClient(os.getenv('TMDB_API_KEY', '')), self.ai, db, "UNKNOWN")
+            from src.ai import UnifiedChatModel
+            api_key_names = getattr(self.ai.gemini_model, 'api_key_names', []) if hasattr(self.ai, 'gemini_model') else []
+            foundry_model_id = getattr(self.ai, 'foundry_model_id', '')
+            use_foundry = getattr(self.ai, 'use_foundry', False)
+            
+            ai_research = UnifiedChatModel(
+                api_key_names=api_key_names,
+                system_instruction=SYSTEM_INSTRUCTION_RESEARCH,
+                foundry_model_id=foundry_model_id,
+                use_foundry=use_foundry
+            )
+            ai_chat = UnifiedChatModel(
+                api_key_names=api_key_names,
+                system_instruction=SYSTEM_INSTRUCTION_CHAT,
+                foundry_model_id=foundry_model_id,
+                use_foundry=use_foundry
+            )
+            ai_tts = UnifiedChatModel(
+                api_key_names=api_key_names,
+                system_instruction=SYSTEM_INSTRUCTION_TTS,
+                foundry_model_id=foundry_model_id,
+                use_foundry=use_foundry
+            )
+            
+            classifier = PersistentGenreClassifier(TMDBClient(os.getenv('TMDB_API_KEY', '')), ai_research, ai_chat, ai_tts, db, "UNKNOWN")
             
             for iss in issues:
                 try:
@@ -205,7 +229,31 @@ class MediaOrganizerPlugin(BasePlugin):
 
             # STAGE 3: Сохранение базовой информации в БД
             print("\n этап 2/4: Сохранение в БД...")
-            classifier = PersistentGenreClassifier(tmdb, self.ai, db, disk_name)
+            from src.ai import UnifiedChatModel
+            api_key_names = getattr(self.ai.gemini_model, 'api_key_names', []) if hasattr(self.ai, 'gemini_model') else []
+            foundry_model_id = getattr(self.ai, 'foundry_model_id', '')
+            use_foundry = getattr(self.ai, 'use_foundry', False)
+            
+            ai_research = UnifiedChatModel(
+                api_key_names=api_key_names,
+                system_instruction=SYSTEM_INSTRUCTION_RESEARCH,
+                foundry_model_id=foundry_model_id,
+                use_foundry=use_foundry
+            )
+            ai_chat = UnifiedChatModel(
+                api_key_names=api_key_names,
+                system_instruction=SYSTEM_INSTRUCTION_CHAT,
+                foundry_model_id=foundry_model_id,
+                use_foundry=use_foundry
+            )
+            ai_tts = UnifiedChatModel(
+                api_key_names=api_key_names,
+                system_instruction=SYSTEM_INSTRUCTION_TTS,
+                foundry_model_id=foundry_model_id,
+                use_foundry=use_foundry
+            )
+            
+            classifier = PersistentGenreClassifier(tmdb, ai_research, ai_chat, ai_tts, db, disk_name)
             _, classified_series = await classifier.classify_media(scanner.movies, scanner.series)
             print(f"   Записей сохранено: {len(db.export_disk(disk_name))}")
 

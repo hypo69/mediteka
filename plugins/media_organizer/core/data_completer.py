@@ -20,7 +20,7 @@ from typing import Optional
 
 from src.ai import GoogleGenerativeAI
 from src.logger import logger
-from plugins.media_organizer.core import MEDIA_DB, SYSTEM_INSTRUCTION
+from plugins.media_organizer.core import MEDIA_DB, SYSTEM_INSTRUCTION_RESEARCH, SYSTEM_INSTRUCTION_CHAT, SYSTEM_INSTRUCTION_TTS
 from plugins.media_organizer.core.database import MediaDatabase
 from plugins.media_organizer.core.media_scanner import MediaScanner, TMDBClient
 from plugins.media_organizer.core.genre_classifier import PersistentGenreClassifier
@@ -45,7 +45,9 @@ async def complete_disk_data(disk_name: str, tmdb_key: str) -> bool:
 
     print(f"=== Запуск принудительного дополнения данных для: {disk_name} ===")
     
-    ai = GoogleGenerativeAI(system_instruction=SYSTEM_INSTRUCTION)
+    ai_research = GoogleGenerativeAI(system_instruction=SYSTEM_INSTRUCTION_RESEARCH)
+    ai_chat = GoogleGenerativeAI(system_instruction=SYSTEM_INSTRUCTION_CHAT)
+    ai_tts = GoogleGenerativeAI(system_instruction=SYSTEM_INSTRUCTION_TTS)
     db = MediaDatabase(MEDIA_DB)
     scanner = MediaScanner()
 
@@ -71,7 +73,7 @@ async def complete_disk_data(disk_name: str, tmdb_key: str) -> bool:
     # 2. Классификация и сохранение (только новых)
     print("2/3: Классификация и сохранение в БД новых записей...")
     tmdb = TMDBClient(tmdb_key)
-    classifier = PersistentGenreClassifier(tmdb, ai, db, disk_name)
+    classifier = PersistentGenreClassifier(tmdb, ai_research, ai_chat, ai_tts, db, disk_name)
     await classifier.classify_media(new_movies, new_series)
     
     # 3. Глубокое сканирование сериалов

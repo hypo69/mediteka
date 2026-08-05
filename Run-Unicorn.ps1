@@ -1,4 +1,4 @@
-﻿$scriptDir = Split-Path $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
 $venvActivate = Join-Path $scriptDir "venv\Scripts\Activate.ps1"
 $env:PYTHONUTF8 = "1"
@@ -99,9 +99,11 @@ $uvicornArgs = @(
     "main:app",
     "--host", $host_,
     "--port", $port,
-    "--workers", [string]$workers,
     "--loop", "asyncio"
 )
+if ($workers -gt 1) {
+    $uvicornArgs += "--workers", [string]$workers
+}
 
 $is_debug = ($mode -in ("dev","debug")) -or ($debug -in ("true","1","yes"))
 if ($is_debug) {

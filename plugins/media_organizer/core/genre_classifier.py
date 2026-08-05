@@ -82,112 +82,7 @@ from src.media_granularity import (
     get_granularity_display_name,
 )
 
-# Промпты для поэтапных запросов
-_PROMPT_BASE = """Верни ТОЛЬКО JSON (без markdown) для {media_type} "{raw_name}"{genres_hint}.
-Поля: title, title_ru(название на русском), title_orig(оригинальное название на языке оригинала),
-year(int), type, main_category, country, genres(list), directors(list), cast(list[5]),
-num_of_seasons(int|null), num_of_seasons(list[int]|null),
-status("завершён"|"продолжается"|"отменён"|null),
-rating({{"imdb": float|null, "tmdb": float|null}}),
-awards(list[string]|null)."""
-
-_PROMPT_PLOT = """Верни ТОЛЬКО JSON с полями plot, atmosphere, why_watch(string), mood(string) для {media_type} "{title}"."""
-
-_PROMPT_final_verdict = """Верни ТОЛЬКО JSON с полями:
-- final_verdict (string|null) — финал фильма или всего сериала
-- quote (string|null) — культовая цитата
-Для {media_type} "{title}"."""
-
-_PROMPT_final_verdict_SEASONS = """Верни ТОЛЬКО JSON с полями:
-- seasons (list|null) — для сериала: массив сезонов, каждый содержит season_number (int), description (string), episodes (массив с полями episode_number (int), begins (string), ends (string)), final_verdict (string|null)
-- can_stop_at (string|null) — для сериала: после какого сезона можно остановиться если качество упало, иначе null
-Для {media_type} "{title}"."""
-
-_PROMPT_FACTS = """Верни ТОЛЬКО JSON с полями:
-- facts (list[string], 3-5 фактов) — интересные факты о {media_type} "{title}", съёмках, актёрах
-- similar (list[string], 3-5 названий) — похожие фильмы/сериалы
-- review — объект с полями:
-  - rating (string) — одно из: "отличный" | "хороший" | "средний"
-  - liked (string) — что понравилось зрителям (актёрская игра, сюжет, атмосфера и т.д.)
-  - disliked (string|null) — что не понравилось зрителям, или null
-"""
-
-_PROMPT_EPISODES_TEMPLATE = """Верни ТОЛЬКО JSON для сериала "{title}".
-{instructions}
-
-Структура — список сезонов (промежуточный формат для распределения по строкам БД):"""
-
-
-def get_prompt_episodes(title: str, granularity: str) -> str:
-    """Получение промпта для запроса эпизодов по уровню детализации.
-
-    Args:
-        title (str): Название сериала.
-        granularity (str): Уровень детализации ('episode', 'arc', 'season', 'overview').
-
-    Returns:
-        str: Промпт для запроса к модели.
-    """
-    prompts = {
-        'episode': """Структура: Каждый сезон → каждый эпизод → подробное описание событий.
-
-[
-  {{
-    "season_number": 1,
-    "episodes": [
-      {{"episode_number": 1, "begins": "с чего начинается серия (2-3 предложения)", "ends": "чем заканчивается серия (2 предложения)"}},
-      ...
-    ]
-  }},
-  ...
-]
-""",
-        'arc': """Структура: Сезон → сюжетные арки → краткие описания серий.
-
-[
-  {{
-    "season_number": 1,
-    "arcs": [
-      {{
-        "arc_name": "название арки",
-        "episodes": [1, 2, 3],
-        "summary": "описание арки (2-3 предложения)",
-        "key_episodes": [
-          {{"episode_number": 1, "summary": "краткое описание серии (1-2 предложения)"}}
-        ]
-      }},
-      ...
-    ]
-  }},
-  ...
-]
-""",
-        'season': """Структура: Сезон → основные линии → финал.
-
-[
-  {{
-    "season_number": 1,
-    "summary": "подробное описание сезона (3-5 абзацев)",
-    "main_plot_lines": ["описание основных сюжетных линий"],
-    "key_events": ["ключевые события сезона"],
-    "ending_summary": "описание финала сезона"
-  }},
-  ...
-]
-""",
-        'overview': """Структура: Общая хроника сезона/периода.
-
-[
-  {{
-    "season_number": 1,
-    "summary": "краткое описание сезона (1-2 предложения)"
-  }},
-  ...
-]
-""",
-    }
-    instructions = prompts.get(granularity, prompts['overview'])
-    return _PROMPT_EPISODES_TEMPLATE.format(title=title, instructions=instructions)
+# Промпты для эпизодов больше не используются, так как все делает Research Agent.
 
 
 class GenreClassifier:
@@ -195,25 +90,28 @@ class GenreClassifier:
 
     Attributes:
         tmdb (TMDBClient): Экземпляр клиента TMDB.
-        gemini: Экземпляр модели Gemini.
+        ai_research: Экземпляр модели Gemini для Research Agent.
+        ai_chat: Экземпляр модели Gemini для Chat Generator.
+        ai_tts: Экземпляр модели Gemini для TTS Generator.
         db (MediaDatabase): Экземпляр базы данных.
         disk_name (str): Имя диска для сохранения записей.
     """
 
-    def __init__(self, tmdb: TMDBClient, gemini, db: 'MediaDatabase', disk_name: str) -> None:
+    def __init__(self, tmdb: TMDBClient, ai_research, ai_chat, ai_tts, db: 'MediaDatabase', disk_name: str) -> None:
         """Инициализация классификатора.
 
         Args:
             tmdb (TMDBClient): Экземпляр клиента TMDB.
-            gemini: Экземпляр модели Gemini.
+            ai_research: Экземпляр модели Gemini для Research Agent.
+            ai_chat: Экземпляр модели Gemini для Chat Generator.
+            ai_tts: Экземпляр модели Gemini для TTS Generator.
             db (MediaDatabase): Экземпляр базы данных.
             disk_name (str): Имя диска.
-
-        Examples:
-            >>> classifier = GenreClassifier(tmdb, gemini, db, 'ДИСК 1')
         """
         self.tmdb = tmdb
-        self.gemini = gemini
+        self.ai_research = ai_research
+        self.ai_chat = ai_chat
+        self.ai_tts = ai_tts
         self.db = db
         self.disk_name = disk_name
 
@@ -330,25 +228,10 @@ class GenreClassifier:
         return result
 
     async def _map_category(self, raw_name: str, genres: List[str], media_type: str, item_id: str, is_series: bool, path: str = '') -> Dict:
-        """Картографирование медиа в категорию через Gemini.
-
-        Args:
-            raw_name (str): Исходное имя.
-            genres (List[str]): Жанры из TMDB.
-            media_type (str): Тип: 'movie' или 'series'.
-            item_id (str): ID элемента.
-            is_series (bool): True если это сериал.
-            path (str): Путь к медиа.
-
-        Returns:
-            Dict: Данные медиа с категорией.
-
-        Examples:
-            >>> data = await classifier._map_category('Фауда', [' Drama', 'Thriller'], 'series', '1', True)
-        """
+        """Картографирование медиа в категорию через новые модели (Research, Chat, TTS)."""
         genres_hint = f" (жанры TMDB: {', '.join(genres)})" if genres else ''
 
-        def parse(response: str, label: str = '') -> Dict:
+        def parse_json(response: str, label: str = '') -> Dict:
             if not response:
                 print(f"     ⚠️  {label} пустой ответ от модели")
                 return {}
@@ -356,127 +239,86 @@ class GenreClassifier:
             try:
                 parsed = json.loads(clean)
                 if label:
-                    print(f"     📝 {label}: {json.dumps(parsed, ensure_ascii=False, indent=2)}")
+                    print(f"     📝 {label}: {json.dumps(parsed, ensure_ascii=False, indent=2)[:500]}...")
                 return parsed
             except Exception as e:
                 print(f"     ❌ {label} ошибка парсинга JSON: {e}")
                 print(f"     Ответ: {response[:500]}...")
                 return {}
 
-        PAUSE = 5
-
-        print(f"  📤 BASE для '{raw_name}'...")
-        r1 = parse(await self.gemini.ask(_PROMPT_BASE.format(
-            media_type=media_type, raw_name=raw_name, genres_hint=genres_hint
-        )), 'BASE')
-        print(f"     ✅ BASE получен")
-        data = {
-            'title': r1.get('title', raw_name),
-            'title_ru': r1.get('title_ru', ''),
-            'title_orig': r1.get('title_orig', ''),
-            'year': r1.get('year') or 0,
-            'media_type': media_type,
-            'main_category': r1.get('main_category', 'Драмы'),
-            'country': r1.get('country', ''),
-            'genres': r1.get('genres') or [],
-            'directors': r1.get('directors') or [],
-            'cast': r1.get('cast') or [],
-            'num_of_seasons': r1.get('num_of_seasons', 0),
-            'num_episodes_per_season': r1.get('num_episodes_per_season', []),
-            'status': r1.get('status', ''),
-            'rating': r1.get('rating') or {},
-            'awards': r1.get('awards') or [],
-            'path': path,
-            'episodes_detail': [],
-            'episode_scan_skipped': False,
-            'plot_granularity': '',
+        PAUSE = 2
+        import pathlib
+        
+        input_data = {
+            "title": raw_name,
+            "genres": genres_hint,
+            "type": media_type
         }
+        input_str = json.dumps(input_data, ensure_ascii=False)
+        
+        # 1. Research Agent
+        print(f"  📤 RESEARCH для '{raw_name}'...")
+        r_research = parse_json(await self.ai_research.ask(input_str), 'RESEARCH')
+        print(f"     ✅ RESEARCH получен")
         await asyncio.sleep(PAUSE)
-
-        print(f"  📤 PLOT для '{data['title']}'...")
-        r2 = parse(await self.gemini.ask(_PROMPT_PLOT.format(media_type=media_type, title=data['title'])), 'PLOT')
-        data.update({'plot': r2.get('plot', ''), 'atmosphere': r2.get('atmosphere', ''),
-                     'why_watch': r2.get('why_watch', ''), 'mood': r2.get('mood', '')})
-        print(f"     ✅ PLOT получен")
+        
+        research_str = json.dumps(r_research, ensure_ascii=False)
+        
+        # 2. Chat Generator
+        print(f"  📤 CHAT для '{raw_name}'...")
+        r_chat = parse_json(await self.ai_chat.ask(research_str), 'CHAT')
+        print(f"     ✅ CHAT получен")
         await asyncio.sleep(PAUSE)
+        
+        # 3. TTS Generator
+        print(f"  📤 TTS для '{raw_name}'...")
+        r_tts = await self.ai_tts.ask(research_str)
+        print(f"     ✅ TTS получен")
+        
+        # Сохранение файлов в директорию медиа
+        if path:
+            try:
+                ai_dir = pathlib.Path(path) / 'ai'
+                if not ai_dir.exists():
+                    ai_dir.mkdir(parents=True, exist_ok=True)
+                
+                (ai_dir / 'research.json').write_text(json.dumps(r_research, ensure_ascii=False, indent=2), encoding='utf-8')
+                (ai_dir / 'chat.json').write_text(json.dumps(r_chat, ensure_ascii=False, indent=2), encoding='utf-8')
+                (ai_dir / 'narrator.txt').write_text(r_tts, encoding='utf-8')
+                print(f"     💾 Файлы ai/ сохранены в {ai_dir}")
+            except Exception as e:
+                print(f"     ❌ Ошибка сохранения файлов ai/: {e}")
 
-        print(f"  📤 final_verdict для '{data['title']}'...")
-        r3 = parse(await self.gemini.ask(_PROMPT_final_verdict.format(media_type=media_type, title=data['title'])), 'final_verdict')
-        data.update({'final_verdict': r3.get('final_verdict', ''), 'quote': r3.get('quote', '')})
-        print(f"     ✅ final_verdict получен")
-        await asyncio.sleep(PAUSE)
-
-        # final_verdict_SEASONS только для сериалов
-        if is_series:
-            print(f"  📤 final_verdict_SEASONS для '{data['title']}'...")
-            r3b = parse(await self.gemini.ask(_PROMPT_final_verdict_SEASONS.format(media_type=media_type, title=data['title'])), 'final_verdict_SEASONS')
-            data.update({'can_stop_at': r3b.get('can_stop_at', '')})
-            print(f"     ✅ final_verdict_SEASONS получен")
-            await asyncio.sleep(PAUSE)
-
-        print(f"  📤 FACTS для '{data['title']}'...")
-        r4 = parse(await self.gemini.ask(_PROMPT_FACTS.format(media_type=media_type, title=data['title'])), 'FACTS')
-        data.update({'facts': r4.get('facts') or [], 'similar': r4.get('similar') or [],
-                     'review': r4.get('review') or {}})
-        print(f"     ✅ FACTS получен")
-        await asyncio.sleep(PAUSE)
-
-        if is_series:
-            # Определяем уровень детализации на основе количества сезонов и эпизодов
-            num_seasons = data.get('num_of_seasons') or 0
-            num_episodes_per_season = data.get('num_episodes_per_season')
-            if isinstance(num_episodes_per_season, str):
-                try:
-                    num_episodes_per_season = json.loads(num_episodes_per_season)
-                except Exception:
-                    num_episodes_per_season = None
-            
-            # Вычисляем среднее количество эпизодов на сезон
-            avg_episodes_per_season = None
-            if num_episodes_per_season and isinstance(num_episodes_per_season, list) and len(num_episodes_per_season) > 0:
-                avg_episodes_per_season = sum(num_episodes_per_season) // len(num_episodes_per_season)
-            
-            # Определяем уровень детализации
-            granularity = determine_granularity_from_record(data)
-            data['plot_granularity'] = granularity
-            
-            print(f"  📊 ПОДБОР ПРОМПТА: {granularity} ({get_granularity_display_name(granularity)})")
-            
-            # Проверяем, есть ли данные о сезонах из TMDB
-            tmdb_seasons = None
-            if self.tmdb:
-                tmdb_info = self.tmdb.search_tv_series(raw_name, data.get('year'))
-                if tmdb_info:
-                    tmdb_details = self.tmdb.get_tv_details(tmdb_info['id'])
-                    if tmdb_details and 'seasons' in tmdb_details:
-                        tmdb_seasons = tmdb_details['seasons']
-            
-            # Если из TMDB есть информация о сезонах, суммируем эпизоды
-            total_episodes = 0
-            if tmdb_seasons:
-                for season in tmdb_seasons:
-                    if season.get('episode_count'):
-                        total_episodes += season['episode_count']
-            
-            # Логика: пропускаем запрос эпизодов, если:
-            # 1. Уровень детализации overview (очень длинные сериалы), ИЛИ
-            # 2. Сезонов очень много (>15), ИЛИ
-            # 3. Общее количество эпизодов очень велико (>100)
-            SKIP_EPISODE_THRESHOLD_SEASONS = 15
-            SKIP_EPISODE_THRESHOLD_TOTAL = 100
-            
-            if granularity == 'overview' or num_seasons > SKIP_EPISODE_THRESHOLD_SEASONS or total_episodes > SKIP_EPISODE_THRESHOLD_TOTAL:
-                print(f"  ⚠️  EPISODES пропущен (granularity: {granularity}, сезонов: {num_seasons}, эпизодов: {total_episodes})")
-                data['episodes_detail'] = []
-                data['episode_scan_skipped'] = True
-            else:
-                print(f"  📤 EPISODES ({granularity}) для '{data['title']}'...")
-                # Генерируем промпт на основе уровня детализации
-                prompt_episodes = get_prompt_episodes(data['title'], granularity)
-                r5 = parse(await self.gemini.ask(prompt_episodes), 'EPISODES')
-                data['episodes_detail'] = r5.get('episodes_detail') or []
-                data['episode_scan_skipped'] = False
-                print(f"     ✅ EPISODES получен ({len(r5.get('episodes_detail', []))} сезонов)")
+        # Формирование словаря для базы данных (чтобы работали фильтры и веб-интерфейс)
+        data = {
+            'title': r_chat.get('title', r_research.get('title', raw_name)),
+            'title_ru': r_chat.get('title_ru', ''),
+            'title_orig': r_chat.get('title_orig', ''),
+            'year': r_chat.get('year') or r_research.get('year', 0),
+            'media_type': media_type,
+            'main_category': r_chat.get('main_category', 'Драмы'),
+            'country': r_chat.get('country', ''),
+            'genres': r_chat.get('genres') or [],
+            'directors': r_chat.get('directors') or [],
+            'cast': r_chat.get('cast') or [],
+            'num_of_seasons': r_chat.get('num_of_seasons', 0),
+            'num_episodes_per_season': r_chat.get('num_episodes_per_season', []),
+            'status': r_chat.get('status', ''),
+            'rating': r_chat.get('rating') or {},
+            'awards': r_chat.get('awards') or [],
+            'path': path,
+            'plot': r_chat.get('plot', ''),
+            'atmosphere': r_chat.get('atmosphere', ''),
+            'why_watch': r_chat.get('why_watch', ''),
+            'mood': r_chat.get('mood_tags') or r_chat.get('mood', ''),
+            'final_verdict': r_chat.get('final_verdict', ''),
+            'quote': r_chat.get('quote', ''),
+            'facts': r_chat.get('facts') or [],
+            'similar': r_chat.get('similar') or [],
+            'review': r_chat.get('review') or {},
+            'episode_scan_skipped': r_research.get('episode_scan_skipped', False),
+            'episodes_detail': r_chat.get('seasons', []) or r_research.get('seasons', []),
+        }
 
         return data
 
@@ -488,19 +330,18 @@ class GenreClassifier:
 class PersistentGenreClassifier(GenreClassifier):
     """Классификатор с проверкой коллизий по всей БД."""
 
-    def __init__(self, tmdb, gemini, db, disk_name) -> None:
+    def __init__(self, tmdb, ai_research, ai_chat, ai_tts, db, disk_name) -> None:
         """Инициализация расширенного классификатора.
 
         Args:
             tmdb: Экземпляр клиента TMDB.
-            gemini: Экземпляр модели Gemini.
+            ai_research: Экземпляр модели Gemini (Research).
+            ai_chat: Экземпляр модели Gemini (Chat).
+            ai_tts: Экземпляр модели Gemini (TTS).
             db (MediaDatabase): Экземпляр базы данных.
             disk_name (str): Имя диска.
-
-        Examples:
-            >>> classifier = PersistentGenreClassifier(tmdb, gemini, db, 'ДИСК 1')
         """
-        super().__init__(tmdb, gemini, db, disk_name)
+        super().__init__(tmdb, ai_research, ai_chat, ai_tts, db, disk_name)
 
     async def _map_category(self, raw_name, genres, media_type, item_id, is_series, path='') -> Dict:
         """Картографирование с проверкой коллизий.

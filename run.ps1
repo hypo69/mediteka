@@ -121,21 +121,6 @@ if ($occupied) {
     Write-Host "    [OK] Порт свободен" -ForegroundColor Green
 }
 
-# ============================================
-# ЗАПУСК СЕРВЕРА В ФОНЕ (Unicorn)
-# ============================================
-Write-Host ""
-Write-Host "[5/7] Запуск сервера (Unicorn)..." -ForegroundColor Green
-$env:PRELOAD_SILERO = $preloadSilero
-$unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
-if (Test-Path $unicornScript) {
-    Write-Host "    Запуск Run-Unicorn.ps1 в фоне..." -ForegroundColor DarkGray
-    $unicornProcess = Start-Process powershell -ArgumentList "-NoProfile -File `"$unicornScript`"" -PassThru
-    Write-Host "    [OK] Сервер запущен в PID: $($unicornProcess.Id)" -ForegroundColor Green
-} else {
-    Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
-    exit 1
-}
 
 # ============================================
 # ЗАПУСК CLOUDFLARE TUNNEL
@@ -147,33 +132,28 @@ if (Test-Path $cloudflaredScript) {
     Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
     & $cloudflaredScript
     
-    # Ожидание доступности туннеля
-    $targetUrl = "https://kino.davidka.net"
-    $maxRetries = 20
-    $retryDelay = 5
-    $isUp = $false
-    
-    Write-Host "[INFO] Ожидание доступности туннеля $targetUrl..." -ForegroundColor Cyan
-    for ($i = 1; $i -le $maxRetries; $i++) {
-        try {
-            $response = Invoke-WebRequest -Uri $targetUrl -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
-            if ($response.StatusCode -eq 200) {
-                Write-Host "    [OK] Туннель доступен!" -ForegroundColor Green
-                $isUp = $true
-                break
+    # Ожидание доступности туннеля в фоне
+    Write-Host "[INFO] Ожидание доступности туннеля $targetUrl в фоне..." -ForegroundColor Cyan
+    Start-Job -ScriptBlock {
+        param($targetUrl)
+        $maxRetries = 20
+        $retryDelay = 5
+        $isUp = $false
+        for ($i = 1; $i -le $maxRetries; $i++) {
+            try {
+                $response = Invoke-WebRequest -Uri $targetUrl -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
+                if ($response.StatusCode -eq 200) {
+                    $isUp = $true
+                    break
+                }
+            } catch {
             }
-        } catch {
+            Start-Sleep -Seconds $retryDelay
         }
-        Write-Host "    [INFO] Попытка ${i}/${maxRetries}: Туннель еще не готов..." -ForegroundColor DarkGray
-        Start-Sleep -Seconds $retryDelay
-    }
-    
-    if ($isUp) {
-        Start-Process $targetUrl
-        Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
-    } else {
-        Write-Host "[WARN] Туннель не стал доступен за отведенное время." -ForegroundColor Yellow
-    }
+        if ($isUp) {
+            Start-Process $targetUrl
+        }
+    } -ArgumentList $targetUrl | Out-Null
 }
 
 # ============================================
@@ -200,7 +180,18 @@ Write-Host "[7/7] Сканирование подключенных дисков
 $env:CONNECTED_DRIVES = & $pythonPath -c "import os; print(os.environ.get('CONNECTED_DRIVES', ''))"
 Write-Host "    Подключенные диски: $env:CONNECTED_DRIVES" -ForegroundColor Gray
 Write-Host ""
-Write-Host "[SUCCESS] Настройка завершена." -ForegroundColor Green
+Write-Host ""
+Write-Host "[SUCCESS] Настройка завершена. Запуск сервера..." -ForegroundColor Green
 
-
-
+# ============================================
+# ЗАПУСК СЕРВЕРА В ТЕКУЩЕМ ОКНЕ (Unicorn)
+# ============================================
+$env:PRELOAD_SILERO = $preloadSilero
+$unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
+if (Test-Path $unicornScript) {
+    Write-Host "    Запуск Run-Unicorn.ps1..." -ForegroundColor DarkGray
+    & $unicornScript
+} else {
+    Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
+    exit 1
+}

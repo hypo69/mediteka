@@ -30,7 +30,7 @@ from plugins.media_organizer.core.genre_classifier import PersistentGenreClassif
 from plugins.media_organizer.core.media_rag_functions import rebuild_rag_index
 from src.secrets.api_key_state import load_api_keys
 from src.ai import GoogleGenerativeAI
-from plugins.media_organizer.core import MEDIA_DB, SYSTEM_INSTRUCTION
+from plugins.media_organizer.core import MEDIA_DB, SYSTEM_INSTRUCTION_RESEARCH, SYSTEM_INSTRUCTION_CHAT, SYSTEM_INSTRUCTION_TTS
 
 load_dotenv()
 
@@ -52,7 +52,9 @@ class QBittorrentWatcher:
         _, key_names, _ = load_api_keys()
         if not key_names:
             raise ValueError("Нет доступных Gemini API ключей.")
-        self.ai = GoogleGenerativeAI(api_key_names=key_names, system_instruction=SYSTEM_INSTRUCTION)
+        self.ai_research = GoogleGenerativeAI(api_key_names=key_names, system_instruction=SYSTEM_INSTRUCTION_RESEARCH)
+        self.ai_chat = GoogleGenerativeAI(api_key_names=key_names, system_instruction=SYSTEM_INSTRUCTION_CHAT)
+        self.ai_tts = GoogleGenerativeAI(api_key_names=key_names, system_instruction=SYSTEM_INSTRUCTION_TTS)
         
         # Инициализация TMDB
         tmdb_key = os.getenv('TMDB_API_KEY', '')
@@ -150,7 +152,7 @@ class QBittorrentWatcher:
                 try:
                     # Инициализируем классификатор для конкретной директории
                     disk_name = "QBITTORRENT"
-                    classifier = PersistentGenreClassifier(self.tmdb, self.ai, self.db, disk_name)
+                    classifier = PersistentGenreClassifier(self.tmdb, self.ai_research, self.ai_chat, self.ai_tts, self.db, disk_name)
                     
                     info = classifier._map_category(
                         clean_title,
