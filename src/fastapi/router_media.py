@@ -91,7 +91,11 @@ class PreferenceRequest(BaseModel):
 
 
 class RagBuildRequest(BaseModel):
-    key: str = ''
+    key: str | None = None
+
+class RagAddJsonRequest(BaseModel):
+    documents: list[dict]
+    key: str | None = None
 
 
 
@@ -491,6 +495,94 @@ def init_router(prefix: str = '/api/media') -> APIRouter:
             return {"status": "ok", "result": result_msg}
         except Exception as ex:
             logger.error(f"Error running rebuild: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post('/rag/add-json')
+    async def add_json_to_rag(req: RagAddJsonRequest) -> dict:
+        """Добавление произвольного JSON в RAG-индекс."""
+        try:
+            api_key = req.key
+            if not api_key:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+            if not api_key:
+                raise HTTPException(status_code=400, detail="GEMINI_API_KEY не найден")
+                
+            from plugins.media_organizer.core.media_rag import get_media_rag
+            rag = get_media_rag(api_key)
+            
+            if not req.documents:
+                return {"status": "ok", "added": 0}
+                
+            valid_docs = []
+            for doc in req.documents:
+                if 'text' in doc:
+                    valid_docs.append(doc)
+                elif isinstance(doc, dict):
+                    # Если text нет, попытаемся сериализовать весь dict в текст
+                    text = " ".join(f"{k}: {v}" for k, v in doc.items() if v)
+                    valid_docs.append({'text': text, 'meta': doc})
+            
+            if not valid_docs:
+                raise HTTPException(status_code=400, detail="Не найдено валидных документов. JSON должен быть списком объектов.")
+
+            added = rag.add_documents(valid_docs)
+            return {"status": "ok", "added": len(valid_docs) if added else 0}
+        except Exception as ex:
+            logger.error(f"Error adding JSON to RAG: {ex}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(ex))
+
+    @router.post('/rag/add-json-dir')
+    async def add_json_dir_to_rag(req: RagBuildRequest) -> dict:
+        """Сканирование директории .files_for_rag и добавление JSON в RAG-индекс."""
+        try:
+            rag_dir = _ROOT / '.files_for_rag'
+            if not rag_dir.exists() or not rag_dir.is_dir():
+                return {"status": "error", "message": f"Папка .files_for_rag не найдена по пути: {rag_dir}"}
+
+            api_key = req.key
+            if not api_key:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+            if not api_key:
+                raise HTTPException(status_code=400, detail="GEMINI_API_KEY не найден")
+                
+            from plugins.media_organizer.core.media_rag import get_media_rag
+            rag = get_media_rag(api_key)
+            
+            total_added = 0
+            processed_files = []
+            
+            for file_path in rag_dir.glob('*.json'):
+                try:
+                    content = file_path.read_text(encoding='utf-8')
+                    data = json.loads(content)
+                    
+                    if not isinstance(data, list):
+                        if isinstance(data, dict):
+                            data = [data]
+                        else:
+                            continue
+                            
+                    valid_docs = []
+                    for doc in data:
+                        if 'text' in doc:
+                            valid_docs.append(doc)
+                        elif isinstance(doc, dict):
+                            text = " ".join(f"{k}: {v}" for k, v in doc.items() if v)
+                            valid_docs.append({'text': text, 'meta': doc})
+                            
+                    if valid_docs:
+                        added = rag.add_documents(valid_docs)
+                        if added:
+                            total_added += len(valid_docs)
+                            processed_files.append(file_path.name)
+                except Exception as e:
+                    logger.error(f"Error parsing RAG json file {file_path}: {e}")
+                    
+            return {"status": "ok", "added": total_added, "files": processed_files}
+        except Exception as ex:
+            logger.error(f"Error adding JSON dir to RAG: {ex}", exc_info=True)
             raise HTTPException(status_code=500, detail=str(ex))
 
     return router

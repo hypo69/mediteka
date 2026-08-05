@@ -100,6 +100,28 @@ class TestRouterChat:
         
         assert router is not None
 
+    @pytest.mark.asyncio
+    async def test_get_models_logging(self):
+        """Тест логирования моделей agy."""
+        from src.fastapi.router_chat import init_router
+        
+        mock_model = Mock()
+        router = init_router(mock_model, {})
+        
+        get_models_func = None
+        for route in router.routes:
+            if route.path == '/models':
+                get_models_func = route.endpoint
+                break
+        
+        assert get_models_func is not None
+        
+        with patch('src.fastapi.router_chat.logger.info') as mock_log:
+            await get_models_func()
+            mock_log.assert_called()
+            args, _ = mock_log.call_args
+            assert "agy" in args[0].lower()
+
 
 class TestRouterMedia:
     """Тесты router_media.py."""
@@ -150,4 +172,4 @@ class TestRouterControl:
         manager = ControlConnectionManager()
         
         assert manager is not None
-        assert len(manager.active_connections) == 0
+        assert len(manager.rooms) == 0

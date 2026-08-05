@@ -86,6 +86,7 @@ def init_router(model, plugins: dict) -> APIRouter:
             foundry_models.append(foundry_model_id)
             
         agy_models = ['agy-flash', 'agy-pro']
+        logger.info(f"Returning available agy models: {agy_models}")
         
         return {
             'models': {

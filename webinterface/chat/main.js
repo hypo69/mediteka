@@ -452,7 +452,14 @@ async function sendMessage() {
     if (!started) {
       textDiv.textContent = '';
     }
-    const errText = typeof err === 'object' && err !== null ? JSON.stringify(err) : String(err);
+    let errText;
+    if (err instanceof Error) {
+      errText = err.message;
+    } else if (typeof err === 'object' && err !== null) {
+      errText = JSON.stringify(err);
+    } else {
+      errText = String(err);
+    }
     textDiv.innerHTML = `<span style="color: #ff7070;">Ошибка: ${errText}</span>`;
   }
   finally { btn.disabled = false; btn.textContent = 'Отправить'; }

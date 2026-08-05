@@ -29,7 +29,7 @@ async function rescanStorage() {
 
   <div class="row g-3">
     <!-- LEFT: диск и пути -->
-    <div class="col-4">
+    <div class="col-6">
       <div class="card">
         <div class="card-header">
           💾 Диск
@@ -58,7 +58,7 @@ async function rescanStorage() {
     </div>
 
     <!-- CENTER: аудит и восстановление -->
-    <div class="col-4">
+    <div class="col-6">
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
           <span>🗂 Аудит БД</span>
@@ -81,42 +81,6 @@ async function rescanStorage() {
         </div>
         <div class="card-body p-2">
           <div id="admin-rebuild-body" class="small text-muted">Консолидация дублирующихся записей в БД</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: RAG -->
-    <div class="col-4">
-      <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span>🧠 RAG-индекс</span>
-          <div class="d-flex align-items-center">
-            <div class="form-check form-switch me-3 mb-0">
-              <input class="form-check-input" type="checkbox" id="admin-rag-toggle" checked onchange="toggleRag(this.checked)">
-              <label class="form-check-label small" for="admin-rag-toggle">Вкл</label>
-            </div>
-            <button class="btn btn-sm btn-outline-primary me-1" onclick="showHelpModal('rag')">?</button>
-            <button class="btn btn-outline-info btn-sm" id="btn-admin-rag-build">Построить</button>
-          </div>
-        </div>
-        <div class="card-body p-2">
-          <!-- RAG Status badges -->
-          <div id="admin-rag-status" class="mb-2">
-            <span class="badge bg-secondary">Загрузка...</span>
-          </div>
-
-          <p class="small text-muted mb-2">Семантический поиск по медиатеке</p>
-
-          <!-- RAG Search -->
-          <div class="input-group input-group-sm mb-1">
-            <input type="text" class="form-control" id="admin-rag-query"
-              placeholder="Введите запрос (напр: фильм про войну)">
-            <button class="btn btn-outline-primary" id="btn-admin-rag-search">🔍 Поиск</button>
-          </div>
-
-          <!-- RAG Search Results -->
-          <div id="admin-rag-results" class="small text-muted mt-1"
-            style="max-height:240px; overflow-y:auto;"></div>
         </div>
       </div>
     </div>

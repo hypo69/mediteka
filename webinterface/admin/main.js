@@ -92,6 +92,7 @@ async function initInterface() {
     loadTabContent('torrents', `/html/torrents/index.html?v=${cb}`),
     loadTabContent('media', `/html/media/index.html?v=${cb}`),
     loadTabContent('admin', `/html/admin_tab/index.html?v=${cb}`, `/html/admin_tab/main.js?v=${cb}`),
+    loadTabContent('rag', `/html/rag_tab/index.html?v=${cb}`, `/html/rag_tab/main.js?v=${cb}`),
     loadTabContent('models', `/html/models_tab/index.html?v=${cb}`),
     loadTabContent('tts', `/html/tts_tab/index.html?v=${cb}`, `/html/tts_tab/main.js?v=${cb}`),
     loadTabContent('sources', `/html/sources_tab/index.html?v=${cb}`),

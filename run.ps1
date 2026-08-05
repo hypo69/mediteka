@@ -45,52 +45,10 @@ try {
 }
 
 # ============================================
-# ЗАПУСК CLOUDFLARE TUNNEL (через Run-Cloudflared.ps1)
-# ============================================
-Write-Host ""
-Write-Host "[3/6] Запуск Cloudflare Tunnel..." -ForegroundColor Cyan
-$cloudflaredScript = Join-Path $scriptDir "Run-Cloudflared.ps1"
-if (Test-Path $cloudflaredScript) {
-    Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
-    & $cloudflaredScript
-    
-    # Ожидание доступности туннеля
-    $targetUrl = "https://kino.davidka.net"
-    $maxRetries = 20
-    $retryDelay = 5
-    $isUp = $false
-    
-    Write-Host "[INFO] Ожидание доступности туннеля $targetUrl..." -ForegroundColor Cyan
-    for ($i = 1; $i -le $maxRetries; $i++) {
-        try {
-            $response = Invoke-WebRequest -Uri $targetUrl -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
-            if ($response.StatusCode -eq 200) {
-                Write-Host "    [OK] Туннель доступен!" -ForegroundColor Green
-                $isUp = $true
-                break
-            }
-        } catch {
-            # Ошибка при попытке соединения — продолжаем цикл
-        }
-        Write-Host "    [INFO] Попытка ${i}/${maxRetries}: Туннель еще не готов..." -ForegroundColor DarkGray
-        Start-Sleep -Seconds $retryDelay
-    }
-    
-    if ($isUp) {
-        Start-Process $targetUrl
-        Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
-    } else {
-        Write-Host "[WARN] Туннель не стал доступен за отведенное время." -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "    [WARN] Run-Cloudflared.ps1 не найден: $cloudflaredScript" -ForegroundColor Yellow
-}
-
-# ============================================
 # ЗАГРУЗКА КОНФИГУРАЦИИ И ОКРУЖЕНИЯ (.env)
 # ============================================
 Write-Host ""
-Write-Host "[4/6] Загрузка конфигурации..." -ForegroundColor Cyan
+Write-Host "[3/7] Загрузка конфигурации..." -ForegroundColor Cyan
 $configPath = Join-Path $scriptDir "src\fastapi\config.json"
 $envFile = Join-Path $scriptDir ".env"
 $host_ = "0.0.0.0"
@@ -140,7 +98,7 @@ $url = "${proto}://${host_}:${port}"
 # ЗАВЕРШЕНИЕ ПРОЦЕССОВ НА ПОРТЕ
 # ============================================
 Write-Host ""
-Write-Host "[4/6] Проверка порта $port..." -ForegroundColor Cyan
+Write-Host "[4/7] Проверка порта $port..." -ForegroundColor Cyan
 
 # Проверяем, занят ли порт
 $netstatOutput = netstat -aon 2>$null
@@ -164,11 +122,66 @@ if ($occupied) {
 }
 
 # ============================================
+# ЗАПУСК СЕРВЕРА В ФОНЕ (Unicorn)
+# ============================================
+Write-Host ""
+Write-Host "[5/7] Запуск сервера (Unicorn)..." -ForegroundColor Green
+$env:PRELOAD_SILERO = $preloadSilero
+$unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
+if (Test-Path $unicornScript) {
+    Write-Host "    Запуск Run-Unicorn.ps1 в фоне..." -ForegroundColor DarkGray
+    $unicornProcess = Start-Process powershell -ArgumentList "-NoProfile -File `"$unicornScript`"" -PassThru
+    Write-Host "    [OK] Сервер запущен в PID: $($unicornProcess.Id)" -ForegroundColor Green
+} else {
+    Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
+    exit 1
+}
+
+# ============================================
+# ЗАПУСК CLOUDFLARE TUNNEL
+# ============================================
+Write-Host ""
+Write-Host "[6/7] Запуск Cloudflare Tunnel..." -ForegroundColor Cyan
+$cloudflaredScript = Join-Path $scriptDir "Run-Cloudflared.ps1"
+if (Test-Path $cloudflaredScript) {
+    Write-Host "    Вызов Run-Cloudflared.ps1..." -ForegroundColor DarkGray
+    & $cloudflaredScript
+    
+    # Ожидание доступности туннеля
+    $targetUrl = "https://kino.davidka.net"
+    $maxRetries = 20
+    $retryDelay = 5
+    $isUp = $false
+    
+    Write-Host "[INFO] Ожидание доступности туннеля $targetUrl..." -ForegroundColor Cyan
+    for ($i = 1; $i -le $maxRetries; $i++) {
+        try {
+            $response = Invoke-WebRequest -Uri $targetUrl -Method Head -UseBasicParsing -ErrorAction SilentlyContinue
+            if ($response.StatusCode -eq 200) {
+                Write-Host "    [OK] Туннель доступен!" -ForegroundColor Green
+                $isUp = $true
+                break
+            }
+        } catch {
+        }
+        Write-Host "    [INFO] Попытка ${i}/${maxRetries}: Туннель еще не готов..." -ForegroundColor DarkGray
+        Start-Sleep -Seconds $retryDelay
+    }
+    
+    if ($isUp) {
+        Start-Process $targetUrl
+        Write-Host "[INFO] Браузер открыт." -ForegroundColor Cyan
+    } else {
+        Write-Host "[WARN] Туннель не стал доступен за отведенное время." -ForegroundColor Yellow
+    }
+}
+
+# ============================================
 # ЗАПУСК LOCAL FOUNDRY SERVICE
 # ============================================
 if ($useFoundry) {
     Write-Host ""
-    Write-Host "[4.2] Запуск локальной службы Foundry..." -ForegroundColor Cyan
+    Write-Host "[6.1] Запуск локальной службы Foundry..." -ForegroundColor Cyan
     $foundryScript = Join-Path $scriptDir "Run-Foundry.ps1"
     if (Test-Path $foundryScript) {
         Write-Host "    Вызов Run-Foundry.ps1..." -ForegroundColor DarkGray
@@ -182,32 +195,12 @@ if ($useFoundry) {
 # СКАНАДИРОВАНИЕ ПОДКЛЮЧЕННЫХ ДИСКОВ
 # ============================================
 Write-Host ""
-Write-Host "[4.3] Сканирование подключенных дисков..." -ForegroundColor Cyan
+Write-Host "[7/7] Сканирование подключенных дисков..." -ForegroundColor Cyan
 & $pythonPath -m plugins.media_organizer.core.drive_scanner
 $env:CONNECTED_DRIVES = & $pythonPath -c "import os; print(os.environ.get('CONNECTED_DRIVES', ''))"
 Write-Host "    Подключенные диски: $env:CONNECTED_DRIVES" -ForegroundColor Gray
-
-# ============================================
-# ФИНАЛ И ЗАПУСК СЕРВЕРА (через Run-Unicorn.ps1)
-# ============================================
 Write-Host ""
-Write-Host "[5/5] Запуск сервера..." -ForegroundColor Green
-Write-Host "[SUCCESS] Настройка завершена. Сервер будет доступен по адресу:" -ForegroundColor Green
-Write-Host "        https://kino.davidka.net (через Cloudflare Tunnel)" -ForegroundColor Green
-Write-Host "        Локальный адрес: $url" -ForegroundColor Cyan
-Write-Host ""
+Write-Host "[SUCCESS] Настройка завершена." -ForegroundColor Green
 
-# Ожидание инициализации туннеля
-Write-Host "[INFO] Запускаем uvicorn в текущем окне. Для остановки нажмите Ctrl+C." -ForegroundColor Cyan
-Write-Host ""
-
-$env:PRELOAD_SILERO = $preloadSilero
-$unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
-if (Test-Path $unicornScript) {
-    & $unicornScript
-} else {
-    Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
-    exit 1
-}
 
 
