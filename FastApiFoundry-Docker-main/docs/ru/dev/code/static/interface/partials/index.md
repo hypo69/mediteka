@@ -1,3 +1,0 @@
-# partials/
-
-`static/interface/partials`

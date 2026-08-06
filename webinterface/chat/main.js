@@ -2,6 +2,8 @@
 
 let currentMediaPath = null;
 let chatHistory = [];
+let isDebugMode = false; // По умолчанию PROD режим
+let systemInstruction = null; // Хранит системную инструкцию
 
 function initChatTab() {
   const chatWindow = document.getElementById('chat-window');
@@ -12,6 +14,9 @@ function initChatTab() {
     welcome.innerHTML = '<strong>Ai Ассистент</strong> (System): Добро пожаловать в чат! Можете спрашивать о фильмах и сериалах — я покажу путь к файлу и смогу открыть его в плеере.';
     chatWindow.appendChild(welcome);
     chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    // Загрузка системной инструкции
+    loadSystemInstruction();
 
     // Обработчик скачивания торрентов
     chatWindow.addEventListener('click', async (e) => {
@@ -55,9 +60,13 @@ function initChatTab() {
   // Event listeners for chat
   const sendBtn = document.getElementById('send-button');
   const msgInput = document.getElementById('message-input');
+  const debugModeSelector = document.getElementById('chat-mode-debug');
 
   if (sendBtn) sendBtn.addEventListener('click', sendMessage);
   if (msgInput) msgInput.addEventListener('keypress', e => { if (e.key==='Enter') sendMessage(); });
+  if (debugModeSelector) debugModeSelector.addEventListener('change', (e) => {
+    isDebugMode = e.target.value === 'debug';
+  });
 
   // Media controls handlers
   document.getElementById('btn-toggle-player-body')?.addEventListener('click', togglePlayerBody);
@@ -358,11 +367,76 @@ async function sendMessage() {
   const btn   = document.getElementById('send-button');
   const msg   = input.value.trim();
   if (!msg) return;
-  addMessage('user', msg);
   
+  // Определяем режим чата до любой логики
+  const modeSelector = document.getElementById('chat-mode-selector');
+  const chatMode = modeSelector ? modeSelector.value : 'story';
+
   input.value = '';
   btn.disabled = true; btn.textContent = 'Отправка…';
 
+  // Если режим DEBUG - отправляем запрос в бэкенд, но он вернёт полный промпт вместо ответа модели
+  if (isDebugMode) {
+    // Показываем запрос пользователя
+    addMessage('user', msg);
+    
+    const win = document.getElementById('chat-window');
+    const botMessageEl = document.createElement('div');
+    botMessageEl.className = 'message bot-message';
+    botMessageEl.innerHTML = `<strong>Ai Ассистент (DEBUG)</strong> (${new Date().toLocaleTimeString()}): <div class="bot-text">⏳ Формирование промпта...</div>`;
+    win.appendChild(botMessageEl);
+    win.scrollTop = win.scrollHeight;
+    const textDiv = botMessageEl.querySelector('.bot-text');
+
+    let fullReply = '';
+    let started = false;
+
+    try {
+      const replyObj = await window.chatService.sendChatMessage(msg, (chunk, status, voice) => {
+        if (status) {
+          textDiv.innerHTML = `<span style="color: #8b949e; font-style: italic;">⚙️ ${status}</span>`;
+        }
+        if (chunk) {
+          if (!started) {
+            textDiv.textContent = '';
+            started = true;
+          }
+          fullReply += chunk;
+          textDiv.innerHTML = parseContentToHtml(fullReply);
+        }
+        win.scrollTop = win.scrollHeight;
+      }, chatHistory, { chat_mode: chatMode, debug_mode: true });
+
+      // Добавляем сообщение пользователя в историю (но не ответ бота, так как это не реальный ответ модели)
+      chatHistory.push({ role: 'user', parts: [msg] });
+
+      // В DEBUG режиме мы получаем полный промпт в тексте
+      textDiv.innerHTML = `<div style="background: rgba(255, 235, 59, 0.1); border: 1px solid #ffeb3b; border-radius: 8px; padding: 15px; margin-top: 10px;">
+        <div style="color: #fbc02d; font-weight: bold; margin-bottom: 10px; font-size: 1.1em;">⚠️ DEBUG MODE: Полный промпт (не отправлялся в модель)</div>
+        <pre style="background: #fff9c4; padding: 10px; border-radius: 5px; font-size: 0.85em; overflow-x: auto; white-space: pre-wrap; font-family: monospace; border: 1px solid #f57f17;">${fullReply.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+        <div style="color: #fbc02d; margin-top: 10px; font-size: 0.9em;">
+          <strong>Чтобы отправить запрос в модель, переключитесь в режим PROD</strong>
+        </div>
+      </div>`;
+
+      // Не сохраняем ответ в историю в DEBUG режиме, так как это не реальный ответ модели
+    } catch (err) {
+      if (!started) {
+        textDiv.textContent = '';
+      }
+      let errText;
+      if (err instanceof Error) {
+        errText = err.message;
+      } else if (typeof err === 'object' && err !== null) {
+        errText = JSON.stringify(err);
+      } else {
+        errText = String(err);
+      }
+      textDiv.innerHTML = `<span style="color: #ff7070;">Ошибка: ${errText}</span>`;
+    }
+    finally { btn.disabled = false; btn.textContent = 'Отправить'; }
+    return;
+  }
 
   const win = document.getElementById('chat-window');
   const botMessageEl = document.createElement('div');
@@ -374,9 +448,6 @@ async function sendMessage() {
 
   let fullReply = '';
   let started = false;
-
-  const modeSelector = document.getElementById('chat-mode-selector');
-  const chatMode = modeSelector ? modeSelector.value : 'story';
 
   try {
     const replyObj = await window.chatService.sendChatMessage(msg, (chunk, status, voice) => {
@@ -392,7 +463,7 @@ async function sendMessage() {
         textDiv.innerHTML = parseContentToHtml(fullReply);
       }
       win.scrollTop = win.scrollHeight;
-    }, chatHistory, { chat_mode: chatMode });
+    }, chatHistory, { chat_mode: chatMode, debug_mode: isDebugMode });
 
     const reply = replyObj.text;
     const voiceReply = replyObj.voice || reply;
@@ -661,4 +732,19 @@ function closeMediaControls() {
   const controls = document.getElementById('media-controls');
   controls.classList.add('d-none');
   currentMediaPath = null;
+}
+
+// ── DEBUG MODE HELPERS ───────────────────────────────────────────────────────
+
+async function loadSystemInstruction() {
+  try {
+    const response = await fetch('/auth/settings');
+    if (response.ok) {
+      const settings = await response.json();
+      systemInstruction = settings.system_instruction || null;
+    }
+  } catch (e) {
+    console.error('Failed to load system instruction:', e);
+    systemInstruction = null;
+  }
 }

@@ -27,7 +27,7 @@ from src.logger import logger
 
 router = APIRouter(prefix='/api/admin', tags=['admin'])
 
-_SYSTEM_INSTRUCTION_FILE = __root__ / '.ai_instructions' / 'prompts' / 'chat' / 'system_instruction.md'
+_SYSTEM_INSTRUCTION_FILE = __root__ / 'prompts' / 'chat' / 'system_instruction.md'
 _SOURCES_FILE = __root__ / 'plugins' / 'movie_search_sources' / 'sources.json'
 
 

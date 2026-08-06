@@ -3,8 +3,8 @@
 # Process Name: FastAPI Router for API Key Management
 # =============================================================================
 # Description:
-#   CRUD operations for Gemini API keys stored in src/secrets/gemini_keys.json.
-#   Supports: list, add, remove, toggle status, get status.
+#   CRUD operations for Gemini API keys.
+#   Reads from src/ai/gemini/secrets.json, stores status in src/secrets/gemini_keys.json.
 #
 # File: router_keys.py
 # Project: mediteka
@@ -27,6 +27,7 @@ from src.logger import logger
 
 router = APIRouter(prefix='/api/keys', tags=['keys'])
 
+_SECRETS_FILE = Path(__file__).parent.parent / 'ai' / 'gemini' / 'secrets.json'
 _KEYS_FILE = Path(__file__).parent.parent / 'secrets' / 'gemini_keys.json'
 _DAY_SECONDS = 86400
 
@@ -71,24 +72,44 @@ class KeyStatusResponse(BaseModel):
 # Internal Helper Functions
 # ============================================================================
 
-def _load_keys() -> Dict:
-    """Load all keys from JSON file."""
+def _load_secrets() -> Dict[str, str]:
+    """Load all keys from secrets.json (email -> api_key)."""
+    if _SECRETS_FILE.exists():
+        try:
+            return json.loads(_SECRETS_FILE.read_text(encoding='utf-8'))
+        except Exception as ex:
+            logger.error('Failed to load secrets.json', ex)
+            raise HTTPException(status_code=500, detail='Failed to load secrets.json')
+    return {}
+
+
+def _save_secrets(data: Dict[str, str]) -> None:
+    """Save keys to secrets.json."""
+    try:
+        _SECRETS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=4), encoding='utf-8')
+    except Exception as ex:
+        logger.error('Failed to save secrets.json', ex)
+        raise HTTPException(status_code=500, detail='Failed to save secrets.json')
+
+
+def _load_keys_data() -> Dict:
+    """Load status data from gemini_keys.json."""
     if _KEYS_FILE.exists():
         try:
             return json.loads(_KEYS_FILE.read_text(encoding='utf-8'))
         except Exception as ex:
-            logger.error('Failed to load keys file', ex)
-            raise HTTPException(status_code=500, detail='Failed to load keys file')
+            logger.error('Failed to load keys data', ex)
+            raise HTTPException(status_code=500, detail='Failed to load keys data')
     return {}
 
 
-def _save_keys(data: Dict) -> None:
-    """Save keys to JSON file."""
+def _save_keys_data(data: Dict) -> None:
+    """Save status data to gemini_keys.json."""
     try:
         _KEYS_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
     except Exception as ex:
-        logger.error('Failed to save keys file', ex)
-        raise HTTPException(status_code=500, detail='Failed to save keys file')
+        logger.error('Failed to save keys data', ex)
+        raise HTTPException(status_code=500, detail='Failed to save keys data')
 
 
 def _now_iso() -> str:
@@ -104,8 +125,11 @@ def _iso_to_ts(iso: str) -> float:
         return 0.0
 
 
-def _check_exhaustion(entry: Dict) -> tuple[bool, Optional[int]]:
+def _check_exhaustion(name: str) -> tuple[bool, Optional[int]]:
     """Check if key is exhausted and return seconds until reset."""
+    keys_data = _load_keys_data()
+    entry = keys_data.get(name, {})
+    
     exhausted_at = entry.get('exhausted_at')
     if not exhausted_at:
         return False, None
@@ -136,16 +160,22 @@ def _mask_key(api_key: str) -> str:
 
 @router.get('', response_model=KeyListResponse)
 async def list_keys() -> KeyListResponse:
-    """List all API keys with masked values and status."""
-    data = _load_keys()
+    """List all API keys from secrets.json with masked values and status."""
+    secrets = _load_secrets()
+    keys_data = _load_keys_data()
     keys = []
     
-    for name, entry in data.items():
-        exhausted, reset_in = _check_exhaustion(entry)
+    for name, api_key in secrets.items():
+        exhausted, reset_in = _check_exhaustion(name)
+        
+        # Get status from keys_data or default to 'active'
+        entry = keys_data.get(name, {})
+        status = entry.get('status', 'active')
+        
         keys.append({
             'name': name,
-            'api_key_masked': _mask_key(entry.get('api_key', '')),
-            'status': entry.get('status', 'unknown'),
+            'api_key_masked': _mask_key(api_key),
+            'status': status,
             'last_run': entry.get('last_run'),
             'exhausted_at': entry.get('exhausted_at'),
             'exhausted': exhausted,
@@ -157,18 +187,19 @@ async def list_keys() -> KeyListResponse:
 
 @router.get('/{key_name}', response_model=KeyStatusResponse)
 async def get_key_status(key_name: str) -> KeyStatusResponse:
-    """Get detailed status for a specific key."""
-    data = _load_keys()
+    """Get detailed status for a specific key from secrets.json."""
+    secrets = _load_secrets()
+    keys_data = _load_keys_data()
     
-    if key_name not in data:
-        raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found')
+    if key_name not in secrets:
+        raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found in secrets.json')
     
-    entry = data[key_name]
-    exhausted, reset_in = _check_exhaustion(entry)
+    entry = keys_data.get(key_name, {})
+    exhausted, reset_in = _check_exhaustion(key_name)
     
     return KeyStatusResponse(
         name=key_name,
-        status=entry.get('status', 'unknown'),
+        status=entry.get('status', 'active'),
         last_run=entry.get('last_run'),
         exhausted_at=entry.get('exhausted_at'),
         exhausted=exhausted,
@@ -178,23 +209,28 @@ async def get_key_status(key_name: str) -> KeyStatusResponse:
 
 @router.post('', status_code=201)
 async def create_key(request: KeyCreateRequest) -> Dict[str, str]:
-    """Add a new API key."""
+    """Add a new API key to secrets.json."""
     if not request.name or not request.api_key:
         raise HTTPException(status_code=400, detail='Name and API key are required')
     
-    data = _load_keys()
+    secrets = _load_secrets()
+    keys_data = _load_keys_data()
     
-    if request.name in data:
-        raise HTTPException(status_code=409, detail=f'Key "{request.name}" already exists')
+    if request.name in secrets:
+        raise HTTPException(status_code=409, detail=f'Key "{request.name}" already exists in secrets.json')
     
-    data[request.name] = {
-        'api_key': request.api_key,
+    # Add to secrets.json
+    secrets[request.name] = request.api_key
+    _save_secrets(secrets)
+    
+    # Initialize status in keys_data
+    keys_data[request.name] = {
         'status': request.status,
         'last_run': None,
         'exhausted_at': None
     }
+    _save_keys_data(keys_data)
     
-    _save_keys(data)
     logger.info(f'Added new key: {request.name}')
     
     return {'message': f'Key "{request.name}" added successfully'}
@@ -202,14 +238,22 @@ async def create_key(request: KeyCreateRequest) -> Dict[str, str]:
 
 @router.delete('/{key_name}')
 async def delete_key(key_name: str) -> Dict[str, str]:
-    """Delete an API key."""
-    data = _load_keys()
+    """Delete an API key from secrets.json."""
+    secrets = _load_secrets()
+    keys_data = _load_keys_data()
     
-    if key_name not in data:
-        raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found')
+    if key_name not in secrets:
+        raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found in secrets.json')
     
-    del data[key_name]
-    _save_keys(data)
+    # Delete from secrets.json
+    del secrets[key_name]
+    _save_secrets(secrets)
+    
+    # Delete from keys_data
+    if key_name in keys_data:
+        del keys_data[key_name]
+        _save_keys_data(keys_data)
+    
     logger.info(f'Deleted key: {key_name}')
     
     return {'message': f'Key "{key_name}" deleted successfully'}
@@ -217,26 +261,34 @@ async def delete_key(key_name: str) -> Dict[str, str]:
 
 @router.patch('/{key_name}')
 async def update_key(key_name: str, request: KeyUpdateRequest) -> Dict[str, str]:
-    """Update key status or name."""
-    data = _load_keys()
+    """Update key status or name in secrets.json and keys_data."""
+    secrets = _load_secrets()
+    keys_data = _load_keys_data()
     
-    if key_name not in data:
-        raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found')
+    if key_name not in secrets:
+        raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found in secrets.json')
     
-    entry = data[key_name]
-    
+    # Update status
     if request.status:
         if request.status not in ('active', 'disabled'):
             raise HTTPException(status_code=400, detail='Status must be "active" or "disabled"')
-        entry['status'] = request.status
+        keys_data[key_name]['status'] = request.status
     
+    # Rename key
     if request.name and request.name != key_name:
-        if request.name in data:
+        if request.name in secrets:
             raise HTTPException(status_code=409, detail=f'Key "{request.name}" already exists')
-        data[request.name] = entry
-        del data[key_name]
+        
+        # Rename in secrets.json
+        secrets[request.name] = secrets[key_name]
+        del secrets[key_name]
+        _save_secrets(secrets)
+        
+        # Rename in keys_data
+        keys_data[request.name] = keys_data[key_name]
+        del keys_data[key_name]
     
-    _save_keys(data)
+    _save_keys_data(keys_data)
     logger.info(f'Updated key: {key_name}')
     
     return {'message': f'Key "{key_name}" updated successfully'}
@@ -245,14 +297,14 @@ async def update_key(key_name: str, request: KeyUpdateRequest) -> Dict[str, str]
 @router.post('/{key_name}/reset-quota')
 async def reset_quota(key_name: str) -> Dict[str, str]:
     """Reset daily quota exhaustion for a key."""
-    data = _load_keys()
+    keys_data = _load_keys_data()
     
-    if key_name not in data:
+    if key_name not in keys_data:
         raise HTTPException(status_code=404, detail=f'Key "{key_name}" not found')
     
-    if 'exhausted_at' in data[key_name]:
-        del data[key_name]['exhausted_at']
-        _save_keys(data)
+    if 'exhausted_at' in keys_data[key_name]:
+        del keys_data[key_name]['exhausted_at']
+        _save_keys_data(keys_data)
         logger.info(f'Reset quota for key: {key_name}')
         return {'message': f'Quota reset for key "{key_name}"'}
     

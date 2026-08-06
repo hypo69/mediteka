@@ -1,3 +1,0 @@
-# js/
-
-`static/interface/js`

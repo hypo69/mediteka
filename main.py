@@ -98,7 +98,7 @@ app.mount('/webinterface', StaticFiles(directory=webinterface_dir), name='webint
 app.mount('/html', StaticFiles(directory=webinterface_dir), name='html')
 
 
-_system_instruction: str = read_text_file(__root__ / '.ai_instructions' / 'prompts' / 'chat' / 'system_instruction.md') or ''
+_system_instruction: str = read_text_file(__root__ / 'prompts' / 'chat' / 'system_instruction.md') or ''
 _api_key_names: list[str] = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
 
 use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')

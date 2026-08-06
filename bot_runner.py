@@ -40,7 +40,7 @@ async def _run_bot() -> None:
     from src.utils.file import read_text_file
     from plugins import load_plugins
 
-    _system_instruction = read_text_file(__root__ / '.ai_instructions' / 'prompts' / 'chat' / 'system_instruction.md') or ''
+    _system_instruction = read_text_file(__root__ / 'prompts' / 'chat' / 'system_instruction.md') or ''
     _api_key_names = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
 
     use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')

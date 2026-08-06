@@ -25,8 +25,8 @@ from src.ai import GoogleGenerativeAI
 from src.secrets.api_key_state import load_api_keys
 from src.utils.jjson import j_loads, j_dumps
 
-REGISTRY_JSON = __root__ / '.ai_instructions' / 'knowledge' / 'codex_registry.json'
-REGISTRY_MD = __root__ / '.ai_instructions' / 'knowledge' / 'codex' / 'registry.md'
+REGISTRY_JSON = __root__ / 'knowledge' / 'codex_registry.json'
+REGISTRY_MD = __root__ / 'knowledge' / 'codex' / 'registry.md'
 
 load_dotenv(__root__ / '.env')
 
@@ -136,12 +136,12 @@ def write_markdown_index(data: list) -> bool:
             formatted_files = []
             for filepath in files:
                 rel_path = filepath
-                if filepath.startswith('.ai_instructions/knowledge/codex/'):
-                    rel_path = filepath.replace('.ai_instructions/knowledge/codex/', '')
-                elif filepath.startswith('.ai_instructions/knowledge/'):
-                    rel_path = filepath.replace('.ai_instructions/knowledge/', '../')
-                elif filepath.startswith('.ai_instructions/rules/'):
-                    rel_path = filepath.replace('.ai_instructions/rules/', '../rules/')
+                if filepath.startswith('knowledge/codex/'):
+                    rel_path = filepath.replace('knowledge/codex/', '')
+                elif filepath.startswith('knowledge/'):
+                    rel_path = filepath.replace('knowledge/', '../')
+                elif filepath.startswith('rules/'):
+                    rel_path = filepath.replace('rules/', '../rules/')
                 elif filepath.startswith('.ai_instructions/'):
                     rel_path = filepath.replace('.ai_instructions/', '../../')
                 else:
@@ -256,7 +256,7 @@ async def extract_knowledge_from_file(filepath: str) -> bool:
         "  \"affected_files\": [\"путь/к/файлу1\", \"путь/к/файлу2\"]\n"
         "}\n\n"
         "В поле affected_files указывай относительные пути файлов от корня проекта (например, "
-        "'.ai_instructions/knowledge/scripts_tools.md' или 'main.py').\n"
+        "'knowledge/scripts_tools.md' или 'main.py').\n"
         "Возвращай ТОЛЬКО валидный JSON-объект. Не оборачивай его в markdown блоки (например, ```json).\n\n"
         "Текст чата для анализа:\n"
         f"{chat_text}"

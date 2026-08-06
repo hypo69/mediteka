@@ -1,3 +1,0 @@
-# css/
-
-`static/interface/css`

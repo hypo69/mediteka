@@ -1,3 +1,0 @@
-# models/
-
-`src/models`

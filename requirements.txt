@@ -8,3 +8,6 @@ pydub==0.25.1
 reportlab==4.2.5
 simplejson==3.19.3
 speechrecognition==3.17.0
+faiss-cpu
+sentence-transformers
+numpy

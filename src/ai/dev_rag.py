@@ -53,7 +53,7 @@ def build_dev_rag(api_key: str) -> GeminiRAG:
     rag.clear()
 
     # Директории для индексации
-    target_dirs = ["docs", ".ai_instructions", "src", "plugins"]
+    target_dirs = ["docs", "prompts", "src", "plugins"]
     docs = []
 
     for dir_name in target_dirs:

@@ -1,3 +1,0 @@
-# core/
-
-`src/core`

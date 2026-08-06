@@ -166,6 +166,121 @@ def init_router(model, plugins: dict) -> APIRouter:
                 user_identifier = None
                 settings = {}
 
+                # Check debug mode
+                is_debug = request.generation_config.get('debug_mode', False)
+
+                if is_debug:
+                    # DEBUG MODE: Build and return the full prompt instead of sending to model
+                    final_system_instruction = None
+                    selected_model = None
+                    user_identifier = None
+                    settings = {}
+
+                    # Извлечение данных пользователя
+                    token = fastapi_req.cookies.get('auth_token')
+                    if token:
+                        from src.fastapi.router_auth import verify_jwt_token
+                        user_data = verify_jwt_token(token)
+                        if user_data:
+                            from src.user_manager import user_manager
+                            db_user = await asyncio.to_thread(user_manager.get_user_by_email, user_data.email)
+                            if db_user:
+                                user_identifier = db_user['id']
+                                settings = await asyncio.to_thread(user_manager.get_user_settings, db_user['id'])
+                                if settings:
+                                    if settings.get('system_instruction'):
+                                        final_system_instruction = settings['system_instruction']
+                                    if settings.get('model'):
+                                        selected_model = settings['model']
+
+                    if not user_identifier:
+                        client_ip = fastapi_req.client.host if fastapi_req.client else 'unknown'
+                        user_identifier = f"anon_{client_ip}"
+
+                    api_key = getattr(model, 'api_key', '') or ''
+                    # Default to model for fallback if no active_model set yet
+                    active_model = model
+                    if not api_key:
+                        from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                        api_key = _get_gemini_api_key()
+
+                    # Извлекаем контекст из персонального RAG пользователя и из профиля предпочтений
+                    user_context_str = ""
+
+                    # Проверяем, нужно ли игнорировать старый контекст
+                    skip_past_context = False
+                    clean_msg = request.message.strip().lower()
+                    if len(clean_msg) < 25:
+                        control_words = {
+                            'да', 'нет', 'yes', 'no', 'ок', 'ok', 'хочу', 'конечно',
+                            'давай', 'проверь', 'найди', 'покажи', 'ладно', 'угу', 'yep', 'sure',
+                            'want', 'check', 'find', 'show', 'okay', 'отлично',
+                            'включи', 'запусти', 'play', 'start', 'open', 'открой', 'включай', 'запускай',
+                            'поставь', 'вруби', 'воспроизведи', 'сейчас', 'now', 'go'
+                        }
+                        words = set(clean_msg.replace('!', ' ').replace('.', ' ').replace(',', ' ').split())
+                        if words & control_words:
+                            skip_past_context = True
+
+                    if api_key and user_identifier and len(request.message.strip()) >= 5 and not skip_past_context:
+                        past_context = await asyncio.to_thread(
+                            search_user_context, user_identifier, api_key, request.message, 2, 0.45
+                        )
+                        if past_context:
+                            snippets = [item['text'] for item in past_context]
+                            user_context_str = "\n[Контекст из предыдущих обсуждений пользователя]:\n" + "\n---\n".join(snippets)
+
+                    # Профиль предпочтений
+                    from src.user_manager.user_profile import get_recommendation_context
+                    pref_context = await asyncio.to_thread(get_recommendation_context, user_identifier)
+                    if pref_context:
+                        user_context_str = f"{user_context_str}\n\n[Профиль предпочтений пользователя]:\n{pref_context}".strip()
+
+                    final_system_instruction = final_system_instruction or getattr(model, 'system_instruction', None)
+                    
+                    # Voice gender instruction
+                    voice_gender_instruction = ""
+                    tts_voice = settings.get('tts_voice', '') or os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")
+                    voice_lower = tts_voice.lower()
+                    is_male_voice = any(name in voice_lower for name in ("dmitry", "yaraslaus", "male", "bayan", "aidar", "eugene", "georgy"))
+                    is_female_voice = any(name in voice_lower for name in ("svetlana", "elena", "female", "kseniya", "tanya", "aliona", "dariya"))
+                    if is_male_voice:
+                        voice_gender_instruction = "IMPORTANT: Выбран мужской голос озвучки. Модель должна отвечать строго от женского лица (в женском роде, используя глаголы и местоимения женского рода: 'я пошла', 'я сделала' и т.д.)."
+                    elif is_female_voice:
+                        voice_gender_instruction = "IMPORTANT: Выбран женский голос озвучки. Модель должна отвечать строго от мужского лица (в мужском роде, используя глаголы и местоимения мужского рода: 'я пошел', 'я сделал' и т.д.)."
+
+                    if voice_gender_instruction:
+                        if final_system_instruction:
+                            final_system_instruction = f"{final_system_instruction}\n\n{voice_gender_instruction}"
+                        else:
+                            final_system_instruction = voice_gender_instruction
+
+                    if user_context_str:
+                        if final_system_instruction:
+                            final_system_instruction = f"{final_system_instruction}\n\n{user_context_str}"
+                        else:
+                            final_system_instruction = user_context_str
+
+                    # Build the full prompt
+                    full_prompt_parts = []
+                    if final_system_instruction:
+                        full_prompt_parts.append(f"SYSTEM INSTRUCTION:\n{final_system_instruction}")
+                    
+                    if request.history:
+                        full_prompt_parts.append("CHAT HISTORY:\n" + "\n---\n".join([
+                            f"{entry.get('role', 'unknown').upper()}:\n{entry.get('parts', [''])[0] if isinstance(entry.get('parts'), list) else entry.get('parts', '')}"
+                            for entry in request.history[-5:]  # Last 5 messages
+                        ]))
+                    
+                    full_prompt_parts.append(f"USER MESSAGE:\n{request.message}")
+
+                    full_prompt_text = "\n\n=== FULL PROMPT TO BE SENT TO MODEL ===\n" + "\n\n".join(full_prompt_parts)
+
+                    yield f"data: {json.dumps({'status': 'DEBUG MODE: Промпт сформирован, не отправляется в модель'})}\n\n"
+                    yield f"data: {json.dumps({'text': full_prompt_text})}\n\n"
+
+                    return
+
                 # Извлечение данных пользователя / IP для User RAG
                 token = fastapi_req.cookies.get('auth_token')
                 if token:

@@ -33,9 +33,9 @@ MEDIA_RAG_DB = DATA_DIR / 'media_rag.db'
 DB_FILE = MEDIA_DB  # Alias for backward compatibility
 
 # Конфигурационные файлы
-PROMPT_RESEARCH_FILE = __root__ / '.ai_instructions' / 'prompts' / 'media_organizer' / 'prompt_research.md'
-PROMPT_CHAT_FILE = __root__ / '.ai_instructions' / 'prompts' / 'media_organizer' / 'prompt_chat.md'
-PROMPT_TTS_FILE = __root__ / '.ai_instructions' / 'prompts' / 'media_organizer' / 'prompt_tts.md'
+PROMPT_RESEARCH_FILE = __root__ / 'prompts' / 'media_organizer' / 'prompt_research.md'
+PROMPT_CHAT_FILE = __root__ / 'prompts' / 'media_organizer' / 'system_instruction.md'
+PROMPT_TTS_FILE = __root__ / 'prompts' / 'media_organizer' / 'prompt_tts.md'
 TORRENTS_FILE = CONFIG_DIR / 'torrents_names.json.md'
 
 def _build_instruction(file_path: Path, include_torrents: bool = False) -> str:

@@ -79,6 +79,7 @@ class AgyChatBase:
 
         try:
             config = LocalAgentConfig(
+                model=self.model_id,
                 system_instructions=self.system_instruction,
                 api_key=self.api_key
             )
@@ -137,6 +138,7 @@ class AgyChatBase:
 
         try:
             config = LocalAgentConfig(
+                model=self.model_id,
                 system_instructions=sys_prompt,
                 api_key=self.api_key
             )

@@ -243,6 +243,10 @@
     <option value="story" selected>📖 Сюжет</option>
     <option value="download">⚡ Найти и скачать</option>
   </select>
+  <select class="form-select text-muted" id="chat-mode-debug" style="max-width: 100px; font-size: 0.85rem; border-color: var(--border-color); background-color: var(--bg-color-card); color: var(--text-color);">
+    <option value="prod" selected>PROD</option>
+    <option value="debug">DEBUG</option>
+  </select>
   <input type="text" class="form-control" id="message-input" data-i18n-placeholder="chat.placeholder" placeholder="Введите сообщение...">
   <button class="btn btn-primary" id="send-button" data-i18n="chat.send">Отправить</button>
 </div>

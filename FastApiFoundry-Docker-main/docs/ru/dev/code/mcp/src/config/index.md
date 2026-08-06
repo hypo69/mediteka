@@ -1,3 +1,0 @@
-# config/
-
-`mcp/src/config`

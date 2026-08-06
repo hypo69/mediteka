@@ -1,3 +1,0 @@
-# servers/
-
-`mcp/src/servers`
