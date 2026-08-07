@@ -241,7 +241,76 @@ Relocate torrent files.
 }
 ```
 
----
+### Admin
+
+#### GET `/api/admin/system_instruction`
+Get system instruction.
+
+#### POST `/api/admin/system_instruction`
+Update system instruction.
+
+#### GET `/api/admin/plugin/{plugin_name}/status`
+Get plugin status.
+
+#### POST `/api/admin/plugin/{plugin_name}/status`
+Update plugin status.
+
+### Keys
+
+#### GET `/api/keys`
+List all API keys.
+
+#### GET `/api/keys/{key_name}`
+Get key status.
+
+#### POST `/api/keys`
+Create new API key.
+
+#### DELETE `/api/keys/{key_name}`
+Delete API key.
+
+#### PATCH `/api/keys/{key_name}`
+Update API key.
+
+#### POST `/api/keys/{key_name}/reset-quota`
+Reset API key quota.
+
+### Logs
+
+#### GET `/api/logs/files`
+List log files.
+
+#### GET `/api/logs/read`
+Read log file content.
+
+#### DELETE `/api/logs/clear`
+Clear logs.
+
+#### POST `/api/logs/analyze`
+Analyze logs.
+
+#### GET `/api/logs/reports`
+List log reports.
+
+#### GET `/api/logs/report`
+Get specific log report.
+
+#### GET `/api/logs/stats`
+Get log statistics.
+
+### TTS (Text-to-Speech)
+
+#### GET `/api/tts/stream-text`
+Stream text.
+
+#### GET `/api/tts/synthesize`
+Synthesize speech.
+
+#### GET `/api/tts/stream-audio`
+Stream audio.
+
+#### GET `/api/tts/file/{filename}`
+Get TTS audio file.
 
 ## Plugins API
 
@@ -296,8 +365,6 @@ class MyPlugin(BasePlugin):
 # Access via plugins["rag"]
 ```
 
----
-
 ## Database API
 
 ### MediaDatabase
@@ -325,8 +392,6 @@ duplicates = db.find_duplicates()
 # Audit
 issues = await auditor.audit()
 ```
-
----
 
 ## Configuration
 
@@ -358,8 +423,6 @@ issues = await auditor.audit()
 }
 ```
 
----
-
 ## Events
 
 ### WebSocket Events
@@ -383,8 +446,6 @@ issues = await auditor.audit()
 | `scan_completed` | Media scan completed |
 | `audit_completed` | Audit completed |
 | `rag_indexed` | RAG index built |
-
----
 
 ## Error Codes
 

@@ -30,12 +30,17 @@ class MyPlugin(BasePlugin):
 
 | Плагин | Описание |
 |--------|----------|
-| `media_layer` | Управление медиа-слоями |
-| `media_organizer` | Организация медиатеки |
+| `code_helper` | Помощь по кодовой базе проекта |
+| `media_layer` | Управление медиа-слоями (субтитры, звук) |
+| `media_organizer` | Организация и аудит медиатеки |
+| `movie_search_sources` | Каталог источников для просмотра |
 | `qbittorrent` | Управление qBittorrent |
-| `rag` | RAG поиск |
-| `telegram_bot` | Telegram бот |
-| `torrent_playwright` | Поиск торрентов |
+| `rag` | RAG поиск по медиатеке |
+| `telegram_bot` | Telegram бот для управления |
+| `torrent_playwright` | Поиск и скачивание торрентов |
+| `user_manager_tool` | Управление пользователями |
+| `web_search` | Веб-поиск через Playwright |
+| `yt_dlp` | Скачивание видео/аудио через yt-dlp |
 
 ## Пример плагина
 

@@ -63,6 +63,9 @@
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-help" data-i18n="tabs.help">📚 Справочник</button>
     </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-instructions">📝 Инструкции</button>
+    </li>
     <li class="nav-item ms-auto">
       <select class="form-select form-select-sm lang-selector" id="lang-selector" style="width:auto;">
         <option value="en">English</option>
@@ -122,6 +125,9 @@
 
     <!-- Help Tab -->
     <div id="tab-help" class="tab-pane fade"></div>
+
+    <!-- Instructions Tab -->
+    <div id="tab-instructions" class="tab-pane fade"></div>
   </div>
 </div>
 
@@ -142,6 +148,24 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="helpModal.close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt Preview Modal -->
+<div class="modal fade" id="prompt-preview-modal" tabindex="-1" aria-labelledby="prompt-preview-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="prompt-preview-modal-label">Предпросмотр промта</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="prompt-preview-content">
+        <p>Загрузка...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
       </div>
     </div>
   </div>

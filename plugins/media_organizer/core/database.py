@@ -191,6 +191,16 @@ class MediaDatabase:
                 END
             """)
 
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS system_instructions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    role TEXT NOT NULL CHECK(role IN ('chat', 'narrator')),
+                    content TEXT NOT NULL,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TEXT NOT NULL
+                )
+            """)
+
     def get_media_by_path(self, path: str) -> Dict:
         """Поиск записи по пути (используется для проверки обработанных элементов).
         
