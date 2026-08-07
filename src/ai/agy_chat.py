@@ -38,7 +38,14 @@ class AgyChatBase:
 
     def __init__(self, model_id: str, system_prompt: str = "") -> None:
         """Инициализация объекта подключения к AGY SDK."""
-        self.model_id: str = model_id
+        actual_model_id = model_id
+        if model_id.startswith("agy-"):
+            actual_model_id = model_id[len("agy-"):]
+        if actual_model_id == "flash":
+            actual_model_id = "gemini-2.0-flash"
+        elif actual_model_id == "pro":
+            actual_model_id = "gemini-2.5-pro"
+        self.model_id: str = actual_model_id
         self.system_instruction: str = system_prompt
         self.history: List[Dict[str, str]] = []
         

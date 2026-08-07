@@ -8,6 +8,7 @@
 - [project.md](project.md) — назначение приложения, точки входа, плагины, API и интерфейсы.
 - [media-organizer.md](media-organizer.md) — медиатека, SQLite, RAG и процесс сканирования.
 - [chat_architecture.md](chat_architecture.md) — архитектура чата, плагины, RAG и веб-интерфейсы.
+- [js_versioning.md](js_versioning.md) — правила версионирования JavaScript/CSS файлов для избежания проблем с кэшированием.
 - [engineering-rules.md](engineering-rules.md) — применимые инженерные правила из Kiro.
 - [known-state.md](known-state.md) — незавершённые требования, дефекты и расхождения документации с кодом.
 - [registry.md](registry.md) — реестр знаний, полученных из чатов разработчика с ИИ-ассистентами.

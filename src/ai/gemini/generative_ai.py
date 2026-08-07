@@ -101,6 +101,40 @@ class GoogleGenerativeAI:
 
     MODELS: List[str] = field(default_factory=lambda: _AVAILABLE_MODELS, init=False)
 
+    @classmethod
+    def get_available_models(cls, api_key: str = '') -> List[str]:
+        """Динамически запрашивает список доступных моделей через Google GenAI SDK.
+        Фильтрует только те модели, которые поддерживают генерацию контента.
+        """
+        if not api_key:
+            try:
+                from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
+                api_key = _get_gemini_api_key()
+            except Exception:
+                pass
+        
+        if not api_key:
+            return _AVAILABLE_MODELS
+            
+        try:
+            client = genai.Client(api_key=api_key)
+            models = []
+            for m in client.models.list():
+                name = m.name
+                if name.startswith('models/'):
+                    name = name[len('models/'):]
+                
+                # Фильтруем только модели, поддерживающие генерацию текста (generateContent)
+                if m.supported_actions and 'generateContent' in m.supported_actions:
+                    # Пропускаем устаревшие модели (bison, gecko, vision, embedding, 1.0-pro)
+                    if any(x in name for x in ('bison', 'gecko', 'vision', 'embedding', '1.0-pro', '1.0-ultra')):
+                        continue
+                    models.append(name)
+            return models if models else _AVAILABLE_MODELS
+        except Exception as e:
+            logger.error(f"Ошибка получения списка моделей от Google API: {e}")
+            return _AVAILABLE_MODELS
+
     def _get_exhausted_error_msg(self) -> str:
         msg = "Ошибка: Все API ключи исчерпаны."
         import os
@@ -240,14 +274,16 @@ class GoogleGenerativeAI:
                     cfg_kwargs[k] = val
         return types.GenerateContentConfig(**cfg_kwargs)
 
-    def _start_chat(self):
+    def _start_chat(self, history: list = []):
         """Запуск чата с начальной настройкой."""
         config = self._build_content_config()
         
         # Если save_history_chat=False, используем просто send_message без создания чата
         if not self.save_history_chat:
-            return None
+            return False
         
+        if history:
+            return self._client.chats.create(model=self.model_name, config=config, history=history)
         return self._client.chats.create(model=self.model_name, config=config)
 
     def _switch_model(self) -> bool:
@@ -322,11 +358,21 @@ class GoogleGenerativeAI:
 
     def _restore_chat_from_history(self):
         """Восстанавливает сессию чата из chat_history в памяти."""
-        self._chat = self._start_chat()
+        history_contents = []
         for entry in self.chat_history:
-            self._chat.history.append(
-                types.Content(role=entry['role'], parts=[types.Part.from_text(text=p) for p in entry['parts']])
-            )
+            role = entry.get('role', 'user')
+            if role == 'assistant':
+                role = 'model'
+            parts = entry.get('parts', [])
+            parts_objects = []
+            for p in parts:
+                if isinstance(p, str):
+                    parts_objects.append(types.Part.from_text(text=p))
+                elif isinstance(p, dict) and 'text' in p:
+                    parts_objects.append(types.Part.from_text(text=p['text']))
+            history_contents.append(types.Content(role=role, parts=parts_objects))
+            
+        self._chat = self._start_chat(history=history_contents)
 
     def _prepare_contents(self, q: str, history: Optional[List[Dict]] = None) -> List[types.Content]:
         """Подготавливает список объектов Content для stateless API-запроса."""

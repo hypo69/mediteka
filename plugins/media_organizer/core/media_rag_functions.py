@@ -42,20 +42,35 @@ def _get_gemini_api_key() -> str:
     except Exception:
         load_dotenv()
 
+    # Сначала пробуем переменные окружения напрямую
     for key_name in ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'GEMINI_API_KEY_1']:
         key = os.getenv(key_name, '').strip()
         if key:
             return key
 
+    # Берём из менеджера ключей, передавая GEMINI_API_KEY_NAMES (как в generative_ai.py)
     try:
-        from src.secrets.api_key_state import load_api_keys
-        api_keys, _, _ = load_api_keys()
+        from src.secrets.api_key_state import load_api_keys, _load_secrets
+        key_names_env = os.getenv('GEMINI_API_KEY_NAMES', '')
+        names = [n.strip() for n in key_names_env.split(',') if n.strip()] or None
+        api_keys, _, _ = load_api_keys(names)
         if api_keys:
             return api_keys[0]
+
+        # Безусловный fallback: если все ключи заблокированы по лимитам, берем любой первый доступный из secrets.json
+        secrets = _load_secrets()
+        if secrets:
+            target_names = names if names else list(secrets.keys())
+            for name in target_names:
+                if name in secrets and secrets[name]:
+                    logger.warning(f"Используется заблокированный/резервный ключ: {name}")
+                    return secrets[name]
     except Exception as e:
         logger.error(f"Ошибка при получении ключа через load_api_keys: {e}")
 
     return ''
+
+
 
 def _get_active_paths() -> List[str]:
     """Получает список актуальных путей к доступным хранилищам.
@@ -105,15 +120,19 @@ def search_media(
         results_json = rag_search_tool(query, top_k=top_k, api_key=api_key)
         results = json.loads(results_json)
 
-        if isinstance(results, dict) and 'error' in results:
-            return results_json
+        if isinstance(results, dict):
+            if 'error' in results:
+                return results_json
+            results_list = results.get('results', [])
+        else:
+            results_list = results if isinstance(results, list) else []
 
         # Получаем актуальные диски
         active_paths = _get_active_paths()
 
         # Пост-фильтрация по подключенным дискам и критериям
         filtered = []
-        for item in results:
+        for item in results_list:
             meta = item.get('meta', {})
             # Фильтр по дискам
             path = meta.get('path', '')
@@ -377,34 +396,34 @@ def get_media_tools() -> List[Dict[str, Any]]:
         'name': 'search_media',
         'description': 'Семантический поиск фильмов и сериалов по описанию',
         'parameters': {
-            'type': types.SchemaType.OBJECT,
+            'type': types.Type.OBJECT,
             'properties': {
                 'query': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Поисковый запрос на естественном языке',
                 },
                 'top_k': {
-                    'type': types.SchemaType.NUMBER,
+                    'type': types.Type.NUMBER,
                     'description': 'Количество результатов (по умолчанию 5)',
                     'optional': True,
                 },
                 'category': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Категория (например, драма, комедия, экшн)',
                     'optional': True,
                 },
                 'media_type': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Тип медиа (movie, series)',
                     'optional': True,
                 },
                 'year_from': {
-                    'type': types.SchemaType.NUMBER,
+                    'type': types.Type.NUMBER,
                     'description': 'Минимальный год',
                     'optional': True,
                 },
                 'year_to': {
-                    'type': types.SchemaType.NUMBER,
+                    'type': types.Type.NUMBER,
                     'description': 'Максимальный год',
                     'optional': True,
                 },
@@ -417,18 +436,18 @@ def get_media_tools() -> List[Dict[str, Any]]:
         'name': 'get_media_card',
         'description': 'Получение полной карточки фильма/сериала',
         'parameters': {
-            'type': types.SchemaType.OBJECT,
+            'type': types.Type.OBJECT,
             'properties': {
                 'disk_name': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Имя диска, на котором находится медиа',
                 },
                 'title': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Название фильма/сериала',
                 },
                 'media_type': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Тип медиа (movie или series)',
                 },
             },
@@ -440,14 +459,14 @@ def get_media_tools() -> List[Dict[str, Any]]:
         'name': 'find_by_exact_title',
         'description': 'Точный поиск медиа по названию без семантического поиска',
         'parameters': {
-            'type': types.SchemaType.OBJECT,
+            'type': types.Type.OBJECT,
             'properties': {
                 'title': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Название для поиска',
                 },
                 'media_type': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Тип медиа (movie или series)',
                     'optional': True,
                 },
@@ -460,20 +479,20 @@ def get_media_tools() -> List[Dict[str, Any]]:
         'name': 'get_random_media',
         'description': 'Получение случайной рекомендации из медиатеки',
         'parameters': {
-            'type': types.SchemaType.OBJECT,
+            'type': types.Type.OBJECT,
             'properties': {
                 'category': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Категория для фильтрации',
                     'optional': True,
                 },
                 'media_type': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Тип медиа (movie или series)',
                     'optional': True,
                 },
                 'mood': {
-                    'type': types.SchemaType.STRING,
+                    'type': types.Type.STRING,
                     'description': 'Настроение для фильтрации',
                     'optional': True,
                 },
@@ -485,7 +504,7 @@ def get_media_tools() -> List[Dict[str, Any]]:
         'name': 'rebuild_rag_index',
         'description': 'Пересборка RAG-индекса из текущей базы данных',
         'parameters': {
-            'type': types.SchemaType.OBJECT,
+            'type': types.Type.OBJECT,
             'properties': {},
         },
     }
@@ -494,7 +513,7 @@ def get_media_tools() -> List[Dict[str, Any]]:
         'name': 'get_rag_status',
         'description': 'Получение статуса RAG-индекса',
         'parameters': {
-            'type': types.SchemaType.OBJECT,
+            'type': types.Type.OBJECT,
             'properties': {},
         },
     }

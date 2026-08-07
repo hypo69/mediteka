@@ -96,7 +96,7 @@ class TestRouterChat:
         
         plugins = {}
         
-        router = init_router(mock_model, plugins)
+        router = init_router(mock_model, mock_model, plugins)
         
         assert router is not None
 
@@ -106,11 +106,11 @@ class TestRouterChat:
         from src.fastapi.router_chat import init_router
         
         mock_model = Mock()
-        router = init_router(mock_model, {})
+        router = init_router(mock_model, mock_model, {})
         
         get_models_func = None
         for route in router.routes:
-            if route.path == '/models':
+            if route.path in ('/models', '/api/chat/models'):
                 get_models_func = route.endpoint
                 break
         

@@ -74,7 +74,22 @@ async function initModelsTab() {
   };
 
   if (refreshKeysBtn) {
-    refreshKeysBtn.onclick = () => refreshKeysList(keysListBody);
+    refreshKeysBtn.onclick = async () => {
+      refreshKeysBtn.disabled = true;
+      const originalText = refreshKeysBtn.textContent;
+      refreshKeysBtn.textContent = '⏳ Сброс...';
+      try {
+        const res = await window.api.fetch('/api/keys/reset-all', { method: 'POST' });
+        showModelsNotification(res.message || 'Квоты всех ключей успешно сброшены', 'success');
+      } catch (err) {
+        console.error('Ошибка сброса квот:', err);
+        showModelsNotification('Ошибка сброса: ' + err.message, 'danger');
+      } finally {
+        refreshKeysBtn.disabled = false;
+        refreshKeysBtn.textContent = originalText;
+        await refreshKeysList(keysListBody);
+      }
+    };
   }
 
   if (addKeyBtn) {
@@ -415,4 +430,7 @@ async function saveSystemInstruction() {
     saveBtn.innerHTML = originalHtml;
   }
 }
+
+// Экспорт для загрузчика вкладок (type="module")
+window.initModelsTab = initModelsTab;
 

@@ -85,6 +85,8 @@ window.chatService = {
             }
           } catch (e) {
             console.error('Parsing SSE error:', e, trimmed);
+            // Пробрасываем ошибку бэкенда наружу
+            throw e;
           }
         }
       }
@@ -101,7 +103,9 @@ window.chatService = {
           }
           if (onChunk) onChunk(data.text || '', data.status || '', data.voice || '');
         }
-      } catch (e) {}
+      } catch (e) {
+        throw e;
+      }
     }
     
     let followUpQuery = null;

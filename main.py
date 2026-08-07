@@ -98,23 +98,35 @@ app.mount('/webinterface', StaticFiles(directory=webinterface_dir), name='webint
 app.mount('/html', StaticFiles(directory=webinterface_dir), name='html')
 
 
-_system_instruction: str = read_text_file(__root__ / 'prompts' / 'chat' / 'system_instruction.md') or ''
 _api_key_names: list[str] = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
 
 use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')
 foundry_model_id = os.getenv('FOUNDRY_MODEL_ID', 'qwen3-0.6b-generic-cpu:4')
 
 from src.ai import UnifiedChatModel
-model = UnifiedChatModel(
+
+# --- Chat model instance ---
+_system_instruction_chat: str = read_text_file(__root__ / 'prompts' / 'chat' / 'system_instruction.md') or ''
+chat_model = UnifiedChatModel(
     api_key_names=_api_key_names,
-    system_instruction=_system_instruction,
+    system_instruction=_system_instruction_chat,
     foundry_model_id=foundry_model_id,
     use_foundry=use_foundry,
 )
-plugins = load_plugins(model)
 
-app.include_router(init_chat_router(model, plugins))
-app.include_router(init_qbt_router(model))
+# --- Narrator model instance ---
+_system_instruction_narrator: str = read_text_file(__root__ / 'prompts' / 'narrator' / 'narrator_style.md') or ''
+narrator_model = UnifiedChatModel(
+    api_key_names=_api_key_names,
+    system_instruction=_system_instruction_narrator,
+    foundry_model_id=foundry_model_id,
+    use_foundry=use_foundry,
+)
+logger.info('Chat and Narrator model instances initialized')
+plugins = load_plugins(chat_model)
+
+app.include_router(init_chat_router(chat_model, narrator_model, plugins))
+app.include_router(init_qbt_router(chat_model))
 app.include_router(init_media_router(prefix='/api/media-admin'))
 app.include_router(init_media_router(prefix='/api/media'))
 app.include_router(init_auth_router())
@@ -127,6 +139,11 @@ app.include_router(init_admin_router())
 
 @app.on_event("startup")
 async def startup_event():
+    # Сохраняем инстансы моделей и плагины в app.state для доступа из роутеров
+    app.state.chat_model = chat_model
+    app.state.narrator_model = narrator_model
+    app.state.plugins = plugins
+
     # Сканируем подключённые диски ОС и обновляем CONNECTED_DRIVES
     from plugins.media_organizer.core.drive_scanner import update_environment_drives
     update_environment_drives()

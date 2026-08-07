@@ -294,6 +294,25 @@ async def update_key(key_name: str, request: KeyUpdateRequest) -> Dict[str, str]
     return {'message': f'Key "{key_name}" updated successfully'}
 
 
+@router.post('/reset-all')
+async def reset_all_quotas() -> Dict[str, str]:
+    """Reset daily quota exhaustion for all API keys."""
+    keys_data = _load_keys_data()
+    reset_count = 0
+    
+    for name, info in keys_data.items():
+        if 'exhausted_at' in info:
+            del info['exhausted_at']
+            reset_count += 1
+            
+    if reset_count > 0:
+        _save_keys_data(keys_data)
+        logger.info(f'Reset quota for {reset_count} keys')
+        return {'message': f'Успешно сброшены квоты для {reset_count} ключей'}
+        
+    return {'message': 'Нет заблокированных ключей для сброса'}
+
+
 @router.post('/{key_name}/reset-quota')
 async def reset_quota(key_name: str) -> Dict[str, str]:
     """Reset daily quota exhaustion for a key."""

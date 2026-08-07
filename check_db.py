@@ -1,22 +1,9 @@
 import sqlite3
-
-conn = sqlite3.connect(r'C:\mediateka\plugins\media_organizer\media.db')
-cursor = conn.cursor()
-
-# List tables
-cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-print('Tables:', [row[0] for row in cursor.fetchall()])
-
-# Media columns
-cursor.execute('PRAGMA table_info(media)')
-print('\nmedia columns:')
-for row in cursor.fetchall():
-    print(f'  {row}')
-
-# series_episodes columns
-cursor.execute('PRAGMA table_info(series_episodes)')
-print('\nseries_episodes columns:')
-for row in cursor.fetchall():
-    print(f'  {row}')
-
+db = 'plugins/media_organizer/data/media.db'
+conn = sqlite3.connect(db)
+tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+print('Tables:', tables)
+for t in tables:
+    info = conn.execute(f"PRAGMA table_info({t[0]})").fetchall()
+    print(f'{t[0]} columns:', [r[1] for r in info])
 conn.close()

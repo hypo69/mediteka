@@ -134,6 +134,9 @@ def rag_search_tool(query: str, top_k: int = 5, api_key: str = '') -> str:
     """
     rag = get_media_rag(api_key)
     if rag.count() == 0:
-        return json.dumps({'error': 'RAG-индекс пуст. Выполни команду: rebuild_rag'}, ensure_ascii=False)
+        return json.dumps({
+            'message': 'RAG-индекс пуст. База данных медиатеки ещё не проиндексирована. Чтобы осуществлять семантический поиск, необходимо запустить перестроение индекса (команда rebuild_rag).',
+            'results': []
+        }, ensure_ascii=False)
     results = rag.search(query, top_k=top_k, threshold=0.3)
     return json.dumps(results, ensure_ascii=False, indent=2)

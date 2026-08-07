@@ -1,7 +1,7 @@
 {
   "user_id": "anon_testclient",
   "created_at": 1785758927.1008117,
-  "updated_at": 1785824845.7065372,
+  "updated_at": 1786111096.9559755,
   "watch_history": {},
   "last_watched": null,
   "search_history": [
@@ -16,6 +16,10 @@
     {
       "query": "Титаник",
       "timestamp": 1785824845.7065027
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786111096.955947
     }
   ],
   "preferences": {

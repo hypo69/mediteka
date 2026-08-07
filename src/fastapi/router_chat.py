@@ -75,16 +75,17 @@ def get_chat_model(selected_model_name: str, system_instruction: str = None):
         )
 
 
-def init_router(model, plugins: dict) -> APIRouter:
-    """Инициализация роутера чата с привязкой модели и плагинов."""
+def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
+    """Инициализация роутера чата с привязкой моделей (chat и narrator) и плагинов."""
 
     @router.get('/models')
     async def get_models() -> dict:
         """Получение списка доступных моделей, сгруппированных по провайдеру."""
-        from src.ai.gemini.generative_ai import _AVAILABLE_MODELS
+        from src.ai.gemini.generative_ai import GoogleGenerativeAI
         import os
-        
-        gemini_models = list(_AVAILABLE_MODELS)
+
+        gemini_models = await asyncio.to_thread(GoogleGenerativeAI.get_available_models)
+
         foundry_models = []
         
         use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')
@@ -92,7 +93,7 @@ def init_router(model, plugins: dict) -> APIRouter:
             foundry_model_id = os.getenv('FOUNDRY_MODEL_ID', 'qwen3-0.6b-generic-cpu:4')
             foundry_models.append(foundry_model_id)
             
-        agy_models = ['agy-flash', 'agy-pro']
+        agy_models = [f"agy-{m}" for m in gemini_models]
         logger.info(f"Returning available agy models: {agy_models}")
         
         return {
@@ -117,7 +118,7 @@ def init_router(model, plugins: dict) -> APIRouter:
 
     @router.post('/save-rag')
     async def save_to_rag(request: SaveRagRequest, fastapi_req: Request):
-        """Ручное сохранение ответа (текст + голос) в персональный RAG пользователя."""
+        """Ручное сохранение одобренного ответа: в персональный FAISS RAG + JSON-хранилище."""
         try:
             token = fastapi_req.cookies.get('auth_token')
             user_identifier = None
@@ -134,19 +135,27 @@ def init_router(model, plugins: dict) -> APIRouter:
                 client_ip = fastapi_req.client.host if fastapi_req.client else 'unknown'
                 user_identifier = f"anon_{client_ip}"
 
-            api_key = getattr(model, 'api_key', '') or ''
+            api_key = getattr(chat_model, 'api_key', '') or ''
             if not api_key:
                 from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
                 api_key = _get_gemini_api_key()
 
             combined_response = f"Текст для чата:\n{request.chat_text}\n\nТекст для диктора:\n{request.voice_text}"
 
-            success = await asyncio.to_thread(
+            # 1. Индексация в FAISS (текущая логика)
+            rag_success = await asyncio.to_thread(
                 index_user_query, user_identifier, api_key, request.query, combined_response
             )
-            
-            if success:
-                return {"status": "success", "message": "Успешно сохранено в RAG"}
+
+            # 2. Сохранение в JSON-хранилище (fire-and-forget)
+            from src.ai.gemini.chat_response_store import save_approved_response
+            asyncio.ensure_future(asyncio.to_thread(
+                save_approved_response,
+                user_identifier, request.query, request.chat_text, request.voice_text
+            ))
+
+            if rag_success:
+                return {"status": "success", "message": "Успешно сохранено в RAG и JSON-хранилище"}
             else:
                 raise HTTPException(status_code=500, detail="Ошибка сохранения в RAG")
         except Exception as e:
@@ -197,17 +206,13 @@ def init_router(model, plugins: dict) -> APIRouter:
                         client_ip = fastapi_req.client.host if fastapi_req.client else 'unknown'
                         user_identifier = f"anon_{client_ip}"
 
-                    api_key = getattr(model, 'api_key', '') or ''
-                    # Default to model for fallback if no active_model set yet
-                    active_model = model
+                    api_key = getattr(chat_model, 'api_key', '') or ''
                     if not api_key:
                         from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
                         api_key = _get_gemini_api_key()
 
-                    # Извлекаем контекст из персонального RAG пользователя и из профиля предпочтений
+                    # RAG-контекст (то же что и в prod)
                     user_context_str = ""
-
-                    # Проверяем, нужно ли игнорировать старый контекст
                     skip_past_context = False
                     clean_msg = request.message.strip().lower()
                     if len(clean_msg) < 25:
@@ -228,58 +233,53 @@ def init_router(model, plugins: dict) -> APIRouter:
                         )
                         if past_context:
                             snippets = [item['text'] for item in past_context]
-                            user_context_str = "\n[Контекст из предыдущих обсуждений пользователя]:\n" + "\n---\n".join(snippets)
+                            user_context_str = "\n[Контекст из предыдущих обсуждений]:\n" + "\n---\n".join(snippets)
 
-                    # Профиль предпочтений
                     from src.user_manager.user_profile import get_recommendation_context
                     pref_context = await asyncio.to_thread(get_recommendation_context, user_identifier)
                     if pref_context:
-                        user_context_str = f"{user_context_str}\n\n[Профиль предпочтений пользователя]:\n{pref_context}".strip()
+                        user_context_str = f"{user_context_str}\n\n[Профиль предпочтений]:\n{pref_context}".strip()
 
-                    final_system_instruction = final_system_instruction or getattr(model, 'system_instruction', None)
-                    
-                    # Voice gender instruction
+                    # Гендер голоса
                     voice_gender_instruction = ""
                     tts_voice = settings.get('tts_voice', '') or os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")
                     voice_lower = tts_voice.lower()
                     is_male_voice = any(name in voice_lower for name in ("dmitry", "yaraslaus", "male", "bayan", "aidar", "eugene", "georgy"))
                     is_female_voice = any(name in voice_lower for name in ("svetlana", "elena", "female", "kseniya", "tanya", "aliona", "dariya"))
                     if is_male_voice:
-                        voice_gender_instruction = "IMPORTANT: Выбран мужской голос озвучки. Модель должна отвечать строго от женского лица (в женском роде, используя глаголы и местоимения женского рода: 'я пошла', 'я сделала' и т.д.)."
+                        voice_gender_instruction = "Отвечай от женского лица."
                     elif is_female_voice:
-                        voice_gender_instruction = "IMPORTANT: Выбран женский голос озвучки. Модель должна отвечать строго от мужского лица (в мужском роде, используя глаголы и местоимения мужского рода: 'я пошел', 'я сделал' и т.д.)."
+                        voice_gender_instruction = "Отвечай от мужского лица."
 
-                    if voice_gender_instruction:
-                        if final_system_instruction:
-                            final_system_instruction = f"{final_system_instruction}\n\n{voice_gender_instruction}"
-                        else:
-                            final_system_instruction = voice_gender_instruction
-
-                    if user_context_str:
-                        if final_system_instruction:
-                            final_system_instruction = f"{final_system_instruction}\n\n{user_context_str}"
-                        else:
-                            final_system_instruction = user_context_str
-
-                    # Build the full prompt
+                    # Собираем debug-вывод: только те данные, которые реально отправляются в запросе к API
                     full_prompt_parts = []
-                    if final_system_instruction:
-                        full_prompt_parts.append(f"SYSTEM INSTRUCTION:\n{final_system_instruction}")
-                    
-                    if request.history:
-                        full_prompt_parts.append("CHAT HISTORY:\n" + "\n---\n".join([
-                            f"{entry.get('role', 'unknown').upper()}:\n{entry.get('parts', [''])[0] if isinstance(entry.get('parts'), list) else entry.get('parts', '')}"
-                            for entry in request.history[-5:]  # Last 5 messages
-                        ]))
-                    
-                    full_prompt_parts.append(f"USER MESSAGE:\n{request.message}")
 
-                    full_prompt_text = "\n\n=== FULL PROMPT TO BE SENT TO MODEL ===\n" + "\n\n".join(full_prompt_parts)
+                    # 1. Динамическая добавка (гендер + RAG-контекст)
+                    dynamic_parts = []
+                    if voice_gender_instruction:
+                        dynamic_parts.append(voice_gender_instruction)
+                    if user_context_str:
+                        dynamic_parts.append(user_context_str)
+                    if dynamic_parts:
+                        full_prompt_parts.append("── DYNAMIC CONTEXT ──\n" + "\n\n".join(dynamic_parts))
+
+                    # 2. История
+                    if request.history:
+                        full_prompt_parts.append("── CHAT HISTORY (последние 5) ──\n" + "\n---\n".join([
+                            f"{entry.get('role', 'unknown').upper()}:\n{entry.get('parts', [''])[0] if isinstance(entry.get('parts'), list) else entry.get('parts', '')}"
+                            for entry in request.history[-5:]
+                        ]))
+
+                    # 3. Сообщение пользователя
+                    full_prompt_parts.append(f"── USER MESSAGE ──\n{request.message}")
+
+                    full_prompt_text = "\n\n".join(full_prompt_parts)
 
                     yield f"data: {json.dumps({'status': 'DEBUG MODE: Промпт сформирован, не отправляется в модель'})}\n\n"
                     yield f"data: {json.dumps({'text': full_prompt_text})}\n\n"
 
                     return
+
 
                 # Извлечение данных пользователя / IP для User RAG
                 token = fastapi_req.cookies.get('auth_token')
@@ -303,90 +303,13 @@ def init_router(model, plugins: dict) -> APIRouter:
                     client_ip = fastapi_req.client.host if fastapi_req.client else 'unknown'
                     user_identifier = f"anon_{client_ip}"
 
-                api_key = getattr(model, 'api_key', '') or ''
-                # Default to model for fallback if no active_model set yet
-                active_model = model
+                api_key = getattr(chat_model, 'api_key', '') or ''
+                active_model = chat_model
                 if not api_key:
                     from plugins.media_organizer.core.media_rag_functions import _get_gemini_api_key
                     api_key = _get_gemini_api_key()
 
-                # Извлекаем контекст из персонального RAG пользователя и из профиля предпочтений
-                user_context_str = ""
-
-                # Проверяем, нужно ли игнорировать старый контекст для простых управляющих слов/продолжений
-                skip_past_context = False
-                clean_msg = request.message.strip().lower()
-                if len(clean_msg) < 25:
-                    control_words = {
-                        'да', 'нет', 'yes', 'no', 'ок', 'ok', 'хочу', 'конечно',
-                        'давай', 'проверь', 'найди', 'покажи', 'ладно', 'угу', 'yep', 'sure',
-                        'want', 'check', 'find', 'show', 'okay', 'отлично',
-                        'включи', 'запусти', 'play', 'start', 'open', 'открой', 'включай', 'запускай',
-                        'поставь', 'вруби', 'воспроизведи', 'сейчас', 'now', 'go'
-                    }
-                    words = set(clean_msg.replace('!', ' ').replace('.', ' ').replace(',', ' ').split())
-                    if words & control_words:
-                        skip_past_context = True
-
-                if api_key and user_identifier and len(request.message.strip()) >= 5 and not skip_past_context:
-                    # search_user_context makes a Gemini embedding HTTP call — run in thread pool
-                    past_context = await asyncio.to_thread(
-                        search_user_context, user_identifier, api_key, request.message, 2, 0.45
-                    )
-                    if past_context:
-                        snippets = [item['text'] for item in past_context]
-                        user_context_str = "\n[Контекст из предыдущих обсуждений пользователя]:\n" + "\n---\n".join(snippets)
-
-                # Профиль предпочтений и просмотров для рекомендательной системы
-                from src.user_manager.user_profile import get_recommendation_context
-                pref_context = await asyncio.to_thread(get_recommendation_context, user_identifier)
-                if pref_context:
-                    user_context_str = f"{user_context_str}\n\n[Профиль предпочтений пользователя]:\n{pref_context}".strip()
-
-                final_system_instruction = system_instruction or getattr(model, 'system_instruction', None)
-                
-                # Динамическая коррекция рода ответа под голос (если мужской -> женский род, если женский -> мужской род)
-                voice_gender_instruction = ""
-                tts_voice = settings.get('tts_voice', '') or os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")
-                voice_lower = tts_voice.lower()
-                is_male_voice = any(name in voice_lower for name in ("dmitry", "yaraslaus", "male", "bayan", "aidar", "eugene", "georgy"))
-                is_female_voice = any(name in voice_lower for name in ("svetlana", "elena", "female", "kseniya", "tanya", "aliona", "dariya"))
-                if is_male_voice:
-                    voice_gender_instruction = "IMPORTANT: Выбран мужской голос озвучки. Модель должна отвечать строго от женского лица (в женском роде, используя глаголы и местоимения женского рода: 'я пошла', 'я сделала' и т.д.)."
-                elif is_female_voice:
-                    voice_gender_instruction = "IMPORTANT: Выбран женский голос озвучки. Модель должна отвечать строго от мужского лица (в мужском роде, используя глаголы и местоимения мужского рода: 'я пошел', 'я сделал' и т.д.)."
-
-                if voice_gender_instruction:
-                    if final_system_instruction:
-                        final_system_instruction = f"{final_system_instruction}\n\n{voice_gender_instruction}"
-                    else:
-                        final_system_instruction = voice_gender_instruction
-
-                if user_context_str:
-                    if final_system_instruction:
-                        final_system_instruction = f"{final_system_instruction}\n\n{user_context_str}"
-                    else:
-                        final_system_instruction = user_context_str
-
-                from src.fastapi.router_control import get_room_id
-                room_id = get_room_id(token, None)
-                kwargs = {
-                    'system_instruction': final_system_instruction,
-                    'history': request.history,
-                    'room_id': room_id,
-                }
-                # Determine which model instance to use
-                if selected_model:
-                    active_model = get_chat_model(selected_model, final_system_instruction)
-                    api_key = getattr(active_model, 'api_key', '') or getattr(model, 'api_key', '') or ''
-                else:
-                    active_model = model
-                    if hasattr(active_model, 'system_instruction'):
-                        active_model.system_instruction = final_system_instruction
-
-                yield f"data: {json.dumps({'status': 'Проверка плагинов...'})}\n\n"
-
-                # Проверяем, подходит ли запрос под медиа-плагин RAG.
+                # Определяем, относится ли запрос к медиатеке
                 is_media = False
                 rag_plugin = plugins.get('rag')
                 if rag_plugin and hasattr(rag_plugin, '_is_media_query'):
@@ -405,6 +328,116 @@ def init_router(model, plugins: dict) -> APIRouter:
                                 break
                         if last_model_text and rag_plugin._is_media_query(last_model_text):
                             is_media = True
+
+                # Извлекаем контекст из персонального RAG пользователя и из профиля предпочтений
+                user_context_str = ""
+
+                # Проверяем, нужно ли игнорировать старый контекст для простых управляющих слов/продолжений или прямых медиа-поисков
+                skip_past_context = False
+                if is_media:
+                    # Для прямого поиска/описания медиа старый RAG-контекст не нужен (предотвращает дубликаты)
+                    skip_past_context = True
+                else:
+                    clean_msg = request.message.strip().lower()
+                    if len(clean_msg) < 25:
+                        control_words = {
+                            'да', 'нет', 'yes', 'no', 'ок', 'ok', 'хочу', 'конечно',
+                            'давай', 'проверь', 'найди', 'покажи', 'ладно', 'угу', 'yep', 'sure',
+                            'want', 'check', 'find', 'show', 'okay', 'отлично',
+                            'включи', 'запусти', 'play', 'start', 'open', 'открой', 'включай', 'запускай',
+                            'поставь', 'вруби', 'воспроизведи', 'сейчас', 'now', 'go'
+                        }
+                        words = set(clean_msg.replace('!', ' ').replace('.', ' ').replace(',', ' ').split())
+                        if words & control_words:
+                            skip_past_context = True
+
+                if api_key and user_identifier and len(request.message.strip()) >= 5 and not skip_past_context:
+                    # search_user_context makes a Gemini embedding HTTP call — run in thread pool
+                    past_context = await asyncio.to_thread(
+                        search_user_context, user_identifier, api_key, request.message, 2, 0.45
+                    )
+                    if past_context:
+                        snippets = [item['text'] for item in past_context]
+                        user_context_str = "\n[Контекст из предыдущих обсуждений пользователя]:\n" + "\n---\n".join(snippets)
+
+                # Профиль предпочтений и просмотров для рекомендательной системы
+                from src.user_manager.user_profile import get_recommendation_context
+                pref_context = await asyncio.to_thread(get_recommendation_context, user_identifier)
+                if pref_context:
+                    # Если RAG пропущен, профиль предпочтений все равно можно оставить
+                    user_context_str = f"{user_context_str}\n\n[Профиль предпочтений пользователя]:\n{pref_context}".strip()
+
+                # Собираем динамическую добавку (гендер + RAG-контекст)
+                dynamic_context_parts = []
+                
+                # 1. Гендерное правило
+                voice_gender_instruction = ""
+                tts_voice = settings.get('tts_voice', '') or os.getenv("TTS_VOICE", "ru-RU-DmitryNeural")
+                voice_lower = tts_voice.lower()
+                is_male_voice = any(name in voice_lower for name in ("dmitry", "yaraslaus", "male", "bayan", "aidar", "eugene", "georgy"))
+                is_female_voice = any(name in voice_lower for name in ("svetlana", "elena", "female", "kseniya", "tanya", "aliona", "dariya"))
+                if is_male_voice:
+                    voice_gender_instruction = "Отвечай от женского лица."
+                elif is_female_voice:
+                    voice_gender_instruction = "Отвечай от мужского лица."
+                
+                if voice_gender_instruction:
+                    dynamic_context_parts.append(f"[Правило]: {voice_gender_instruction}")
+                
+                # 2. Контекст из RAG и предпочтений
+                if user_context_str:
+                    dynamic_context_parts.append(user_context_str)
+
+                # Внедряем динамический контекст в начало сообщения пользователя, если он есть
+                user_msg_with_context = request.message
+                if dynamic_context_parts:
+                    user_msg_with_context = "\n\n".join(dynamic_context_parts) + "\n\n[Запрос пользователя]:\n" + request.message
+
+                from src.fastapi.router_control import get_room_id
+                room_id = get_room_id(token, None)
+                
+                # Фильтруем историю перед передачей в модель:
+                # убираем пустые, ошибочные и статусные сообщения, ограничиваем глубину
+                _ERROR_PREFIXES = ('❌', 'Ошибка', 'Error', 'TypeError', 'AttributeError', 'Traceback')
+                _STATUS_PREFIXES = ('🔍', '🌐', '🤖', '🛠️', '🎡', '📡', 'Вызов плагина', 'Генерация', 'Проверка')
+
+                def _is_clean_entry(entry: dict) -> bool:
+                    parts = entry.get('parts', [])
+                    text = ''
+                    if isinstance(parts, list) and parts:
+                        p = parts[0]
+                        text = p if isinstance(p, str) else p.get('text', '') if isinstance(p, dict) else ''
+                    elif isinstance(parts, str):
+                        text = parts
+                    text = (text or '').strip()
+                    if not text:
+                        return False
+                    if any(text.startswith(pfx) for pfx in _ERROR_PREFIXES):
+                        return False
+                    if any(text.startswith(pfx) for pfx in _STATUS_PREFIXES):
+                        return False
+                    return True
+
+                clean_history = [e for e in (request.history or []) if _is_clean_entry(e)]
+                # Берём не более последних 10 сообщений (5 пар user/model)
+                clean_history = clean_history[-10:]
+
+                kwargs = {
+                    'history': clean_history,
+                    'room_id': room_id,
+                }
+                
+                # Выбираем инстанс модели
+                if selected_model:
+                    active_model = get_chat_model(selected_model, None)
+                    api_key = getattr(active_model, 'api_key', '') or getattr(chat_model, 'api_key', '') or ''
+                else:
+                    active_model = chat_model
+
+                yield f"data: {json.dumps({'status': 'Проверка плагинов...'})}\n\n"
+
+                # Проверяем, подходит ли запрос под медиа-плагин RAG.
+                # is_media уже вычислено выше в начале функции.
 
                 full_response_text = ""
 
@@ -440,24 +473,25 @@ def init_router(model, plugins: dict) -> APIRouter:
 
                     import inspect
                     if inspect.isasyncgen(response):
-                        yielded_any = False
+                        has_text = False
                         async for chunk in response:
-                            yielded_any = True
                             if 'status' in chunk:
                                 yield f"data: {json.dumps({'status': chunk['status']})}\n\n"
-                            if 'text' in chunk:
-                                full_response_text += chunk['text']
+                            if 'text' in chunk and chunk['text'] is not None:
+                                has_text = True
+                                full_response_text += str(chunk['text'])
                                 yield f"data: {json.dumps({'text': chunk['text']})}\n\n"
                             if 'voice' in chunk:
                                 yield f"data: {json.dumps({'voice': chunk['voice']})}\n\n"
 
-                        if yielded_any:
+                        if has_text:
                             if full_response_text and api_key and user_identifier:
                                 # Fire-and-forget: index in background, don't block the response
                                 asyncio.ensure_future(asyncio.to_thread(
                                     index_user_query, user_identifier, api_key, request.message, full_response_text
                                 ))
                             return
+                        # Плагин ничего не нашёл — продолжаем к нативной модели
                     elif response:
                         full_response_text = str(response)
                         yield f"data: {json.dumps({'status': f'{plugin_name} вернул ответ', 'text': full_response_text})}\n\n"
@@ -468,55 +502,52 @@ def init_router(model, plugins: dict) -> APIRouter:
                         return
 
                 if is_media:
-                    yield f"data: {json.dumps({'error': 'Не удалось найти информацию в базе данных медиатеки'})}\n\n"
-                    return
-
-                is_rc = request.generation_config.get('is_rc', False)
-                targets = ['voice', 'chat'] if is_rc else ['chat', 'voice']
+                    yield f"data: {json.dumps({'status': 'Медиа не найдено в базе. Поиск в интернете...'})}\n\n"
+                    # Модель имеет встроенный инструмент Google Search Grounding (types.GoogleSearch() в generative_ai.py),
+                    # поэтому мы просто продолжаем генерацию. Модель сама найдет информацию в интернете.
 
                 yield f"data: {json.dumps({'status': 'Генерация (этап 1)...'})}\n\n"
                 
                 chat_kwargs_1 = kwargs.copy()
-                chat_kwargs_1.pop('room_id', None)
+                chat_kwargs_1.pop('room_id', '')
                 gen_cfg_1 = request.generation_config.copy()
-                gen_cfg_1['response_type'] = targets[0]
+                gen_cfg_1['response_type'] = 'chat'
                 chat_kwargs_1['generation_config'] = gen_cfg_1
+
+                stream_generator_1 = active_model.chat_stream(user_msg_with_context, **chat_kwargs_1)
                 
-                stream_generator_1 = active_model.chat_stream(request.message, **chat_kwargs_1)
-                
-                response_1 = ""
-                key_1 = "voice" if targets[0] == "voice" else "text"
+                chat_response = ""
                 async for chunk in stream_generator_1:
                     if chunk:
                         c = chunk.replace("[CHAT]", "").replace("[VOICE]", "")
                         if c:
-                            response_1 += c
-                            yield f"data: {json.dumps({key_1: c})}\n\n"
+                            chat_response += c
+                            yield f"data: {json.dumps({'text': c})}\n\n"
                 
-                if response_1:
+                voice_response = ""
+                if chat_response:
                     yield f"data: {json.dumps({'status': 'Генерация (этап 2)...'})}\n\n"
                     
                     chat_kwargs_2 = kwargs.copy()
-                    chat_kwargs_2.pop('room_id', None)
+                    chat_kwargs_2.pop('room_id', '')
+                    chat_kwargs_2['history'] = []  # Narrator работает без истории
+                    
                     gen_cfg_2 = request.generation_config.copy()
-                    gen_cfg_2['response_type'] = targets[1]
+                    gen_cfg_2['response_type'] = 'voice'
                     chat_kwargs_2['generation_config'] = gen_cfg_2
                     
-                    q2 = f"{request.message}\n\nОпираясь на твой предыдущий ответ:\n{response_1}\n\nСгенерируй версию для {'диктора' if targets[1] == 'voice' else 'чата'}."
-                    stream_generator_2 = active_model.chat_stream(q2, **chat_kwargs_2)
-                    
-                    response_2 = ""
-                    key_2 = "voice" if targets[1] == "voice" else "text"
+                    # На вход Narrator получает готовое каноническое описание от Chat
+                    q2 = chat_response
+
+                    stream_generator_2 = narrator_model.chat_stream(q2, **chat_kwargs_2)
                     async for chunk in stream_generator_2:
                         if chunk:
                             c = chunk.replace("[CHAT]", "").replace("[VOICE]", "")
                             if c:
-                                response_2 += c
-                                yield f"data: {json.dumps({key_2: c})}\n\n"
-                    
-                    full_response_text = response_1 if targets[0] == 'chat' else response_2
-                else:
-                    full_response_text = ""
+                                voice_response += c
+                                yield f"data: {json.dumps({'voice': c})}\n\n"
+                
+                full_response_text = chat_response
 
                 # Автоматическая индексация успешного ответа в User RAG (fire-and-forget, не блокирует ответ)
                 if full_response_text and api_key and user_identifier:

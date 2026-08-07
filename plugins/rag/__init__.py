@@ -147,26 +147,16 @@ class RAGPlugin(BasePlugin):
 
             results = results_data.get("results", [])
 
-            # Поиск в интернете через Playwright, если локально ничего не найдено или запрошен интернет-поиск
-            web_context = ""
-            if not results or any(x in low_message for x in ["интернет", "форум", "гугл", "поищи", "ddg"]):
-                yield {"status": "🌐 Поиск информации в интернете через Playwright..."}
-                try:
-                    from plugins.web_search.playwright_searcher import PlaywrightWebSearcher
-                    web_searcher = PlaywrightWebSearcher()
-                    web_context = await web_searcher.search_and_extract(message)
-                except Exception as playwright_err:
-                    logger.error(f"Ошибка при работе PlaywrightWebSearcher: {playwright_err}")
-                    web_context = "Не удалось выполнить поиск в интернете через Playwright."
+            # Если RAG пустой — выходим без ответа, fallback идёт в router_chat нативным Gemini + Google Search Grounding
+            if not results:
+                return
 
             # Определяем, нужен ли вызов Gemini для генерации естественного ответа
             conversational_keywords = ["посоветуй", "рекомендуй", "расскажи", "кто", "как", "почему", "о чём", "какой", "что", "где", "когда", "чей", "какие", "подробнее"]
             is_conversational = (
-                "?" in message or 
+                "?" in message or
                 any(w in low_message for w in conversational_keywords) or
-                not results or
-                kwargs.get("history") or
-                web_context
+                kwargs.get("history")
             )
 
             if is_conversational:
@@ -181,7 +171,7 @@ class RAGPlugin(BasePlugin):
                         plot_desc = card_data.get('plot') or card_data.get('why_watch') or "Нет описания."
                         genres_str = ", ".join(card_data.get('genres', []))
                         cast_str = ", ".join(card_data.get('cast', []))
-                        
+
                         item_ctx = (
                             f"{idx}. {item.get('title')} ({item.get('year') or '?'})\n"
                             f"   Тип: {item.get('type')}, Категория: {item.get('category')}, Диск: {item.get('disk_name')}\n"
@@ -194,17 +184,15 @@ class RAGPlugin(BasePlugin):
                         context_parts.append(f"{idx}. {item.get('title')} ({item.get('year') or '?'})")
 
                 context_str = "\n\n".join(context_parts)
-                
+
                 system_prompt = (
-                    f"Ты — AI Assistant домашней медиатеки кино.davidka.net. Тебе предоставлены результаты локального RAG-поиска и внешнего веб-поиска по запросу пользователя.\n"
-                    f"Используй эти результаты для построения подробного, вежливого и структурированного ответа на русском языке.\n"
-                    f"Если фильм/сериал найден, обязательно используй тег <film>Название на русском</film> при его упоминании, чтобы система плеера могла автоматически запустить его.\n"
-                    f"Если информация взята из интернета, вежливо упомяни, что в локальной медиатеке этого фильма/сериала или таких подробностей нет.\n"
-                    f"В случае запроса подробного сюжета по сериям, перескажи его максимально детально на основе найденного контекста, без использования местоимения «это» в начале абзацев.\n"
-                    f"ВАЖНО: Если пользователь просит информацию о сериале с несколькими сезонами, не пытайся описать их все в одном ответе! Чтобы ответы не были слишком большими, описывай по одному сезону (начиная с первого, включая финалы и важные события). "
-                    f"В конце ответа добавь специальный тег с запросом на следующий сезон, например: [NEXT_QUERY]Расскажи подробно про 2 сезон[/NEXT_QUERY]. Система автоматически отправит его как следующий вопрос.\n\n"
-                    f"Результаты поиска в локальной медиатеке:\n{context_str}\n\n"
-                    f"{web_context}"
+                    "Ты — AI Assistant домашней медиатеки кино.davidka.net. Тебе предоставлены результаты локального RAG-поиска по запросу пользователя.\n"
+                    "Используй эти результаты для построения подробного, вежливого и структурированного ответа на русском языке.\n"
+                    "Если фильм/сериал найден, обязательно используй тег <film>Название на русском</film> при его упоминании, чтобы система плеера могла автоматически запустить его.\n"
+                    "В случае запроса подробного сюжета по сериям, перескажи его максимально детально на основе найденного контекста, без использования местоимения «это» в начале абзацев.\n"
+                    "ВАЖНО: Если пользователь просит информацию о сериале с несколькими сезонами, описывай по одному сезону. "
+                    "В конце ответа добавь тег: [NEXT_QUERY]Расскажи подробно про 2 сезон[/NEXT_QUERY].\n\n"
+                    f"Результаты поиска в локальной медиатеке:\n{context_str}"
                 )
 
                 answer = await self.ai.chat(

@@ -106,10 +106,19 @@ async function initInterface() {
   
   // Фокусировать поле ввода при переключении на вкладку чата
   document.addEventListener('shown.bs.tab', (e) => {
-    if (e.target.getAttribute('data-bs-target') === '#tab-chat') {
+    const target = e.target.getAttribute('data-bs-target');
+    if (target === '#tab-chat') {
       const msgInput = document.getElementById('message-input');
       if (msgInput) {
         msgInput.focus();
+      }
+    } else if (target === '#tab-instructions') {
+      console.log('[AdminInterface] Switching to instructions tab...');
+      // Инициализация вкладки инструкций при переключении
+      if (window.initInstructionsTab) {
+        window.initInstructionsTab();
+      } else {
+        console.error('[AdminInterface] initInstructionsTab not found!');
       }
     }
   });
@@ -179,18 +188,27 @@ async function loadTabContent(tabName, url, jsOverrideSrc) {
     
     // Load JS for the tab (use override path if provided)
     const script = document.createElement('script');
+    script.type = 'module';
     const cacheBuster = Date.now();
     script.src = jsOverrideSrc || `/html/${tabName}/main.js?v=${cacheBuster}`;
     script.onload = () => {
-      if (window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]) {
-        window[`init${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`]();
+      console.log(`[Admin] Loaded JS for ${tabName}`);
+      const initFuncName = 'init' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab';
+      if (window[initFuncName]) {
+        console.log(`[Admin] Calling ${initFuncName} for ${tabName}`);
+        window[initFuncName]();
+      } else {
+        console.error(`[Admin] Init function ${initFuncName} not found for ${tabName}`);
       }
       applyTranslations();
     };
-    script.onerror = () => console.error(`Error loading JS for ${tabName}`);
+    script.onerror = (e) => {
+      console.error(`[Admin] Error loading JS for ${tabName}:`, e);
+    };
     container.appendChild(script);
+    console.log(`[Admin] Appended script for ${tabName}`);
   } catch (e) {
-    console.error(`Error loading tab ${tabName}:`, e);
+    console.error(`[Admin] Error loading tab ${tabName}:`, e);
     document.getElementById(`tab-${tabName}`).innerHTML = 
       `<div class="alert alert-danger">Ошибка загрузки: ${e.message}</div>`;
   }

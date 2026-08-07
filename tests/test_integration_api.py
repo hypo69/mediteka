@@ -41,7 +41,7 @@ class TestChatAPI:
         mock_model.chat_stream = AsyncMock()
         
         plugins = {}
-        app.include_router(init_router(mock_model, plugins))
+        app.include_router(init_router(mock_model, mock_model, plugins))
         
         client = TestClient(app)
         
@@ -189,7 +189,7 @@ class TestAuthAPI:
         
         app = FastAPI()
         mock_model = Mock()
-        app.include_router(init_router(mock_model, {}))
+        app.include_router(init_router(mock_model, mock_model, {}))
         
         client = TestClient(app)
         
