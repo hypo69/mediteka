@@ -148,8 +148,9 @@ async def startup_event():
     from plugins.media_organizer.core.drive_scanner import update_environment_drives
     update_environment_drives()
 
-    from src.logger.log_analyzer import start_log_analyzer
-    start_log_analyzer()
+    # Анализатор логов отключён — запускать вручную при необходимости
+    # from src.logger.log_analyzer import start_log_analyzer
+    # start_log_analyzer()
     
     if os.getenv('PRELOAD_SILERO', 'false').lower() in ('true', '1', 'yes'):
         from src.tts.silero import get_silero_model

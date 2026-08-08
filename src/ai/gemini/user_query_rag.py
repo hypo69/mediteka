@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import time
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -63,6 +64,49 @@ def get_user_rag(user_id, api_key: str) -> GeminiRAG:
     return GeminiRAG(api_key=api_key, db_path=db_path)
 
 
+def is_garbage_query(query: str) -> bool:
+    """Определяет, является ли запрос мусорным (не несущим полезной смысловой нагрузки)."""
+    q = query.strip().lower()
+    
+    # 1. Слишком короткие запросы
+    if len(q) < _MIN_QUERY_LEN:
+        return True
+        
+    # 2. Повторяющиеся символы (например, "aaaaaa" или "ыыыыы")
+    if re.search(r'(.)\1{4,}', q):
+        return True
+        
+    # 3. Чистый шум (только знаки препинания, спецсимволы или пробелы)
+    if not re.search(r'[a-zA-Zа-яА-Я0-9]', q):
+        return True
+        
+    # 4. Простые разговорные фразы / приветствия / благодарности / слова-заполнители
+    garbage_words = {
+        'привет', 'здравствуй', 'здравствуйте', 'добрый', 'день', 'вечер', 'утро',
+        'пока', 'свидания', 'встречи', 'прощай', 'спасибо', 'благодарю', 'пожалуйста',
+        'дела', 'жизнь', 'делаешь', 'ты', 'тут', 'эй', 'ау', 'тест', 'test', 'hello',
+        'hi', 'hey', 'good', 'morning', 'afternoon', 'evening', 'thank', 'you', 'thanks',
+        'please', 'bye', 'goodbye', 'how', 'are', 'whats', 'up', 'ok', 'ок', 'ладно', 'как',
+        'большое', 'не', 'за', 'что', 'да', 'нет', 'угу'
+    }
+    # Убираем знаки препинания для анализа слов
+    clean_q = re.sub(r'[^\w\s]', '', q).strip()
+    words = clean_q.split()
+    if words and all(w in garbage_words for w in words):
+        return True
+        
+    # 5. Keyboard mash (бессмысленный набор букв)
+    # Если в слове длиной более 6 символов нет ни одной гласной (для русского и английского)
+    for w in words:
+        if len(w) > 6:
+            # Для русского языка гласные: аеёиоуыэюя
+            # Для английского: aeiouy
+            if not re.search(r'[aeiouyаеёиоуыэюя]', w):
+                return True
+
+    return False
+
+
 def index_user_query(
     user_id,
     api_key: str,
@@ -71,7 +115,7 @@ def index_user_query(
 ) -> bool:
     """Индексирует пару (запрос пользователя + ответ модели) в персональный RAG.
 
-    Пропускает слишком короткие запросы и дубликаты (по хешу).
+    Пропускает слишком короткие/мусорные запросы и дубликаты (по хешу).
     При переполнении (> _MAX_DOCS_PER_USER) удаляет старейшие записи.
 
     Args:
@@ -86,8 +130,9 @@ def index_user_query(
     if not query or not response:
         return False
 
-    # Не индексируем очень короткие запросы (да / нет / ок)
-    if len(query.strip()) < _MIN_QUERY_LEN:
+    # Фильтруем мусорные запросы
+    if is_garbage_query(query):
+        logger.info(f"UserRAG [{user_id}]: запрос отфильтрован как мусорный: '{query}'")
         return False
 
     try:
@@ -107,6 +152,7 @@ def index_user_query(
                 "timestamp": time.time(),
                 "q": query[:500],
                 "response": response[:1000],
+                "is_manual": False
             },
         }])
         return True

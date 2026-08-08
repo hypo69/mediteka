@@ -49,22 +49,25 @@ class SaveRagRequest(BaseModel):
 
 def get_chat_model(selected_model_name: str, system_instruction: str = None):
     """Dynamically construct/retrieve the appropriate AI model instance."""
+    is_foundry = selected_model_name.startswith('foundry:')
     is_gemini = selected_model_name.startswith('gemini-') or 'gemini' in selected_model_name.lower()
     is_agy = selected_model_name.startswith('agy-') or 'agy' in selected_model_name.lower()
-    
-    if is_agy:
+
+    if is_foundry:
+        # Явный префикс foundry: для выбора Foundry модели
+        model_id = selected_model_name[len('foundry:'):]
+        from src.ai.foundry_chat import FoundryChatBase
+        return FoundryChatBase(
+            model_id=model_id,
+            system_prompt=system_instruction or "You are a helpful AI assistant.",
+        )
+    elif is_agy:
         from src.ai.agy_chat import AgyChatBase
         return AgyChatBase(
             model_id=selected_model_name,
             system_prompt=system_instruction or "You are a helpful AI assistant.",
         )
-    elif not is_gemini:
-        from src.ai.foundry_chat import FoundryChatBase
-        return FoundryChatBase(
-            model_id=selected_model_name,
-            system_prompt=system_instruction or "You are a helpful AI assistant.",
-        )
-    else:
+    elif is_gemini:
         from src.ai.gemini.generative_ai import GoogleGenerativeAI
         _api_key_names = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
         return GoogleGenerativeAI(
@@ -72,6 +75,13 @@ def get_chat_model(selected_model_name: str, system_instruction: str = None):
             api_key_names=_api_key_names,
             system_instruction=system_instruction,
             sleep_on_exhausted=False,
+        )
+    else:
+        # По умолчанию - Foundry для неизвестных моделей (обратная совместимость)
+        from src.ai.foundry_chat import FoundryChatBase
+        return FoundryChatBase(
+            model_id=selected_model_name,
+            system_prompt=system_instruction or "You are a helpful AI assistant.",
         )
 
 
@@ -87,11 +97,12 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
         gemini_models = await asyncio.to_thread(GoogleGenerativeAI.get_available_models)
 
         foundry_models = []
-        
+
         use_foundry = os.getenv('USE_FOUNDRY', 'false').lower() in ('true', '1', 'yes')
         if use_foundry:
             foundry_model_id = os.getenv('FOUNDRY_MODEL_ID', 'qwen3-0.6b-generic-cpu:4')
-            foundry_models.append(foundry_model_id)
+            # Добавляем с префиксом foundry: для явной идентификации
+            foundry_models.append(f"foundry:{foundry_model_id}")
             
         agy_models = [f"agy-{m}" for m in gemini_models]
         logger.info(f"Returning available agy models: {agy_models}")

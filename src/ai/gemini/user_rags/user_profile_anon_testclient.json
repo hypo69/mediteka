@@ -1,7 +1,7 @@
 {
   "user_id": "anon_testclient",
   "created_at": 1785758927.1008117,
-  "updated_at": 1786111096.9559755,
+  "updated_at": 1786122660.8448958,
   "watch_history": {},
   "last_watched": null,
   "search_history": [
@@ -20,6 +20,30 @@
     {
       "query": "Титаник",
       "timestamp": 1786111096.955947
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786114702.6986647
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786114899.323215
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786119042.3629193
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786119158.2493243
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786119554.0411305
+    },
+    {
+      "query": "Титаник",
+      "timestamp": 1786122660.844869
     }
   ],
   "preferences": {

@@ -105,7 +105,7 @@ async function loadTabContent(tabName, url) {
     
     // Загрузка JS файла вкладки
     const script = document.createElement('script');
-    script.src = `/html/${tabName}/main.js?v=20260725`;
+    script.src = `/html/${tabName}/main.js?v=20260808`;
     if (tabName === 'admin') {
       script.type = 'module';
     }

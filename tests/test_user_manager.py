@@ -28,13 +28,15 @@ class TestUserProfile:
     """Тесты user_profile.py."""
 
     def test_get_profile_path(self):
-        """Тест получения пути к профилю."""
+        """Тест получения пути к профилю - проверка структуры пути."""
         from src.user_manager.user_profile import _get_profile_path
         
         result = _get_profile_path(1)
         
         assert isinstance(result, Path)
-        assert "user_1" in str(result)
+        # Проверяем что путь содержит user_profile_1
+        assert "user_profile_1" in str(result)
+        assert result.suffix == ".json"
 
     def test_default_profile_structure(self):
         """Тест структуры профиля по умолчанию."""
@@ -43,9 +45,14 @@ class TestUserProfile:
         result = _default_profile_structure(1)
         
         assert isinstance(result, dict)
-        assert 'last_watched' in result
-        assert 'preferences' in result
-        assert 'settings' in result
+        # Проверяем ключевые поля структуры профиля
+        assert 'user_id' in result
+        assert 'created_at' in result
+        assert 'updated_at' in result
+        assert 'watch_history' in result
+        assert 'last_watched' in result  # Может быть None
+        assert 'search_history' in result
+        assert 'preferences' in result  # Используется 'preferences', не 'settings'
 
     def test_load_user_profile(self, tmp_path):
         """Тест загрузки профиля."""

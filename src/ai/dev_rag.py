@@ -73,7 +73,7 @@ def build_dev_rag(api_key: str) -> GeminiRAG:
 
 def get_dev_rag(api_key: str) -> GeminiRAG:
     """Получение индекса разработчика."""
-    return GeminiRAG(api_key=api_key, db_path=str(DEV_RAG_DB))
+    return GeminiRAG(api_key=api_key, db_path=DEV_RAG_DB)
 
 def rag_search_tool(query: str, top_k: int = 3, api_key: str = '') -> str:
     """Семантический поиск по коду и документации через RAG-индекс.

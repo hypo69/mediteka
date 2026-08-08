@@ -7,6 +7,9 @@ let systemInstruction = null; // Хранит системную инструк�
 
 function clearChatHistory() {
   chatHistory = [];
+  try {
+    localStorage.removeItem('chat_history');
+  } catch (e) {}
   const chatWindow = document.getElementById('chat-window');
   if (!chatWindow) return;
   chatWindow.innerHTML = '';
@@ -26,6 +29,22 @@ function initChatTab() {
     welcome.innerHTML = '<strong>Ai Ассистент</strong> (System): Добро пожаловать в чат! Можете спрашивать о фильмах и сериалах — я покажу путь к файлу и смогу открыть его в плеере.';
     chatWindow.appendChild(welcome);
     chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    // Загрузка сохраненной истории из localStorage
+    try {
+      const stored = localStorage.getItem('chat_history');
+      if (stored) {
+        chatHistory = JSON.parse(stored);
+        chatHistory.forEach(msg => {
+          const role = msg.role === 'model' ? 'bot' : 'user';
+          const text = msg.parts[0];
+          addMessage(role, text);
+        });
+      }
+    } catch (e) {
+      console.error('Failed to load chat history:', e);
+      chatHistory = [];
+    }
 
     // Загрузка системной инструкции
     loadSystemInstruction();
@@ -424,6 +443,9 @@ async function sendMessage() {
 
       // Добавляем сообщение пользователя в историю (но не ответ бота, так как это не реальный ответ модели)
       chatHistory.push({ role: 'user', parts: [msg] });
+      try {
+        localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+      } catch (e) {}
 
       // В DEBUG режиме мы получаем полный промпт в тексте
       textDiv.innerHTML = `<div style="background: rgba(255, 235, 59, 0.1); border: 1px solid #ffeb3b; border-radius: 8px; padding: 15px; margin-top: 10px;">
@@ -452,6 +474,9 @@ async function sendMessage() {
     finally { btn.disabled = false; btn.textContent = 'Отправить'; }
     return;
   }
+
+  // Показываем запрос пользователя
+  addMessage('user', msg);
 
   const win = document.getElementById('chat-window');
   const botMessageEl = document.createElement('div');
@@ -496,6 +521,9 @@ async function sendMessage() {
     // Save both turns to history after successful response
     chatHistory.push({ role: 'user', parts: [msg] });
     chatHistory.push({ role: 'model', parts: [reply] });
+    try {
+      localStorage.setItem('chat_history', JSON.stringify(chatHistory));
+    } catch (e) {}
 
     // Добавляем кнопку "Сохранить в RAG" только в интерфейсе администратора
     const isAdminChat = window.location.pathname.includes('/admin') || window.location.href.includes('/admin');

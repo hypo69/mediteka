@@ -111,6 +111,55 @@ class JsonFormatter(logging.Formatter):
         return _json
 
 
+class CompressingHandler(logging.FileHandler):
+    """
+    Обработчик файлового лога с компрессией повторяющихся записей.
+    Буферизует записи и пишет в файл с форматом [Nx] message.
+    """
+    
+    def __init__(self, filename, encoding='utf-8', flush_interval=10):
+        super().__init__(filename, encoding=encoding, delay=True)
+        self.buffer: dict[str, int] = {}  # message -> count
+        self.flush_interval = flush_interval
+        self._dirty = False
+    
+    def emit(self, record: logging.LogRecord):
+        """Добавляет запись в буфер и пишет в файл."""
+        msg = self.format(record)
+        self.buffer[msg] = self.buffer.get(msg, 0) + 1
+        self._dirty = True
+        
+        # Пишем если буфер переполнен или при большом количестве уникальных записей
+        if len(self.buffer) > 100 or self._dirty:
+            self.flush()
+    
+    def flush(self):
+        """Сбрасывает буфер в файл в сжатом формате."""
+        if not self.buffer or not self._dirty:
+            return
+        
+        # Формируем содержимое файла
+        lines = []
+        for msg, count in self.buffer.items():
+            if count > 1:
+                lines.append(f"[{count}x] {msg}")
+            else:
+                lines.append(msg)
+        
+        # Открываем файл и перезаписываем
+        with open(self.baseFilename, 'a', encoding=self.encoding) as f:
+            f.write('\n'.join(lines))
+            f.write('\n')
+        
+        self.buffer.clear()
+        self._dirty = False
+    
+    def close(self):
+        """Закрывает обработчик, сбрасывая буфер."""
+        self.flush()
+        super().close()
+
+
 class Logger(metaclass=SingletonMeta):
     """ Logger class implementing Singleton pattern with console, file, and JSON logging."""
     log_files_path: Path
@@ -182,11 +231,11 @@ class Logger(metaclass=SingletonMeta):
         debug_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         self.logger_file_debug.addHandler(debug_handler)
 
-        # Errors file logger
+        # Errors file logger (с компрессией повторяющихся ошибок)
         self.logger_file_errors = logging.getLogger(name="logger_file_errors")
         self.logger_file_errors.setLevel(logging.ERROR)
         self.logger_file_errors.propagate = False
-        errors_handler = logging.FileHandler(self.errors_log_path, encoding='utf-8')
+        errors_handler = CompressingHandler(self.errors_log_path, encoding='utf-8')
         errors_handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
         self.logger_file_errors.addHandler(errors_handler)
 
@@ -196,28 +245,28 @@ class Logger(metaclass=SingletonMeta):
         self.logger_fastapi = logging.getLogger("logger_fastapi")
         self.logger_fastapi.setLevel(logging.DEBUG)
         self.logger_fastapi.propagate = False
-        fastapi_handler = logging.FileHandler(self.fastapi_log_path, encoding='utf-8')
+        fastapi_handler = CompressingHandler(self.fastapi_log_path, encoding='utf-8')
         fastapi_handler.setFormatter(formatter)
         self.logger_fastapi.addHandler(fastapi_handler)
 
         self.logger_gemini = logging.getLogger("logger_gemini")
         self.logger_gemini.setLevel(logging.DEBUG)
         self.logger_gemini.propagate = False
-        gemini_handler = logging.FileHandler(self.gemini_log_path, encoding='utf-8')
+        gemini_handler = CompressingHandler(self.gemini_log_path, encoding='utf-8')
         gemini_handler.setFormatter(formatter)
         self.logger_gemini.addHandler(gemini_handler)
 
         self.logger_playwright = logging.getLogger("logger_playwright")
         self.logger_playwright.setLevel(logging.DEBUG)
         self.logger_playwright.propagate = False
-        playwright_handler = logging.FileHandler(self.playwright_log_path, encoding='utf-8')
+        playwright_handler = CompressingHandler(self.playwright_log_path, encoding='utf-8')
         playwright_handler.setFormatter(formatter)
         self.logger_playwright.addHandler(playwright_handler)
 
         self.logger_yt_dlp = logging.getLogger("logger_yt_dlp")
         self.logger_yt_dlp.setLevel(logging.DEBUG)
         self.logger_yt_dlp.propagate = False
-        yt_dlp_handler = logging.FileHandler(self.yt_dlp_log_path, encoding='utf-8')
+        yt_dlp_handler = CompressingHandler(self.yt_dlp_log_path, encoding='utf-8')
         yt_dlp_handler.setFormatter(formatter)
         self.logger_yt_dlp.addHandler(yt_dlp_handler)
 

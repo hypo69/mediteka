@@ -27,7 +27,7 @@ async def analyze_log_file(file_path: Path, ai_model: GoogleGenerativeAI):
 
         logger.info(f"Начало умного анализа лога {file_path.name}...")
 
-        max_chars = 5 * 1024 * 1024
+        max_chars = 500 * 1024  # 500KB для экономии квоты
         if len(content) > max_chars:
             content = content[-max_chars:]
 
@@ -114,6 +114,12 @@ async def update_master_journal(ai_model: GoogleGenerativeAI):
 
 async def log_analyzer_loop():
     logger.info("Запуск фоновой службы интеллектуального анализа логов...")
+    
+    # Проверяем, включён ли анализ логов
+    if os.getenv('ENABLE_LOG_ANALYZER', 'false').lower() not in ('true', '1', 'yes'):
+        logger.info("Анализ логов отключён (ENABLE_LOG_ANALYZER=false)")
+        return
+    
     api_key_names = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
     system_instruction = "Вы — профессиональный аналитик системных логов. Ваша задача — исследовать логи, выявлять ошибки, проблемы, тренды и давать рекомендации по устранению."
     
@@ -139,5 +145,32 @@ async def log_analyzer_loop():
 
         await asyncio.sleep(60)
 
+LOCK_FILE = LOG_DIR / 'log_analyzer.lock'
+
 def start_log_analyzer():
-    asyncio.create_task(log_analyzer_loop())
+    """Запускает анализатор логов только в одном процессе."""
+    # Проверяем lock-файл
+    try:
+        if LOCK_FILE.exists():
+            # Проверяем, жив ли процесс
+            try:
+                with open(LOCK_FILE, 'r') as f:
+                    pid = int(f.read().strip())
+                # Попытка проверить существование процесса (Windows)
+                import psutil
+                if psutil.pid_exists(pid):
+                    logger.info(f"Анализатор логов уже запущен (PID: {pid})")
+                    return
+            except (ValueError, ImportError, psutil.NoSuchProcess):
+                pass
+            # Lock-файл устаревший, удаляем
+            LOCK_FILE.unlink(missing_ok=True)
+        
+        # Создаём lock-файл с текущим PID
+        import subprocess
+        pid = subprocess.os.getpid()
+        LOCK_FILE.write_text(str(pid), encoding='utf-8')
+        
+        asyncio.create_task(log_analyzer_loop())
+    except Exception as ex:
+        logger.error(f"Ошибка при запуске анализатора логов: {ex}")
