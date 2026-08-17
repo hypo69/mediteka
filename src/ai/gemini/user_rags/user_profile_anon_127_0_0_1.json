@@ -1,14 +1,3 @@
-{
-  "user_id": "anon_127.0.0.1",
-  "created_at": 1784977759.4425147,
-  "updated_at": 1784977759.442563,
-  "watch_history": {},
-  "last_watched": null,
-  "search_history": [],
-  "preferences": {
-    "liked_titles": [],
-    "disliked_titles": [],
-    "favorite_genres": {},
-    "favorite_categories": {}
-  }
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:2aaec2fb2a31e586f613105c930cdd3abe929d41655dc9d56f65eab499a42693
+size 320
