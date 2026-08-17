@@ -230,10 +230,10 @@ function _renderAgentsGrid() {
 
   if (items.length === 0) {
     grid.innerHTML = `
-      <div class="col-12 text-center py-5 text-secondary">
-        <i class="bi bi-robot fs-1 d-block mb-2"></i>
-        <h5>Агенты не найдены</h5>
-        <p class="small">Создайте нового агента с помощью AI или вручную</p>
+      <div class="col-12 text-center py-5" style="color: #cbd5e1;">
+        <i class="bi bi-robot fs-1 d-block mb-2" style="color: #38bdf8;"></i>
+        <h5 class="text-white">Агенты не найдены</h5>
+        <p class="small" style="color: #94a3b8;">Создайте нового агента с помощью AI или вручную</p>
       </div>
     `;
     return;
@@ -247,51 +247,51 @@ function _renderAgentsGrid() {
       const toolObj = _agentsState.tools.find(t => t.id === tId);
       const icon = toolObj ? toolObj.icon : '🔧';
       const name = toolObj ? toolObj.name : tId;
-      return `<span class="badge bg-secondary me-1 mb-1 font-monospace" style="font-size: 0.72rem;">${icon} ${name}</span>`;
+      return `<span class="badge tool-badge me-1 mb-1 font-monospace">${icon} <span>${name}</span></span>`;
     }).join('');
 
     return `
       <div class="col-xl-4 col-lg-6">
-        <div class="card h-100 bg-dark text-white border-${isEnabled ? 'secondary' : 'dark'} shadow-sm" style="background: linear-gradient(145deg, #131d31 0%, #0b0f19 100%); ${!isEnabled ? 'opacity: 0.65;' : ''}">
-          <div class="card-header border-secondary d-flex justify-content-between align-items-center py-2">
+        <div class="card h-100 agent-card shadow-sm" style="${!isEnabled ? 'opacity: 0.65;' : ''}">
+          <div class="card-header d-flex justify-content-between align-items-center py-2 px-3">
             <div class="d-flex align-items-center gap-2">
               <span class="fs-5">${isSystem ? '⚙️' : '🧩'}</span>
-              <strong class="text-light">${agent.name}</strong>
-              ${isSystem ? '<span class="badge bg-info text-dark" style="font-size: 0.65rem;">SYSTEM</span>' : '<span class="badge bg-warning text-dark" style="font-size: 0.65rem;">CUSTOM</span>'}
+              <strong class="text-white fs-6 fw-bold">${agent.name}</strong>
+              ${isSystem ? '<span class="badge fw-bold" style="font-size: 0.7rem; background-color: #0284c7 !important; color: #ffffff !important;">SYSTEM</span>' : '<span class="badge fw-bold" style="font-size: 0.7rem; background-color: #d97706 !important; color: #ffffff !important;">CUSTOM</span>'}
             </div>
             <div class="form-check form-switch m-0" title="Включить / Выключить">
               <input class="form-check-input agent-toggle-switch" type="checkbox" data-agent-id="${agent.id}" ${isEnabled ? 'checked' : ''}>
             </div>
           </div>
           <div class="card-body p-3 d-flex flex-column">
-            <p class="small text-secondary mb-2 flex-grow-1" style="min-height: 38px;">${agent.description || 'Описание отсутствует'}</p>
+            <p class="small mb-3 flex-grow-1 agent-desc" style="min-height: 40px; color: #cbd5e1; line-height: 1.45;">${agent.description || 'Описание отсутствует'}</p>
             
-            <div class="p-2 rounded bg-black border border-secondary mb-2 small">
-              <div class="d-flex justify-content-between mb-1">
-                <span class="text-secondary">Провайдер & Модель:</span>
-                <span class="badge bg-primary text-truncate" style="max-width: 180px;">${providerName}: ${agent.model}</span>
+            <div class="agent-spec-box mb-3 small">
+              <div class="d-flex justify-content-between align-items-center mb-1 pb-1" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <span class="spec-label">Провайдер &amp; Модель:</span>
+                <span class="badge spec-value-badge text-truncate" style="max-width: 190px;">${providerName}: ${agent.model}</span>
               </div>
-              <div class="d-flex justify-content-between">
-                <span class="text-secondary">Температура / Шаги:</span>
-                <span class="text-info font-monospace">T: ${agent.temperature} | Max: ${agent.max_steps}</span>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="spec-label">Температура / Шаги:</span>
+                <span class="spec-tech-val font-monospace">T: ${agent.temperature} <span style="color: #64748b;">|</span> Max: ${agent.max_steps}</span>
               </div>
             </div>
 
             <div class="mb-3">
-              <div class="small text-secondary mb-1">Инструменты (${(agent.tools || []).length}):</div>
-              <div class="d-flex flex-wrap">${toolsBadges || '<span class="text-muted small">Без внешних инструментов</span>'}</div>
+              <div class="small fw-semibold mb-2" style="color: #f1f5f9;">Инструменты (${(agent.tools || []).length}):</div>
+              <div class="d-flex flex-wrap">${toolsBadges || '<span class="small" style="color: #94a3b8;">Без внешних инструментов</span>'}</div>
             </div>
 
-            <div class="mt-auto d-flex justify-content-between gap-2 pt-2 border-top border-secondary">
-              <button class="btn btn-sm btn-outline-warning rounded-pill px-3 btn-test-sandbox" data-agent-id="${agent.id}">
+            <div class="mt-auto d-flex justify-content-between gap-2 pt-2" style="border-top: 1px solid #334155;">
+              <button class="btn btn-sm rounded-pill px-3 btn-test-sandbox" data-agent-id="${agent.id}">
                 <i class="bi bi-play-fill"></i> Тест в Sandbox
               </button>
               <div class="d-flex gap-1">
-                <button class="btn btn-sm btn-outline-info rounded-pill px-2 btn-edit-agent" data-agent-id="${agent.id}" title="Редактировать">
+                <button class="btn btn-sm rounded-pill px-2 btn-edit-agent" data-agent-id="${agent.id}" title="Редактировать">
                   <i class="bi bi-pencil-fill"></i>
                 </button>
                 ${!isSystem ? `
-                  <button class="btn btn-sm btn-outline-danger rounded-pill px-2 btn-delete-agent" data-agent-id="${agent.id}" title="Удалить">
+                  <button class="btn btn-sm rounded-pill px-2 btn-delete-agent" data-agent-id="${agent.id}" title="Удалить">
                     <i class="bi bi-trash-fill"></i>
                   </button>
                 ` : ''}
@@ -369,14 +369,14 @@ function _populateToolsMatrix() {
   container.innerHTML = _agentsState.tools.map(tool => {
     return `
       <div class="col-md-6">
-        <div class="p-2 border border-secondary rounded bg-dark h-100">
+        <div class="p-3 rounded h-100" style="background: #1e293b; border: 1px solid #334155;">
           <div class="form-check form-switch m-0">
             <input class="form-check-input tool-checkbox" type="checkbox" value="${tool.id}" id="tool-chk-${tool.id}">
-            <label class="form-check-label small text-light fw-bold" for="tool-chk-${tool.id}">
+            <label class="form-check-label small text-white fw-bold" for="tool-chk-${tool.id}">
               ${tool.icon} ${tool.name}
             </label>
           </div>
-          <div class="small text-secondary mt-1" style="font-size: 0.75rem;">${tool.description}</div>
+          <div class="small mt-1" style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.4;">${tool.description}</div>
         </div>
       </div>
     `;
@@ -683,10 +683,10 @@ async function _handleRunAiGenerate() {
       if (resultBox && previewBox) {
         resultBox.classList.remove('d-none');
         previewBox.innerHTML = `
-          <div><strong class="text-info">Название:</strong> ${res.data.name}</div>
-          <div><strong class="text-secondary">Описание:</strong> ${res.data.description}</div>
-          <div class="mt-1"><strong class="text-success">Инструменты:</strong> ${(res.data.recommended_tools || []).join(', ') || 'нет'}</div>
-          <div class="mt-1 text-muted" style="white-space: pre-wrap; font-size: 0.8rem;">${res.data.system_prompt}</div>
+          <div><strong style="color: #38bdf8;">Название:</strong> <span class="text-white fw-bold">${res.data.name}</span></div>
+          <div class="mt-1"><strong style="color: #cbd5e1;">Описание:</strong> <span style="color: #f1f5f9;">${res.data.description}</span></div>
+          <div class="mt-1"><strong style="color: #4ade80;">Инструменты:</strong> <span style="color: #f8fafc;">${(res.data.recommended_tools || []).join(', ') || 'нет'}</span></div>
+          <div class="mt-2 p-2 rounded" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.45;">${res.data.system_prompt}</div>
         `;
       }
       _showToast('Спецификация агента успешно сгенерирована!', 'success');
@@ -749,7 +749,7 @@ async function _handleRunSandboxTest() {
   const userMsgEl = document.createElement('div');
   userMsgEl.className = 'd-flex justify-content-end mb-3';
   userMsgEl.innerHTML = `
-    <div class="p-2 rounded bg-primary text-white small" style="max-width: 80%;">
+    <div class="p-2 px-3 rounded shadow-sm text-white small" style="background-color: #2563eb; max-width: 80%; font-weight: 500;">
       <strong>Вы:</strong> ${query}
     </div>
   `;
@@ -762,12 +762,12 @@ async function _handleRunSandboxTest() {
   const botMsgEl = document.createElement('div');
   botMsgEl.className = 'd-flex flex-column mb-3';
   botMsgEl.innerHTML = `
-    <div class="p-3 rounded bg-dark border border-secondary text-light small">
-      <div class="d-flex align-items-center gap-2 mb-2 text-warning">
+    <div class="p-3 rounded small" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc;">
+      <div class="d-flex align-items-center gap-2 mb-2" style="color: #fbbf24; font-weight: 600;">
         <span class="spinner-border spinner-border-sm"></span>
         <span>Агент выполняет рассуждение и вызовы инструментов...</span>
       </div>
-      <div class="steps-trace small font-monospace text-secondary"></div>
+      <div class="steps-trace small font-monospace" style="color: #cbd5e1;"></div>
     </div>
   `;
   msgsList.appendChild(botMsgEl);
@@ -791,28 +791,28 @@ async function _handleRunSandboxTest() {
       else if (s.type === 'finish') icon = '✅';
       else if (s.type === 'error') icon = '❌';
 
-      return `<div class="mb-1">${icon} <span class="text-light">[Шаг ${s.step}]</span> ${s.content}</div>`;
+      return `<div class="mb-1">${icon} <span style="color: #38bdf8; font-weight: bold;">[Шаг ${s.step}]</span> <span style="color: #e2e8f0;">${s.content}</span></div>`;
     }).join('');
 
     botMsgEl.innerHTML = `
-      <div class="p-3 rounded bg-dark border border-secondary text-light small">
-        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-secondary">
-          <strong class="text-info">🤖 ${agent.name}</strong>
-          <span class="badge bg-secondary">${res.duration_ms || 0} мс</span>
+      <div class="p-3 rounded small" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc;">
+        <div class="d-flex justify-content-between align-items-center mb-2 pb-1" style="border-bottom: 1px solid #334155;">
+          <strong style="color: #38bdf8; font-size: 0.95rem;">🤖 ${agent.name}</strong>
+          <span class="badge" style="background: #334155; color: #f8fafc; font-weight: 600;">${res.duration_ms || 0} мс</span>
         </div>
         
-        <div class="mb-2 text-light" style="white-space: pre-wrap;">${res.response || 'Пустой ответ'}</div>
+        <div class="mb-2" style="white-space: pre-wrap; color: #f8fafc; line-height: 1.5;">${res.response || 'Пустой ответ'}</div>
         
-        <div class="p-2 rounded bg-black border border-secondary mt-2 small font-monospace" style="font-size: 0.75rem;">
-          <div class="text-secondary fw-bold mb-1">Трассировка выполнения (ReAct Trace):</div>
+        <div class="p-2 rounded mt-2 small font-monospace" style="background: #020617; border: 1px solid #334155; font-size: 0.8rem; line-height: 1.45;">
+          <div class="fw-bold mb-1" style="color: #cbd5e1;">Трассировка выполнения (ReAct Trace):</div>
           ${stepsHtml}
         </div>
       </div>
     `;
   } catch (err) {
     botMsgEl.innerHTML = `
-      <div class="p-3 rounded bg-danger-subtle border border-danger text-danger small">
-        <strong>Ошибка выполнения:</strong> ${err.message}
+      <div class="p-3 rounded small" style="background: #450a0a; border: 1px solid #dc2626; color: #fecaca;">
+        <strong style="color: #ef4444;">Ошибка выполнения:</strong> ${err.message}
       </div>
     `;
   } finally {

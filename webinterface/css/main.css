@@ -334,6 +334,15 @@ body {
   color: var(--text-color);
 }
 
+.card.bg-dark > .card-header,
+.modal-content.bg-dark > .modal-header,
+.modal-content.bg-dark > .modal-footer,
+.agent-card .card-header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+
 /* ── TABLES ──────────────────────────────────────────────────────────────────── */
 .table {
   --bs-table-color: var(--text-color);
