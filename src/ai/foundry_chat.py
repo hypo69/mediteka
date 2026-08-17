@@ -40,6 +40,12 @@ class FoundryChatBase:
         ai.clear_history()
     """
 
+    @classmethod
+    def get_available_models(cls, force_refresh: bool = False) -> List[str]:
+        """Возвращает список доступных моделей для Foundry через единый менеджер моделей."""
+        from src.ai.model_manager import get_available_models as _mgr_get_available_models
+        return _mgr_get_available_models(provider="foundry", force_refresh=force_refresh)
+
     def __init__(
         self,
         model_id: str,
@@ -178,11 +184,18 @@ class FoundryChatBase:
                         logger.info(f"Model {self.model_id} loaded successfully")
                         continue  # Retry after load
                     else:
-                        logger.error(f"Failed to load model {self.model_id}: {load_result.get('error')}")
+                        load_err = load_result.get('error', '')
+                        logger.error(f"Failed to load model {self.model_id}: {load_err}")
+                        from src.ai.model_manager import add_unsupported_model
+                        add_unsupported_model('foundry', self.model_id, reason=f"Load failed: {load_err}")
                         return None
 
                 # Other error - log and retry
                 error_msg = result.get("error", "Unknown error")
+                if "404" in error_msg or "not found" in error_msg.lower():
+                    from src.ai.model_manager import add_unsupported_model
+                    add_unsupported_model('foundry', self.model_id, reason=error_msg)
+                    return None
                 logger.warning(f"[{self.model_id}] attempt {attempt} failed: {error_msg}")
 
                 if attempt < attempts:
@@ -307,7 +320,10 @@ class FoundryChatBase:
                         logger.info(f"Model {self.model_id} loaded successfully")
                         continue  # Retry after load
                     else:
-                        logger.error(f"Failed to load model {self.model_id}: {load_result.get('error')}")
+                        load_err = load_result.get('error', '')
+                        logger.error(f"Failed to load model {self.model_id}: {load_err}")
+                        from src.ai.model_manager import add_unsupported_model
+                        add_unsupported_model('foundry', self.model_id, reason=f"Load failed: {load_err}")
                         return None
 
                 error_msg = result.get("error", "Unknown error")

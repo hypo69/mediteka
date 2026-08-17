@@ -36,6 +36,12 @@ class AgyChatBase:
     """
 
     @classmethod
+    def get_available_models(cls, force_refresh: bool = False) -> List[str]:
+        """Возвращает список доступных моделей для AGY через единый менеджер моделей."""
+        from src.ai.model_manager import get_available_models as _mgr_get_available_models
+        return _mgr_get_available_models(provider="agy", force_refresh=force_refresh)
+
+    @classmethod
     def normalize_model_id(cls, model_id: str) -> str:
         """Нормализация имени модели для Antigravity SDK."""
         actual = (model_id or "").strip()
@@ -143,6 +149,11 @@ class AgyChatBase:
                     text += token
                 return self._clean_output(text)
         except Exception as e:
+            err_str = str(e)
+            if any(x in err_str for x in ('404', 'NOT_FOUND', 'not supported', 'is no longer available', 'not found')):
+                from src.ai.model_manager import add_unsupported_model
+                add_unsupported_model('agy', self.model_id, reason=err_str)
+                add_unsupported_model('gemini', self.model_id, reason=err_str)
             logger.error("Ошибка в AgyChatBase.ask", e, exc_info=True)
             return ""
 
@@ -199,6 +210,11 @@ class AgyChatBase:
                 async for token in response:
                     yield token
         except Exception as e:
-            err_msg = f"Ошибка Antigravity SDK: {str(e)}"
+            err_str = str(e)
+            if any(x in err_str for x in ('404', 'NOT_FOUND', 'not supported', 'is no longer available', 'not found')):
+                from src.ai.model_manager import add_unsupported_model
+                add_unsupported_model('agy', self.model_id, reason=err_str)
+                add_unsupported_model('gemini', self.model_id, reason=err_str)
+            err_msg = f"Ошибка Antigravity SDK: {err_str}"
             logger.error(err_msg, e, exc_info=True)
             yield err_msg

@@ -155,6 +155,10 @@ async def startup_event():
     app.state.narrator_model = narrator_model
     app.state.plugins = plugins
 
+    # Разовая актуализация и кэширование моделей всех провайдеров
+    from src.ai.model_manager import actualize_all_models
+    await actualize_all_models()
+
     # Сканируем подключённые диски ОС и обновляем CONNECTED_DRIVES
     from plugins.media_organizer.core.drive_scanner import update_environment_drives
     update_environment_drives()

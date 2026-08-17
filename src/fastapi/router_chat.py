@@ -253,51 +253,18 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
     @router.get('/models')
     async def get_models() -> dict:
         """Получение списка доступных моделей, сгруппированных по провайдеру."""
-        from src.ai.gemini.generative_ai import GoogleGenerativeAI
-        import os
+        from src.ai.model_manager import get_available_models
 
-        gemini_models = await asyncio.to_thread(GoogleGenerativeAI.get_available_models)
+        gemini_models = get_available_models('gemini')
+        
+        foundry_raw = get_available_models('foundry')
+        foundry_models = [f"foundry:{m}" if not m.startswith('foundry:') else m for m in foundry_raw]
 
-        foundry_models = []
-        ollama_models = []
+        ollama_raw = get_available_models('ollama')
+        ollama_models = [f"ollama:{m}" if not m.startswith('ollama:') else m for m in ollama_raw]
 
-        use_foundry = getattr(ai_cfg, 'use_foundry', False) if ai_cfg else False
-        if use_foundry:
-            try:
-                from src.clients.foundry import FoundryClient
-                foundry_url = getattr(ai_cfg, 'foundry_base_url', 'http://localhost:54837') if ai_cfg else 'http://localhost:54837'
-                f_client = FoundryClient(base_url=foundry_url)
-                fetched_f_models = await f_client.get_models()
-                if fetched_f_models:
-                    foundry_models.extend([f"foundry:{m}" for m in fetched_f_models])
-                else:
-                    foundry_model_id = getattr(ai_cfg, 'foundry_model_id', 'qwen2.5-1.5b') if ai_cfg else 'qwen2.5-1.5b'
-                    foundry_models.append(f"foundry:{foundry_model_id}")
-            except Exception as e:
-                logger.warning(f"Could not fetch Foundry models: {e}")
-                foundry_model_id = getattr(ai_cfg, 'foundry_model_id', 'qwen2.5-1.5b') if ai_cfg else 'qwen2.5-1.5b'
-                foundry_models.append(f"foundry:{foundry_model_id}")
-            
-        use_ollama = getattr(ai_cfg, 'use_ollama', False) if ai_cfg else False
-        if use_ollama:
-            ollama_url = getattr(ai_cfg, 'ollama_base_url', 'http://localhost:11434') if ai_cfg else 'http://localhost:11434'
-            import aiohttp
-            try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(f"{ollama_url}/api/tags", timeout=5) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            for model_info in data.get('models', []):
-                                ollama_models.append(f"ollama:{model_info.get('name')}")
-                        else:
-                            fallback = getattr(ai_cfg, 'ollama_model_id', 'llama3.1') if ai_cfg else 'llama3.1'
-                            ollama_models.append(f"ollama:{fallback}")
-            except Exception as e:
-                logger.warning(f"Could not fetch Ollama models from {ollama_url}: {e}")
-                fallback = getattr(ai_cfg, 'ollama_model_id', 'llama3.1') if ai_cfg else 'llama3.1'
-                ollama_models.append(f"ollama:{fallback}")
-            
-        agy_models = [f"agy-{m}" for m in gemini_models]
+        agy_models = get_available_models('agy')
+
         logger.info(f"Returning available gemini models: {gemini_models}")
         logger.info(f"Returning available foundry models: {foundry_models}")
         logger.info(f"Returning available ollama models: {ollama_models}")

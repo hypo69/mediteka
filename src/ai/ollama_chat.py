@@ -13,6 +13,12 @@ class OllamaChatBase:
     Базовый класс для чат-интерфейса с Ollama моделями.
     """
 
+    @classmethod
+    def get_available_models(cls, force_refresh: bool = False) -> List[str]:
+        """Возвращает список доступных моделей для Ollama через единый менеджер моделей."""
+        from src.ai.model_manager import get_available_models as _mgr_get_available_models
+        return _mgr_get_available_models(provider="ollama", force_refresh=force_refresh)
+
     def __init__(
         self,
         model_id: str,
@@ -122,6 +128,10 @@ class OllamaChatBase:
                 else:
                     self._last_error = res.get("error", "Unknown error")
                     self._error_count += 1
+                    if "404" in self._last_error or "not found" in self._last_error.lower():
+                        from src.ai.model_manager import add_unsupported_model
+                        add_unsupported_model('ollama', self.model_id, reason=self._last_error)
+                        return None
                     logger.warning(f"[{self.model_id}] Error in generate_text: {self._last_error}")
                     if attempt >= attempts:
                         return None
@@ -131,6 +141,10 @@ class OllamaChatBase:
                 self._error_count += 1
                 logger.error(f"[{self.model_id}] chat exception: {ex}")
                 self._last_error = str(ex)
+                if "404" in self._last_error or "not found" in self._last_error.lower():
+                    from src.ai.model_manager import add_unsupported_model
+                    add_unsupported_model('ollama', self.model_id, reason=self._last_error)
+                    return None
                 if attempt >= attempts:
                     return None
                 time.sleep(2 ** min(attempt, 5))

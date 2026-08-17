@@ -189,3 +189,86 @@ class TestUserRAG:
         assert is_garbage_query("sdfghjklqwrtzcxvb")  # keyboard mash (без гласных)
         assert is_garbage_query("!!!!!!!!!!!")  # знаки препинания без букв/цифр
         assert is_garbage_query("спасибо большое")  # благодарность
+
+
+class TestModelManager:
+    """Тесты единого менеджера моделей ИИ (ModelManager)."""
+
+    def test_load_unsupported_models_gemini(self):
+        """Тест загрузки неподдерживаемых моделей Gemini из конфигурации."""
+        from src.ai.model_manager import load_unsupported_models
+        unsupported = load_unsupported_models("gemini")
+        assert isinstance(unsupported, set)
+        assert len(unsupported) > 0
+        assert "gemini-1.0-pro" in unsupported or "gemini-2.0-flash" in unsupported
+
+    def test_get_available_models_gemini_sdk_mock(self):
+        """Тест получения моделей Gemini через SDK с фильтрацией и кэшированием."""
+        from src.ai.model_manager import get_available_models, _CACHED_MODELS
+        
+        # Подготовка мока для genai.Client
+        mock_model_1 = MagicMock()
+        mock_model_1.name = "models/gemini-flash-latest"
+        mock_model_1.supported_actions = ["generateContent"]
+
+        mock_model_2 = MagicMock()
+        mock_model_2.name = "models/gemini-2.0-flash"  # в unsupported_models
+        mock_model_2.supported_actions = ["generateContent"]
+
+        mock_model_3 = MagicMock()
+        mock_model_3.name = "models/text-embedding-004"  # embedding
+        mock_model_3.supported_actions = ["embedContent"]
+
+        mock_client = MagicMock()
+        mock_client.models.list.return_value = [mock_model_1, mock_model_2, mock_model_3]
+
+        with patch("src.ai.model_manager.genai.Client", return_value=mock_client):
+            # Первый вызов с force_refresh=True
+            models = get_available_models("gemini", api_key="fake_key", force_refresh=True)
+            assert "gemini-flash-latest" in models
+            assert "gemini-2.0-flash" not in models
+            assert "text-embedding-004" not in models
+
+            # Проверка, что результат сохранен в кэше
+            assert "gemini" in _CACHED_MODELS
+            assert "gemini-flash-latest" in _CACHED_MODELS["gemini"]
+
+            # Повторный вызов должен возвращать данные из кэша без нового вызова genai.Client
+            mock_client.models.list.reset_mock()
+            cached_models = get_available_models("gemini", api_key="fake_key", force_refresh=False)
+            assert cached_models == models
+            mock_client.models.list.assert_not_called()
+
+    def test_get_available_models_agy(self):
+        """Тест получения моделей для AGY."""
+        from src.ai.model_manager import get_available_models
+        agy_models = get_available_models("agy")
+        assert isinstance(agy_models, list)
+        for m in agy_models:
+            assert m.startswith("agy-")
+
+    def test_add_unsupported_model_runtime(self):
+        """Тест добавления неподдерживаемой модели в рантайме и её исключения из кэша."""
+        from src.ai.model_manager import add_unsupported_model, get_available_models, _CACHED_MODELS
+        
+        # Добавляем временную модель в кэш
+        _CACHED_MODELS["foundry"] = ["test-foundry-model-1", "test-foundry-model-2"]
+        assert "test-foundry-model-1" in get_available_models("foundry")
+
+        # Исключаем модель
+        with patch("src.ai.model_manager.j_dumps") as mock_dumps:
+            success = add_unsupported_model("foundry", "test-foundry-model-1", reason="404 Not Found")
+            assert success is True
+            assert "test-foundry-model-1" not in _CACHED_MODELS["foundry"]
+            assert "test-foundry-model-2" in _CACHED_MODELS["foundry"]
+
+    @pytest.mark.asyncio
+    async def test_actualize_all_models(self):
+        """Тест разовой актуализации всех моделей при старте."""
+        from src.ai.model_manager import actualize_all_models
+        pool = await actualize_all_models(force_refresh=False)
+        assert isinstance(pool, dict)
+        assert "gemini" in pool
+        assert "agy" in pool
+        assert "foundry" in pool
+        assert "ollama" in pool

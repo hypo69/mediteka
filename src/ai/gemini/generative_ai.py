@@ -68,44 +68,20 @@ def remove_html_blocks(text: str) -> str:
     """
     return re.sub(r'```html.*?```', '', text, flags=re.DOTALL)
 
-_UNSUPPORTED_MODELS_FILE = Path(__file__).parent / 'unsupported_models.json'
-
 def load_unsupported_models() -> set[str]:
     """Загружает список неподдерживаемых / устаревших моделей Gemini."""
-    if _UNSUPPORTED_MODELS_FILE.exists():
-        try:
-            data = json.loads(_UNSUPPORTED_MODELS_FILE.read_text(encoding='utf-8'))
-            if isinstance(data, list):
-                return set(data)
-        except Exception:
-            pass
-    return {
-        "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-exp",
-        "gemini-2.5-pro", "gemini-2.5-flash-lite", "gemini-3.1-pro-preview",
-        "gemini-3.1-flash-lite-preview", "gemini-1.0-pro", "gemini-1.0-ultra",
-        "gemini-1.5-pro", "gemini-1.5-flash"
-    }
+    from src.ai.model_manager import load_unsupported_models as _mgr_load_unsupported_models
+    return _mgr_load_unsupported_models("gemini")
 
-def add_unsupported_model(model_name: str, reason: str = "") -> None:
-    """Добавляет модель в список неподдерживаемых и сохраняет в JSON."""
-    if not model_name:
-        return
-    norm = model_name.replace("models/", "").strip()
-    unsupported = load_unsupported_models()
-    if norm not in unsupported:
-        unsupported.add(norm)
-        try:
-            _UNSUPPORTED_MODELS_FILE.write_text(
-                json.dumps(sorted(list(unsupported)), ensure_ascii=False, indent=2),
-                encoding='utf-8'
-            )
-            logger.warning(f"[GenerativeAI] Модель '{norm}' добавлена в список неподдерживаемых (причина: {reason[:120]})")
-        except Exception as e:
-            logger.error(f"Не удалось сохранить unsupported_models.json: {e}")
+
+def add_unsupported_model(model_name: str, reason: str = "") -> bool:
+    """Добавляет модель в список неподдерживаемых и сохраняет в конфигурацию."""
+    from src.ai.model_manager import add_unsupported_model as _mgr_add_unsupported_model
+    return _mgr_add_unsupported_model("gemini", model_name, reason)
+
 
 _gemini_config = j_loads(Path(__file__).parent / 'config.json')
 _DEFAULT_MODEL: str = _gemini_config.get('model', 'gemini-flash-latest') if isinstance(_gemini_config, dict) else 'gemini-flash-latest'
-_AVAILABLE_MODELS: list = _gemini_config.get('model_choices', []) if isinstance(_gemini_config, dict) else []
 _DEFAULT_SAVE_HISTORY: bool = _gemini_config.get('save_history_chat', False) if isinstance(_gemini_config, dict) else False
 
 
@@ -135,74 +111,15 @@ class GoogleGenerativeAI:
     _last_exception: Optional[str] = field(default=None, init=False)
     _key_errors: Dict[str, str] = field(default_factory=dict, init=False)
 
-    MODELS: List[str] = field(default_factory=lambda: _AVAILABLE_MODELS, init=False)
+    MODELS: List[str] = field(default_factory=lambda: GoogleGenerativeAI.get_available_models(), init=False)
 
     @classmethod
-    def get_available_models(cls, api_key: str = '') -> List[str]:
+    def get_available_models(cls, api_key: str = '', force_refresh: bool = False) -> List[str]:
         """Динамически запрашивает список доступных моделей через Google GenAI SDK.
-        Фильтрует неподдерживаемые модели (вычитает unsupported_models.json) и возвращает актуальные.
+        Фильтрует неподдерживаемые модели (вычитает unsupported_models из config.json) и кэширует результат.
         """
-        api_keys_to_try = []
-        if api_key:
-            api_keys_to_try.append(api_key)
-        else:
-            try:
-                from src.secrets.api_key_state import load_api_keys
-                keys, _, _ = load_api_keys()
-                if keys:
-                    api_keys_to_try.extend(keys)
-            except Exception:
-                pass
-
-        unsupported = load_unsupported_models()
-        valid_default_models = [m for m in _AVAILABLE_MODELS if m not in unsupported]
-        if not valid_default_models:
-            valid_default_models = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-pro-latest"]
-
-        if not api_keys_to_try:
-            return valid_default_models
-
-        last_error = None
-        for key in api_keys_to_try:
-            try:
-                client = genai.Client(api_key=key)
-                models = []
-                for m in client.models.list():
-                    name = m.name
-                    if name.startswith('models/'):
-                        name = name[len('models/'):]
-                    
-                    # Фильтруем только модели, поддерживающие генерацию текста (generateContent)
-                    if m.supported_actions and 'generateContent' in m.supported_actions:
-                        # Пропускаем устаревшие и явно неподдерживаемые модели
-                        if name in unsupported:
-                            continue
-                        if any(x in name for x in ('bison', 'gecko', 'vision', 'embedding', '1.0-pro', '1.0-ultra', '2.0-flash', '2.5-flash', '2.5-pro')):
-                            continue
-                        models.append(name)
-                if models:
-                    # Приоритетный порядок: flash-latest, flash-lite, 3.6, 3.7, pro-latest
-                    priority_order = ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-pro-latest']
-                    sorted_models = []
-                    for pm in priority_order:
-                        if pm in models and pm not in sorted_models:
-                            sorted_models.append(pm)
-                    for m in models:
-                        if m not in sorted_models:
-                            sorted_models.append(m)
-                    return sorted_models
-            except Exception as e:
-                last_error = e
-                continue
-
-        if last_error:
-            err_msg = str(last_error)
-            if "API_KEY_INVALID" in err_msg or "API key not valid" in err_msg:
-                logger.warning("Все предоставленные Google API ключи недействительны. Загружается встроенный список моделей Gemini.")
-            else:
-                logger.warning(f"Ошибка получения списка моделей от Google API (последняя ошибка: {last_error}). Загружается встроенный список.")
-
-        return valid_default_models
+        from src.ai.model_manager import get_available_models as _mgr_get_available_models
+        return _mgr_get_available_models(provider="gemini", api_key=api_key, force_refresh=force_refresh)
 
     def _get_exhausted_error_msg(self) -> str:
         msg = "Ошибка: Все API ключи исчерпаны."
@@ -357,8 +274,7 @@ class GoogleGenerativeAI:
 
     def _switch_model(self) -> bool:
         """Переключается на следующую поддерживаемую модель из списка. Возвращает False если модели закончились."""
-        unsupported = load_unsupported_models()
-        active_pool = [m for m in self.MODELS if m not in unsupported]
+        active_pool = self.get_available_models()
         if not active_pool:
             active_pool = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-pro-latest"]
         try:
@@ -385,8 +301,7 @@ class GoogleGenerativeAI:
     def _switch_model_down(self) -> bool:
         """Переключается на модель НЕ выше текущей (только вниз по списку мощности).
         Возвращает False если уже самая слабая модель."""
-        unsupported = load_unsupported_models()
-        active_pool = [m for m in self.MODELS if m not in unsupported]
+        active_pool = self.get_available_models()
         if not active_pool:
             active_pool = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-pro-latest"]
         try:
@@ -773,16 +688,8 @@ class GoogleGenerativeAI:
                 )
                 time.sleep(1200)
                 continue  # Повторить попытку
-            except (GatewayTimeout, ServiceUnavailable) as ex:
-                self._record_error(ex)
-                # Модель недоступна — переключаемся на следующую из model_choices в config.json.
-                # Если все модели исчерпаны (_switch_model вернул False) — ждём и повторяем.
-                logger.error("Service unavailable:", ex, False)
-                self._unavailable_attempts += 1
-                if self._unavailable_attempts < 6:
-                    # До 6 попыток — просто перезапускаем с той же моделью
-                    wait = 2 ** min(self._unavailable_attempts, 5)
-                    logger.info(f"503 UNAVAILABLE (attempt {self._unavailable_attempts}). Waitin            except Exception as ex:
+
+            except Exception as ex:
                 self._record_error(ex)
                 ex_str = str(ex)
                 logger.error(f"Unexpected error: {ex_str}", ex, False)
@@ -968,84 +875,9 @@ class GoogleGenerativeAI:
                         response={'result': result},
                     )
                 )
-            contents.append(types.Content(role='tool', parts=tool_results))�им из цикла
-                return '\n'.join(text_parts)
-
-            # Добавляем ответ модели в историю
-            contents.append(candidate.content)
-
-            # Выполняем все function calls и добавляем результаты
-            tool_results = []
-            for part in tool_calls:
-                fc = part.function_call
-                result = tool_dispatcher(fc.name, dict(fc.args))
-                tool_results.append(
-                    types.Part.from_function_response(
-                        name=fc.name,
-                        response={'result': result},
-                    )
-                )
             contents.append(types.Content(role='tool', parts=tool_results))
 
-        return ''
-
-    async def ask_with_tools_stream(self, q: str, tools: list, tool_dispatcher, system_instruction: Optional[str] = None, model_name: Optional[str] = None, history: Optional[List[Dict]] = None):
-        """Отправка запроса с поддержкой function calling и стримингом.
-
-        Yields:
-            dict: События вида {"text": "chunk"} или {"status": "message"}
-        """
-        contents = self._prepare_contents(q, history)
-        instruction = system_instruction or self.system_instruction
-        active_model = model_name or self.model_name
-        config = self._build_content_config(instruction or "", tools)
-        for i in range(10):
-            # Нам не нужен стриминг, если модель решает вызвать функцию.
-            # Стриминг нужен только для финального ответа.
-            response = self._client.models.generate_content(
-                model=active_model,
-                contents=contents,
-                config=config,
-            )
-            
-            candidate = response.candidates[0] if response.candidates else None
-            if not candidate:
-                break
-
-            tool_calls = [p for p in candidate.content.parts if p.function_call]
-            text_parts = [p.text for p in candidate.content.parts if p.text]
-
-            # Если вызовов функций больше нет, значит это финальный ответ.
-            if not tool_calls:
-                # Стримим финальный ответ
-                response_stream = self._client.models.generate_content_stream(
-                    model=active_model,
-                    contents=contents,
-                    config=config,
-                )
-                for chunk in response_stream:
-                    if chunk.text:
-                        yield {"text": chunk.text}
-                return
-
-            # Добавляем ответ модели с вызовом функций в контекст
-            contents.append(candidate.content)
-
-            tool_results = []
-            for part in tool_calls:
-                fc = part.function_call
-                import json
-                yield {"status": f"Вызов функции {fc.name}({json.dumps(dict(fc.args), ensure_ascii=False)})"}
-                result = tool_dispatcher(fc.name, dict(fc.args))
-                tool_results.append(
-                    types.Part.from_function_response(
-                        name=fc.name,
-                        response={'result': result},
-                    )
-                )
-            contents.append(types.Content(role='tool', parts=tool_results))
-
-
+        return
 
     async def describe_image(
         self, image: Path | bytes, mime_type: Optional[str] = 'image/jpeg', prompt: Optional[str] = '', attempts: int = 10
@@ -1188,5 +1020,3 @@ class GoogleGenerativeAI:
         return False
 
 
-async def main():
- 

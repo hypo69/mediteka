@@ -21,7 +21,14 @@ import asyncio
 import subprocess
 from typing import List, Dict, Any
 
-from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig, BuiltinTools
+try:
+    from google.antigravity import Agent, LocalAgentConfig, CapabilitiesConfig, BuiltinTools
+except ImportError:
+    Agent = None
+    LocalAgentConfig = None
+    CapabilitiesConfig = None
+    BuiltinTools = None
+
 from src.logger import logger
 from src.secrets.api_key_state import load_api_keys
 
@@ -124,6 +131,9 @@ class AgyWebSearcher:
 
     async def _search_via_sdk(self, query: str) -> str:
         """Поиск через Antigravity Agent SDK с активированным SEARCH_WEB и ротацией ключей."""
+        if not Agent or not LocalAgentConfig:
+            raise ImportError("Google Antigravity SDK is not installed or available in this environment")
+
         system_instruction = (
             "Ты — модуль автономного веб-поиска. Твоя задача — использовать встроенный инструмент "
             "search_web (и read_url_content при необходимости), чтобы найти актуальные факты по "
