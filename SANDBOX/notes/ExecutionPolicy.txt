@@ -1,1 +1,0 @@
--ExecutionPolicy Bypass -File "C:\mediateka\Run-Foundry.ps1"
