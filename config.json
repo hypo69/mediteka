@@ -1,0 +1,145 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 3000,
+    "workers": 1,
+    "reload": true,
+    "use_ssl": true,
+    "mode": "DEV",
+    "debug": true
+  },
+  "ai": {
+    "use_foundry": true,
+    "foundry_base_url": "http://localhost:54837",
+    "foundry_model_id": "qwen2.5-1.5b-instruct-generic-cpu:4",
+    "preload_silero": false,
+    "use_agy": true,
+    "agy_model_id": "agy-flash"
+  },
+  "tts": {
+    "default_voice": "ru-RU-DmitryNeural"
+  },
+  "logging": {
+    "enable_log_analyzer": false,
+    "max_size_mb": 10.0
+  },
+  "rag": {
+    "mode": "rag+model"
+  },
+  "web_search": {
+    "engine": "agy",
+    "gemini_model": "gemini-2.5-flash",
+    "agy_model": "agy-gemma-4-26b-a4b-it",
+    "fallback_on_rag_not_found": true
+  },
+  "langchain": {
+    "enabled": true,
+    "default_llm": "gemini",
+    "gemini_model": "gemini-2.5-flash",
+    "ollama_model": "qwen2.5:7b",
+    "ollama_base_url": "http://localhost:11434",
+    "mcp_servers": {
+      "playwright": {
+        "command": "npx",
+        "args": [
+          "@playwright/mcp@latest"
+        ],
+        "transport": "stdio"
+      }
+    },
+    "max_agent_steps": 15,
+    "search_timeout_seconds": 60
+  },
+  "agents": {
+    "items": [
+      {
+        "id": "media_search",
+        "name": "LangChain Media Agent",
+        "description": "Автономный ReAct-поиск фильмов, сериалов, раздач на торрент-трекерах и метаданных TMDb",
+        "is_system": true,
+        "enabled": true,
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "temperature": 0.3,
+        "max_steps": 15,
+        "timeout_seconds": 60,
+        "tools": [
+          "search_torrents",
+          "get_movie_metadata",
+          "get_streaming_sources",
+          "build_player_url",
+          "add_torrent_download",
+          "web_search"
+        ],
+        "system_prompt": "Ты автономный ReAct-агент медиатеки Mediteka. Твоя задача — точно определять намерения пользователя, искать фильмы и сериалы через TMDb, находить лучшие раздачи на торрент-трекерах и предлагать варианты онлайн-просмотра."
+      },
+      {
+        "id": "web_search_gemini",
+        "name": "Gemini Search Grounding",
+        "description": "Прямой поиск в реальном индексе Google с автоматической ротацией пула API-ключей",
+        "is_system": true,
+        "enabled": true,
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "temperature": 0.2,
+        "max_steps": 5,
+        "timeout_seconds": 30,
+        "tools": [
+          "web_search"
+        ],
+        "system_prompt": "Ты поисковый агент Mediteka. Ищи актуальные проверенные факты в интернете, цитируй источники и формируй четкие структурированные ответы."
+      },
+      {
+        "id": "web_search_agy",
+        "name": "Antigravity AGY Searcher",
+        "description": "Агентный веб-поиск через встроенные инструменты платформы Google Antigravity",
+        "is_system": true,
+        "enabled": true,
+        "provider": "agy",
+        "model": "agy-gemma-4-26b-a4b-it",
+        "temperature": 0.2,
+        "max_steps": 5,
+        "timeout_seconds": 30,
+        "tools": [
+          "web_search"
+        ],
+        "system_prompt": "Ты поисковый ассистент Antigravity. Используй встроенный веб-поиск для поиска свежей информации и выдавай результат в формате Markdown."
+      },
+      {
+        "id": "playwright_agent",
+        "name": "Playwright Browser Agent",
+        "description": "Автономный браузерный парсинг и сбор контента сайтов через Headless Chromium",
+        "is_system": true,
+        "enabled": true,
+        "provider": "gemini",
+        "model": "gemini-2.5-flash",
+        "temperature": 0.1,
+        "max_steps": 10,
+        "timeout_seconds": 60,
+        "tools": [
+          "search_torrents",
+          "web_search"
+        ],
+        "system_prompt": "Ты браузерный агент Playwright. Выполняй навигацию по веб-страницам, извлекай полезный текст и структурируй данные."
+      },
+      {
+        "id": "media_organizer",
+        "name": "Media Organizer Agent",
+        "description": "Агент сортировки, категоризации и обогащения метаданных локальной медиатеки",
+        "is_system": true,
+        "enabled": true,
+        "provider": "foundry",
+        "model": "qwen2.5-1.5b-instruct-generic-cpu:4",
+        "temperature": 0.1,
+        "max_steps": 10,
+        "timeout_seconds": 45,
+        "tools": [
+          "media_scan",
+          "get_movie_metadata",
+          "rag_search"
+        ],
+        "system_prompt": "Ты агент-организатор медиафайлов. Анализируй имена файлов, определяй правильные названия фильмов и сопоставляй с базой данных."
+      }
+    ]
+  }
+}

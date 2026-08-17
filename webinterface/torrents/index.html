@@ -1,0 +1,105 @@
+<!-- Torrents Tab -->
+<div class="row g-3">
+  <!-- LEFT: утерянные торренты -->
+  <div class="col-md-4">
+    <div class="card h-100" id="missing-panel">
+      <div class="card-header d-flex justify-content-between align-items-center py-2">
+        <span data-i18n="torrents.missingFiles">⛔ Утерянные файлы</span> <span class="badge bg-danger" id="missing-count">0</span>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-refresh" data-i18n-title="common.refresh" title="🔄">🔄</button>
+      </div>
+      <div class="card-body p-0" style="overflow-y:auto; max-height:calc(100vh - 120px); min-height: 400px;">
+        <table class="table table-sm table-hover mb-0" id="missing-table">
+          <tbody id="missing-body"></tbody>
+        </table>
+        <div id="missing-empty" class="text-center text-muted p-3 d-none" data-i18n="torrents.noMissing">Утерянных торрентов нет ✅</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: управление -->
+  <div class="col-md-8">
+    <div class="row">
+      <!-- Автопоиск -->
+      <div class="col-12">
+        <div class="card mb-3">
+          <div class="card-header py-2" data-i18n="torrents.autoSearch">🔍 Автоматический поиск файлов</div>
+          <div class="card-body">
+
+            <!-- Список сохранённых путей -->
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted" data-i18n="torrents.searchFolders">Папки поиска</small>
+                <button class="btn btn-link btn-sm p-0" id="btn-select-all" data-i18n="torrents.selectAll">выбрать все</button>
+              </div>
+              <div id="dirs-list" class="border rounded p-2 mb-2" style="max-height:160px;overflow-y:auto;background:#fff;min-height:40px;">
+                <div class="text-muted small" id="dirs-empty" data-i18n="torrents.noFolders">Нет сохранённых папок</div>
+              </div>
+            </div>
+
+            <!-- Добавить новый путь -->
+            <div class="input-group input-group-sm mb-2">
+              <input type="text" class="form-control font-monospace" id="new-dir-input"
+                     data-i18n-placeholder="torrents.addFolderPlaceholder" placeholder="D:\NewFolder — добавить папку">
+              <button class="btn btn-outline-secondary" id="btn-add-dir" data-i18n="torrents.addFolder">+</button>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary btn-sm" id="btn-relocate" data-i18n="torrents.findAndRelocate">🔍 Найти и переместить</button>
+              <button class="btn btn-outline-secondary btn-sm" id="btn-relocate-selected" data-i18n="torrents.selectedOnly">Только выбранный</button>
+            </div>
+            <div id="relocate-result" class="alert mt-2 d-none" style="white-space:pre-wrap;font-size:.85rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ручное управление -->
+      <div class="col-12">
+        <div class="card mb-3" id="manual-panel">
+          <div class="card-header py-2" data-i18n="torrents.manualControl">✏️ Ручное управление путём</div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label small text-muted" data-i18n="torrents.selectedTorrent">Выбранный торрент</label>
+              <input type="text" class="form-control form-control-sm" id="manual-name" readonly placeholder="Выберите торрент из списка слева">
+            </div>
+            <div class="mb-2">
+              <label class="form-label small text-muted" data-i18n="torrents.newPath">Новый путь к папке с файлами</label>
+              <input type="text" class="form-control form-control-sm font-monospace" id="manual-path"
+                     placeholder="D:\NewLocation\TorrentFolder">
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-warning btn-sm" id="btn-set-location" data-i18n="torrents.setLocation">💾 Установить путь + Recheck</button>
+              <button class="btn btn-outline-danger btn-sm" id="btn-recheck-manual" data-i18n="torrents.recheckOnly">🔁 Только Recheck</button>
+            </div>
+            <div id="manual-result" class="alert mt-2 d-none"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Все торренты -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <span data-i18n="torrents.allTorrents">📋 Все торренты</span> <span class="badge bg-secondary" id="all-count">0</span>
+            <div class="d-flex gap-1">
+              <button class="btn btn-outline-warning btn-sm active" id="btn-show-missing" data-i18n="torrents.missing">Утерянные</button>
+              <button class="btn btn-outline-secondary btn-sm" id="btn-show-all" data-i18n="torrents.all">Все</button>
+            </div>
+          </div>
+          <div class="card-body p-0" style="overflow-y:auto; max-height:calc(50vh - 60px); min-height: 250px;">
+            <table class="table table-sm table-hover mb-0" id="torrents-table">
+              <thead class="table-dark sticky-top">
+                <tr>
+                  <th data-col="name" data-i18n="torrents.name">Название</th>
+                  <th data-col="state" style="width:150px" data-i18n="torrents.state">Статус</th>
+                  <th data-col="progress" style="width:100px" data-i18n="torrents.progress">Прогресс</th>
+                  <th data-col="size" style="width:80px" data-i18n="torrents.size">Размер</th>
+                </tr>
+              </thead>
+              <tbody id="torrents-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

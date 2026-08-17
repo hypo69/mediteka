@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant - Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/html/css/main.css?v=20260817_terminal_green_prompt" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/i18next@23.11.5/i18next.min.js"></script>
+</head>
+<body>
+<!-- Password Protection Modal -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="passwordModalLabel"><i class="bi bi-lock-fill"></i> Вход в админку</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="closePasswordModal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="text-muted">Введите пароль для доступа к администраторскому интерфейсу:</p>
+        <div class="mb-3">
+          <input type="password" class="form-control bg-dark text-white border-secondary" id="admin-password" placeholder="••••••" autofocus>
+        </div>
+        <div id="password-error" class="alert alert-danger d-none">Неверный пароль</div>
+        <button type="button" class="btn btn-primary w-100" id="login-btn">Войти</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt-2" id="admin-interface">
+
+  <ul class="nav nav-tabs mb-3" id="mainTabs">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-chat" data-i18n="tabs.chat">💬 Чат</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-torrents" data-i18n="tabs.torrents">🧲 Торренты</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-media" data-i18n="tabs.media">🎬 Медиатека</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-admin" data-i18n="tabs.admin">⚙️ Управление</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rag">🧠 RAG</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-models" data-i18n="tabs.models">🤖 Модели и API</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-agents">🧩 Агенты ИИ</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-search">🌐 Веб-поиск</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tts" data-i18n="tabs.tts">🗣️ Настройка TTS</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sources">📑 Источники</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-logs" data-i18n="tabs.logs">📋 Логи</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-help" data-i18n="tabs.help">📚 Справочник</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-instructions" data-i18n="tabs.instructions">📝 Системные инструкции</button>
+    </li>
+    <li class="nav-item ms-auto">
+      <select class="form-select form-select-sm lang-selector" id="lang-selector" style="width:auto;">
+        <option value="en">English</option>
+        <option value="ru">Русский</option>
+      </select>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- Chat Tab -->
+    <div id="tab-chat" class="tab-pane fade show active">
+      <div class="chat-window mb-2" id="chat-window"></div>
+
+      <!-- Media Controls -->
+      <div class="media-controls mb-2 d-none" id="media-controls">
+        <div class="card">
+          <div class="card-body p-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small" data-i18n="mediaControls.nowPlaying">▶️ Сейчас играет:</span>
+              <strong id="now-playing-title">—</strong>
+              <button class="btn btn-sm btn-outline-primary ms-auto" id="btn-open-player" data-i18n="mediaControls.openPlayer">Открыть плеер</button>
+              <button class="btn btn-sm btn-outline-secondary" id="btn-close-player" data-i18n="mediaControls.close">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <input type="text" class="form-control" id="message-input" data-i18n-placeholder="chat.placeholder" placeholder="Введите сообщение...">
+        <button class="btn btn-primary" id="send-button" data-i18n="chat.send">Отправить</button>
+      </div>
+    </div>
+
+    <!-- Torrents Tab -->
+    <div id="tab-torrents" class="tab-pane fade"></div>
+
+    <!-- Media Tab -->
+    <div id="tab-media" class="tab-pane fade"></div>
+
+    <!-- Admin Tab -->
+    <div id="tab-admin" class="tab-pane fade"></div>
+
+    <!-- RAG Tab -->
+    <div id="tab-rag" class="tab-pane fade"></div>
+
+    <!-- Models Tab -->
+    <div id="tab-models" class="tab-pane fade"></div>
+
+    <!-- Agents Tab -->
+    <div id="tab-agents" class="tab-pane fade"></div>
+
+    <!-- Search Tab -->
+    <div id="tab-search" class="tab-pane fade"></div>
+
+    <!-- TTS Tab -->
+    <div id="tab-tts" class="tab-pane fade"></div>
+
+    <!-- Sources Tab -->
+    <div id="tab-sources" class="tab-pane fade"></div>
+
+    <!-- Logs Tab -->
+    <div id="tab-logs" class="tab-pane fade"></div>
+
+    <!-- Help Tab -->
+    <div id="tab-help" class="tab-pane fade"></div>
+
+    <!-- Instructions Tab -->
+    <div id="tab-instructions" class="tab-pane fade"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/html/js/chatService.js?v=20260817_agents_tab_v2"></script>
+<script type="module" src="/html/admin/main.js?v=20260817_agents_tab_v2"></script>
+
+<!-- HELP Modal -->
+<div class="modal fade modal-help" id="help-modal" tabindex="-1" aria-labelledby="help-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="help-modal-label" data-i18n="helpModal.title">Помощь</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="help-modal-content">
+        <p data-i18n="common.loading">Загрузка...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="helpModal.close">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Prompt Preview Modal -->
+<div class="modal fade" id="prompt-preview-modal" tabindex="-1" aria-labelledby="prompt-preview-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="prompt-preview-modal-label">Предпросмотр промта</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="prompt-preview-content">
+        <p>Загрузка...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chat Logic & RAG Architecture Modal -->
+<div class="modal fade" id="chat-logic-modal" tabindex="-1" aria-labelledby="chat-logic-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary d-flex justify-content-between align-items-center">
+        <h5 class="modal-title d-flex align-items-center gap-2" id="chat-logic-modal-label">
+          <i class="bi bi-diagram-3-fill text-info"></i> 🧠 Архитектура и алгоритм диспетчеризации ответов чата
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <a href="/html/assets/chat_and_rag_logic.svg" target="_blank" class="btn btn-sm btn-outline-info" title="Открыть SVG в новой вкладке">
+            <i class="bi bi-arrows-fullscreen"></i> SVG
+          </a>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+      </div>
+      <div class="modal-body p-3">
+        <!-- Tabs for Schema vs Documentation -->
+        <ul class="nav nav-pills mb-3" id="chatLogicTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="chat-logic-svg-tab" data-bs-toggle="pill" data-bs-target="#chat-logic-svg-pane" type="button" role="tab">📊 Интерактивная блок-схема</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="chat-logic-doc-tab" data-bs-toggle="pill" data-bs-target="#chat-logic-doc-pane" type="button" role="tab">📑 Описание алгоритма и сценариев</button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="chatLogicTabContent">
+          <!-- SVG Diagram Tab -->
+          <div class="tab-pane fade show active text-center" id="chat-logic-svg-pane" role="tabpanel">
+            <div class="p-2 border border-secondary rounded bg-black d-flex justify-content-center align-items-center" style="overflow-x: auto; min-height: 520px;">
+              <img src="/html/assets/chat_and_rag_logic.svg?v=20260817_1" alt="Схема логики чата" style="max-width: 100%; height: auto; border-radius: 6px;">
+            </div>
+          </div>
+
+          <!-- Documentation Text Tab -->
+          <div class="tab-pane fade" id="chat-logic-doc-pane" role="tabpanel">
+            <div class="p-3 bg-black rounded border border-secondary text-light small">
+              <h6 class="text-info fw-bold mb-2">⚙️ Режимы работы (config.json &rarr; rag.mode)</h6>
+              <ul class="mb-3">
+                <li><strong class="text-success">rag+model (Гибридный / Основной):</strong> Сначала проверяется локальная медиатека. Если фильм найден — LLM красиво рассказывает о нём со ссылкой на наличие в медиатеке. Если фильм отсутствует — LLM обращается к веб-поиску (MCP/Grounding) и рассказывает о фильме с кнопкой загрузки <code>&lt;film&gt;</code>.</li>
+                <li><strong class="text-warning">rag (Строгий локальный):</strong> Работает только по базе <code>media.db</code>. При отсутствии тайтла выдаёт чёткое <em>«В локальной базе не найдено»</em> без ложных подстановок.</li>
+                <li><strong class="text-primary">model (Без базы):</strong> Прямой ответ LLM и веб-поиск без обращения к дискам.</li>
+              </ul>
+
+              <h6 class="text-info fw-bold mb-2">📊 Сценарии обработки</h6>
+              <div class="table-responsive mb-3">
+                <table class="table table-dark table-bordered table-sm small">
+                  <thead>
+                    <tr class="table-secondary text-dark">
+                      <th>Сценарий</th>
+                      <th>Пример</th>
+                      <th>Алгоритм</th>
+                      <th>Результат</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="fw-bold text-success">Фильм есть в базе</td>
+                      <td><em>«Расскажи о фильме А зори здесь тихие»</em></td>
+                      <td>Точный поиск в <code>media.db</code> (Score 1.0) / FAISS &ge; 0.60 &rarr; контекст в LLM</td>
+                      <td>LLM сообщает, что фильм <strong>доступен в медиатеке</strong>, описывает сюжет и тегирует <code>&lt;film&gt;</code>.</td>
+                    </tr>
+                    <tr>
+                      <td class="fw-bold text-danger">Фильма нет в базе</td>
+                      <td><em>«Расскажи о сериале Сваты»</em></td>
+                      <td>Локальный RAG даёт 0 совпадений &rarr; Fallback на Web Search (MCP)</td>
+                      <td>LLM рассказывает о сериале, указывает, что его <strong>нет на дисках</strong>, тегирует <code>&lt;film&gt;</code> для торрентов.</td>
+                    </tr>
+                    <tr>
+                      <td class="fw-bold text-info">Команда запуска</td>
+                      <td><em>«Включи А зори здесь тихие»</em></td>
+                      <td>Проверка пути на диске &rarr; WebSocket <code>play_file_by_path</code></td>
+                      <td>Мгновенный старт в плеере (Direct Play).</td>
+                    </tr>
+                    <tr>
+                      <td class="fw-bold text-primary">Подборка / Настроение</td>
+                      <td><em>«Найди боевик на вечер»</em></td>
+                      <td>Извлечение подходящих жанров &rarr; LLM формирует диалоговую подборку</td>
+                      <td>Живая рекомендация с обоснованием «почему стоит посмотреть».</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <h6 class="text-info fw-bold mb-1">🎯 Порог косинусного сходства (Cosine Similarity)</h6>
+              <p class="text-muted mb-0">Для исключения ложных срабатываний порог в <code>rag_search_tool</code> установлен на <strong>0.60</strong>. Запросы с более низким сходством считаются отсутствующими в локальной базе и корректно перенаправляются в интернет-поиск.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "download_dir": "downloads/yt_dlp",
+  "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+  "audio_format": "mp3",
+  "audio_quality": "192",
+  "cookies_from_browser": null,
+  "cookies_file": null,
+  "proxy": null,
+  "max_filesize_mb": null,
+  "subtitles": false,
+  "subtitle_langs": ["ru", "en"],
+  "embed_thumbnail": true,
+  "add_metadata": true,
+  "restrict_filenames": false,
+  "playlist_max_items": 10,
+  "rate_limit": null
+}

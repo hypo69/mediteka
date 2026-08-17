@@ -1,0 +1,17 @@
+entity_id: breaking_bad
+type: series
+title: Breaking Bad
+original_title: Breaking Bad
+release_date: 2008
+end_date: 2013
+seasons: 5
+episodes: 62
+country: USA
+genre: [Crime drama, Neo-western, Thriller, Dark comedy]
+main_cast:
+  - walter_white
+  - jesse_pinkman
+  - skyler_white
+  - hank_schrader
+  - gustavo_fring
+  - saul_goodman

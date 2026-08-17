@@ -1,0 +1,262 @@
+# -*- coding: utf-8 -*-
+# =============================================================================
+# Название процесса: RAG Plugin для чата
+# =============================================================================
+# Описание:
+#   Плагин для подключения RAG-поиска медиатеки к чату через Function Calling.
+#   Автоматически определяет медиа-запросы и использует Gemini Functions
+#   для семантического поиска и получения информации о фильмах/сериалах.
+#
+# File: rag_plugin.py
+# Project: gemini-simplechat
+# Package: plugins.rag
+# Author: hypo69
+# Copyright: © 2026 hypo69
+# =============================================================================
+
+import json
+import os
+import re
+import sqlite3
+import random
+import asyncio
+from plugins.plugin import BasePlugin
+from plugins.media_organizer.core.media_rag_functions import (
+    get_media_tools,
+    dispatch_media_tool_call,
+    search_media,
+    get_media_card,
+)
+from plugins.media_organizer.core import MEDIA_DB
+from src.ai.dev_rag import rag_search_tool
+from src.logger import logger
+
+_MEDIA_KEYWORDS = (
+    "фильм", "сериал", "кино", "эпизод", "сезон", "актёр", "режиссёр",
+    "movie", "series", "episode", "season", "actor", "director", "film",
+    "диск", "медиа", "media", "посмотреть", "рекомендуй", "похожее",
+    "что посмотреть", "какой фильм", "посоветуй", "рейтинг",
+    "случайн", "рандом", "карусель",
+)
+
+# Ключевые слова для технического поиска
+_DEV_KEYWORDS = (
+    "код", "функция", "инструкция", "как сделать", "стандарт", "ошибка", "настройка",
+    "классу", "модуль", "файл", "api", "rag", "конфигурация"
+)
+
+
+class RAGPlugin(BasePlugin):
+    """RAG-плагин для семантического поиска медиатеки в чате.
+
+    Использует Gemini Function Calling для поиска фильмов и сериалов
+    через RAG-индекс с семантическим поиском.
+    """
+
+    name = "rag"
+
+    def __init__(self, ai_model):
+        """Инициализация RAG-плагина."""
+        super().__init__(ai_model)
+        self._tools = get_media_tools()
+
+    def _is_media_query(self, message: str) -> bool:
+        """Определение медиа-запроса по ключевым словам."""
+        low = message.lower()
+        return any(kw in low for kw in _MEDIA_KEYWORDS)
+
+    def _is_dev_query(self, message: str) -> bool:
+        """Определение технического запроса."""
+        low = message.lower()
+        return any(kw in low for kw in _DEV_KEYWORDS)
+
+    async def _handle(self, message: str, **kwargs):
+        """Обработка запроса (медиа или технический)."""
+        low_message = message.lower()
+
+        # 1. Медиа-поиск
+        if self._is_media_query(message):
+            # Проверяем на рулетку (карусель)
+            if "карусель" in low_message or "случайн" in low_message or "рандом" in low_message:
+                from src.fastapi.router_control import manager
+                yield {"status": "🎡 Выбор случайного фильма через карусель..."}
+
+                with sqlite3.connect(MEDIA_DB) as conn:
+                    conn.row_factory = sqlite3.Row
+                    row = conn.execute(
+                        "SELECT title, title_ru, year, main_category, disk_name, plot, path FROM media "
+                        "WHERE (media_type = 'movie' OR media_type IS NULL OR media_type = '') "
+                        "  AND (title IS NOT NULL AND title != '') "
+                        "ORDER BY RANDOM() LIMIT 1"
+                    ).fetchone()
+                    
+                    if not row:
+                        row = conn.execute(
+                            "SELECT title, title_ru, year, main_category, disk_name, plot, path FROM media "
+                            "WHERE title IS NOT NULL AND title != '' "
+                            "ORDER BY RANDOM() LIMIT 1"
+                        ).fetchone()
+
+                if not row:
+                    yield {"text": "❌ Ошибка: База данных медиатеки пуста."}
+                    return
+
+                title = row['title']
+                title_ru = row['title_ru']
+                year = row['year']
+                main_category = row['main_category']
+                plot = row['plot']
+                path = row['path']
+                disk_name = row['disk_name']
+
+                room_id = kwargs.get('room_id', 'default')
+                has_player = room_id in manager.rooms and len(manager.rooms[room_id].get("player", [])) > 0
+                
+                if path and has_player:
+                    asyncio.create_task(manager.broadcast_to_role(room_id, "player", {
+                        "action": "play_file_by_path",
+                        "path": path
+                    }))
+
+                status_msg = "🚀 Запускаю воспроизведение на плеере..." if has_player else "📱 Вы можете запустить воспроизведение локально или открыть стрим."
+
+                response_text = (
+                    f"🎡 **Карусель выбрала случайный фильм!**\n\n"
+                    f"🎬 **Название:** <film>{title_ru or title}</film>\n"
+                    f"📅 **Год:** {year or 'Неизвестно'}\n"
+                    f"📂 **Категория:** {main_category or 'Без категории'}\n"
+                    f"💿 **Диск:** {disk_name or 'Неизвестно'}\n\n"
+                    f"📝 **Описание:** {plot or 'Нет описания.'}\n\n"
+                    f"{status_msg}"
+                )
+
+                yield {"text": response_text}
+                return
+
+            # Семантический RAG-поиск
+            yield {"status": "🔍 Поиск в локальном RAG-индексе..."}
+            results_json = search_media(message)
+            results_data = json.loads(results_json)
+
+            if "error" in results_data:
+                yield {"text": f"❌ Ошибка поиска: {results_data['error']}"}
+                return
+
+            results = results_data.get("results", [])
+
+            # Поиск в интернете через Playwright, если локально ничего не найдено или запрошен интернет-поиск
+            web_context = ""
+            if not results or any(x in low_message for x in ["интернет", "форум", "гугл", "поищи", "ddg"]):
+                yield {"status": "🌐 Поиск информации в интернете через Playwright..."}
+                try:
+                    from plugins.web_search.playwright_searcher import PlaywrightWebSearcher
+                    web_searcher = PlaywrightWebSearcher()
+                    web_context = await web_searcher.search_and_extract(message)
+                except Exception as playwright_err:
+                    logger.error(f"Ошибка при работе PlaywrightWebSearcher: {playwright_err}")
+                    web_context = "Не удалось выполнить поиск в интернете через Playwright."
+
+            # Определяем, нужен ли вызов Gemini для генерации естественного ответа
+            conversational_keywords = ["посоветуй", "рекомендуй", "расскажи", "кто", "как", "почему", "о чём", "какой", "что", "где", "когда", "чей", "какие", "подробнее"]
+            is_conversational = (
+                "?" in message or 
+                any(w in low_message for w in conversational_keywords) or
+                not results or
+                kwargs.get("history") or
+                web_context
+            )
+
+            if is_conversational:
+                yield {"status": "🤖 Генерация ответа ИИ..."}
+                # Формируем контекст из результатов поиска
+                context_parts = []
+                for idx, item in enumerate(results, 1):
+                    # Подгружаем карточку для более детального контекста
+                    card_json = get_media_card(item.get('disk_name', ''), item.get('title', ''), item.get('type', ''))
+                    try:
+                        card_data = json.loads(card_json)
+                        plot_desc = card_data.get('plot') or card_data.get('why_watch') or "Нет описания."
+                        genres_str = ", ".join(card_data.get('genres', []))
+                        cast_str = ", ".join(card_data.get('cast', []))
+                        
+                        item_ctx = (
+                            f"{idx}. {item.get('title')} ({item.get('year') or '?'})\n"
+                            f"   Тип: {item.get('type')}, Категория: {item.get('category')}, Диск: {item.get('disk_name')}\n"
+                            f"   Жанры: {genres_str}\n"
+                            f"   В ролях: {cast_str}\n"
+                            f"   Описание: {plot_desc}"
+                        )
+                        context_parts.append(item_ctx)
+                    except Exception:
+                        context_parts.append(f"{idx}. {item.get('title')} ({item.get('year') or '?'})")
+
+                context_str = "\n\n".join(context_parts)
+                
+                system_prompt = (
+                    f"Ты — AI Assistant домашней медиатеки кино.davidka.net. Тебе предоставлены результаты локального RAG-поиска и внешнего веб-поиска по запросу пользователя.\n"
+                    f"Используй эти результаты для построения подробного, вежливого и структурированного ответа на русском языке.\n"
+                    f"Если фильм/сериал найден, обязательно используй тег <film>Название на русском</film> при его упоминании, чтобы система плеера могла автоматически запустить его.\n"
+                    f"Если информация взята из интернета, вежливо упомяни, что в локальной медиатеке этого фильма/сериала или таких подробностей нет.\n"
+                    f"В случае запроса подробного сюжета по сериям, перескажи его максимально детально на основе найденного контекста, без использования местоимения «это» в начале абзацев.\n\n"
+                    f"Результаты поиска в локальной медиатеке:\n{context_str}\n\n"
+                    f"{web_context}"
+                )
+
+                answer = await self.ai.chat(
+                    message,
+                    system_instruction=system_prompt,
+                    model_name=kwargs.get('model_name')
+                )
+                yield {"text": answer}
+            else:
+                # Обычный список результатов
+                if not results:
+                    yield {"text": f"🔍 По запросу **«{message}»** ничего не найдено в локальной медиатеке."}
+                    return
+
+                text = f"🔍 **Результаты поиска в медиатеке по запросу «{message}»**:\n\n"
+                for i, item in enumerate(results, 1):
+                    text += f"{i}. **{item.get('title')}** ({item.get('year') or '?'})\n"
+                    text += f"   * Тип: {item.get('type')}, Категория: {item.get('category')}\n"
+                    text += f"   * Диск: {item.get('disk_name')} (Схожесть: {item.get('score')})\n\n"
+
+                yield {"text": text}
+                
+                # Формируем голос для озвучки (TTS)
+                voice_parts = []
+                for i, item in enumerate(results, 1):
+                    card_json = get_media_card(item.get('disk_name', ''), item.get('title', ''), item.get('type', ''))
+                    try:
+                        card_data = json.loads(card_json)
+                        title_ru = card_data.get('title_ru') or card_data.get('title') or ""
+                        clean_title = re.sub(r'[a-zA-Z]', '', title_ru).replace('(', '').replace(')', '').strip()
+                        tts_text = card_data.get('why_watch') or card_data.get('plot') or ""
+                        voice_parts.append(f"{i}. {clean_title}. {tts_text}")
+                    except Exception:
+                        pass
+                voice_text = " ".join(voice_parts)
+                yield {"voice": voice_text}
+            return
+
+        # 2. Технический (dev) поиск
+        if self._is_dev_query(message):
+            yield {"status": "🛠️ Поиск по техническому контексту..."}
+            api_key = os.getenv('GEMINI_API_KEY', '')
+            results_json = rag_search_tool(message, api_key=api_key)
+
+            yield {"status": "🤖 Генерация технического ответа..."}
+            system_prompt = (
+                f"Ты — технический ассистент разработчика медиатеки. Ответь на вопрос пользователя, используя "
+                f"результаты поиска по коду и технической документации проекта.\n\n"
+                f"Найденные фрагменты кода и документации:\n{results_json}"
+            )
+            answer = await self.ai.chat(
+                message,
+                system_instruction=system_prompt,
+                model_name=kwargs.get('model_name')
+            )
+            yield {"text": answer}
+            return
+
+
+plugin = RAGPlugin
