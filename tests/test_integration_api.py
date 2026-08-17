@@ -38,7 +38,9 @@ class TestChatAPI:
         app = FastAPI()
         mock_model = Mock()
         mock_model.chat = AsyncMock(return_value="Test response")
-        mock_model.chat_stream = AsyncMock()
+        async def mock_stream(*args, **kwargs):
+            yield "Test response"
+        mock_model.chat_stream = mock_stream
         
         plugins = {}
         app.include_router(init_router(mock_model, mock_model, plugins))

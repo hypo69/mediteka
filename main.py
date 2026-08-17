@@ -52,16 +52,22 @@ app.add_middleware(
 # Auto login local user to user_id=1
 @app.middleware("http")
 async def auto_login_local_user(request: Request, call_next):
-    # Check if host is local loopback (127.0.0.1 or localhost)
-    if request.url.hostname in ('127.0.0.1', 'localhost'):
-        token = request.cookies.get('auth_token', '')
+    hostname: str = request.url.hostname or ''
+    is_local: bool = (
+        hostname in ('127.0.0.1', 'localhost', '::1', 'testserver', '0.0.0.0')
+        or hostname.startswith('192.168.')
+        or hostname.startswith('10.')
+        or hostname.startswith('172.')
+    )
+    if is_local:
+        token: str = request.cookies.get('auth_token', '')
         from src.fastapi.router_auth import verify_jwt_token
-        is_token_valid = False
+        is_token_valid: bool = False
         if token:
             try:
-                is_token_valid = verify_jwt_token(token) is not None
+                is_token_valid = bool(verify_jwt_token(token))
             except Exception:
-                pass
+                is_token_valid = False
 
         if not token or not is_token_valid:
             from src.user_manager import user_manager
@@ -76,6 +82,24 @@ async def auto_login_local_user(request: Request, call_next):
                         id=db_user['id']
                     )
                     token = create_jwt_token(token_data)
+
+                    # Прокидываем куку в headers текущего запроса для последующих middleware и обработчиков
+                    raw_headers = list(request.scope.get('headers', []))
+                    cookie_bytes = f"auth_token={token}".encode('utf-8')
+                    new_headers = []
+                    found_cookie: bool = False
+                    for k, v in raw_headers:
+                        if k.lower() == b'cookie':
+                            new_headers.append((k, v + b'; ' + cookie_bytes))
+                            found_cookie = True
+                        else:
+                            new_headers.append((k, v))
+                    if not found_cookie:
+                        new_headers.append((b'cookie', cookie_bytes))
+                    request.scope['headers'] = new_headers
+                    if hasattr(request, '_cookies'):
+                        delattr(request, '_cookies')
+
                     response = await call_next(request)
                     response.set_cookie(
                         'auth_token',

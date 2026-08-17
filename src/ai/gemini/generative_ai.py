@@ -1,382 +1,516 @@
-## \file src/ai/gemini/generative_ai.py
 # -*- coding: utf-8 -*-
-#! .pyenv/bin/python3
+# =============================================================================
+# Название процесса: Интеграция с моделями Google Generative AI (Gemini)
+# =============================================================================
+# Описание:
+#   Организация взаимодействия с API Google Generative AI через официальный SDK.
+#   Выполнение генерации текста, стриминга, эмбеддингов и поддержка вызова функций.
+#
+# Примеры:
+#   >>> from src.ai.gemini import GoogleGenerativeAI
+#   >>> ai = GoogleGenerativeAI()
+#   >>> response = await ai.ask("Привет!")
+#
+# File: generative_ai.py
+# Project: mediteka
+# Package: src.ai.gemini
+# Module: Core
+# Class: GoogleGenerativeAI
+# Author: hypo69
+# Copyright: © 2026 hypo69
+# =============================================================================
+"""Модуль интеграции с моделями Google Generative AI (Gemini).
 
+Реализует управление пулом API-ключей, ротацию моделей при сбоях,
+потоковую генерацию ответов, поддержку инструментов и обработку медиа-файлов.
 """
-.. module::  src.ai.gemini.generative_ai
-   :platform: Windows, Unix
-   :synopsis: Google generative AI integration
-   https://github.com/google-gemini/generative-ai-python/blob/main/docs/api/google/generativeai.md
-"""
-import re
-import json
+
 import asyncio
+import json
+import re
 import time
+from dataclasses import dataclass, field
 from io import IOBase
 from pathlib import Path
-from typing import Optional, Dict, List, Any
-from dataclasses import dataclass, field
+from typing import Any, AsyncGenerator
 
 from google import genai
 from google.genai import types
+import numpy as np
 import requests
 
-from grpc import RpcError
-from google.api_core.exceptions import (
-    GatewayTimeout,
-    ServiceUnavailable,
-    ResourceExhausted,
-    InvalidArgument,
+from src.ai.model_manager import (
+    add_unsupported_model as _mgr_add_unsupported_model,
+    get_available_models as _mgr_get_available_models,
+    load_unsupported_models as _mgr_load_unsupported_models,
 )
-from google.auth.exceptions import DefaultCredentialsError, RefreshError
-
-import os
-from dotenv import load_dotenv, set_key
-import numpy as np
-
-import header
-from header import __root__
+from src.config import server_cfg
 from src.logger.logger import logger
-from src.secrets.api_key_state import mark_exhausted, load_api_keys, get_status, update_last_run, next_available_in
-
-_ENV_PATH = __root__ / '.env'
-
-from src.utils.date_time import TimeoutCheck
-from src.utils.jjson import j_loads
+from src.secrets.api_key_state import (
+    get_status,
+    load_api_keys,
+    mark_exhausted,
+    next_available_in,
+    update_last_run,
+)
 from src.utils.image import get_image_bytes
+from src.utils.jjson import j_loads
 
-timeout_check = TimeoutCheck()
 
-def normalize_text(text):
-    # Декодируем все Unicode escape-последовательности
-    #text = codecs.decode(text, 'unicode_escape')
-    
-    # Заменяем escape-последовательности HTML, если необходимо (например, <br>)
-    text = re.sub(r'\\n', '\n', text)  # Заменяем \n на настоящий символ новой строки
+# Загрузка локальной конфигурации модуля Gemini
+_config_path: Path = Path(__file__).parent / 'config.json'
+_gemini_config: dict = j_loads(_config_path) if _config_path.exists() else {}
+_DEFAULT_MODEL: str = (
+    _gemini_config.get('model', 'gemini-flash-latest')
+    if isinstance(_gemini_config, dict)
+    else 'gemini-flash-latest'
+)
+_DEFAULT_SAVE_HISTORY: bool = (
+    _gemini_config.get('save_history_chat', False)
+    if isinstance(_gemini_config, dict)
+    else False
+)
 
-    return text
 
-def remove_html_blocks(text: str) -> str:
-    """
-    Удаляет блоки текста, которые начинаются с '```html' и заканчиваются на '```' или '```\n'.
+def normalize_text(text: str) -> str:
+    """Нормализация текстового ответа модели.
+
+    Замена экранированных последовательностей перевода строки на реальные символы.
 
     Args:
-        text (str): Входной текст.
+        text (str): Входной текст для нормализации.
 
     Returns:
-        str: Текст без блоков '```html'.
+        str: Нормализованный текст.
+
+    Examples:
+        >>> normalize_text("Line 1\\\\nLine 2")
+        'Line 1\\nLine 2'
     """
+    if not text:
+        return ''
+    return re.sub(r'\\n', '\n', text)
+
+
+def remove_html_blocks(text: str) -> str:
+    """Удаление блоков разметки HTML из ответа модели.
+
+    Args:
+        text (str): Входной текст с возможными HTML-блоками.
+
+    Returns:
+        str: Текст с вырезанными блоками ```html ... ```.
+
+    Examples:
+        >>> remove_html_blocks("```html<div>Test</div>```Hello")
+        'Hello'
+    """
+    if not text:
+        return ''
     return re.sub(r'```html.*?```', '', text, flags=re.DOTALL)
 
+
 def load_unsupported_models() -> set[str]:
-    """Загружает список неподдерживаемых / устаревших моделей Gemini."""
-    from src.ai.model_manager import load_unsupported_models as _mgr_load_unsupported_models
-    return _mgr_load_unsupported_models("gemini")
+    """Загрузка списка неподдерживаемых и устаревших моделей Gemini.
+
+    Returns:
+        set[str]: Множество наименований неподдерживаемых моделей.
+
+    Examples:
+        >>> unsupported = load_unsupported_models()
+        >>> isinstance(unsupported, set)
+        True
+    """
+    return _mgr_load_unsupported_models('gemini')
 
 
-def add_unsupported_model(model_name: str, reason: str = "") -> bool:
-    """Добавляет модель в список неподдерживаемых и сохраняет в конфигурацию."""
-    from src.ai.model_manager import add_unsupported_model as _mgr_add_unsupported_model
-    return _mgr_add_unsupported_model("gemini", model_name, reason)
+def add_unsupported_model(model_name: str, reason: str = '') -> bool:
+    """Добавление модели в список неподдерживаемых с сохранением в конфигурации.
 
+    Args:
+        model_name (str): Наименование блокируемой модели.
+        reason (str): Причина исключения модели. Значение по умолчанию: ''.
 
-_gemini_config = j_loads(Path(__file__).parent / 'config.json')
-_DEFAULT_MODEL: str = _gemini_config.get('model', 'gemini-flash-latest') if isinstance(_gemini_config, dict) else 'gemini-flash-latest'
-_DEFAULT_SAVE_HISTORY: bool = _gemini_config.get('save_history_chat', False) if isinstance(_gemini_config, dict) else False
+    Returns:
+        bool: True при успешном сохранении, False при ошибке.
+
+    Examples:
+        >>> add_unsupported_model('gemini-legacy', reason='404 Not Found')
+        True
+    """
+    if not model_name:
+        return False
+    return _mgr_add_unsupported_model('gemini', model_name, reason)
 
 
 @dataclass
 class GoogleGenerativeAI:
-    """
-    Класс для взаимодействия с моделями Google Generative AI.
+    """Класс взаимодействия с моделями Google Generative AI (Gemini).
+
+    Attributes:
+        api_key (str): Активный API-ключ для запросов.
+        model_name (str): Наименование используемой модели Gemini.
+        generation_config (dict): Параметры генерации по умолчанию.
+        system_instruction (str): Базовая системная инструкция.
+        api_key_names (list[str]): Список разрешенных имен ключей.
+        save_history_chat (bool): Флаг сохранения контекста истории чата.
+        sleep_on_exhausted (bool): Флаг ожидания разблокировки при исчерпании квоты.
     """
 
-    api_key: str = field(default='')
+    api_key: str = ''
     model_name: str = field(default_factory=lambda: _DEFAULT_MODEL)
-    generation_config: Dict = field(default_factory=lambda: {"response_mime_type": "text/plain"})
-    system_instruction: Optional[str] = None
-    api_key_names: List[str] = field(default_factory=list)
-    api_keys: List[str] = field(default_factory=list, init=False)
-    api_key_owners: List[str] = field(default_factory=list, init=False)
-    _key_names_active: List[str] = field(default_factory=list, init=False)
-    chat_history: List[Dict] = field(default_factory=list, init=False)
-    _client: Any = field(init=False)
-    _chat: Any = field(init=False)
+    generation_config: dict = field(default_factory=lambda: {'response_mime_type': 'text/plain'})
+    system_instruction: str = ''
+    api_key_names: list[str] = field(default_factory=list)
+    api_keys: list[str] = field(default_factory=list, init=False)
+    api_key_owners: list[str] = field(default_factory=list, init=False)
+    _key_names_active: list[str] = field(default_factory=list, init=False)
+    chat_history: list[dict] = field(default_factory=list, init=False)
+    _client: Any = field(default=False, init=False)
+    _chat: Any = field(default=False, init=False)
     _api_key_index: int = field(default=0, init=False)
     _all_keys_exhausted: bool = field(default=False, init=False)
     _unavailable_attempts: int = field(default=0, init=False)
     save_history_chat: bool = field(default_factory=lambda: _DEFAULT_SAVE_HISTORY)
     sleep_on_exhausted: bool = True
 
-    _last_exception: Optional[str] = field(default=None, init=False)
-    _key_errors: Dict[str, str] = field(default_factory=dict, init=False)
+    _last_exception: str = field(default='', init=False)
+    _key_errors: dict[str, str] = field(default_factory=dict, init=False)
 
-    MODELS: List[str] = field(default_factory=lambda: GoogleGenerativeAI.get_available_models(), init=False)
+    MODELS: list[str] = field(default_factory=lambda: GoogleGenerativeAI.get_available_models(), init=False)
 
     @classmethod
-    def get_available_models(cls, api_key: str = '', force_refresh: bool = False) -> List[str]:
-        """Динамически запрашивает список доступных моделей через Google GenAI SDK.
-        Фильтрует неподдерживаемые модели (вычитает unsupported_models из config.json) и кэширует результат.
+    def get_available_models(cls, api_key: str = '', force_refresh: bool = False) -> list[str]:
+        """Получение динамического списка доступных моделей через Google GenAI SDK.
+
+        Args:
+            api_key (str): Опциональный API-ключ. Значение по умолчанию: ''.
+            force_refresh (bool): Принудительное обновление кэша. Значение по умолчанию: False.
+
+        Returns:
+            list[str]: Список доступных моделей.
+
+        Examples:
+            >>> models = GoogleGenerativeAI.get_available_models()
+            >>> isinstance(models, list)
+            True
         """
-        from src.ai.model_manager import get_available_models as _mgr_get_available_models
-        return _mgr_get_available_models(provider="gemini", api_key=api_key, force_refresh=force_refresh)
+        return _mgr_get_available_models(provider='gemini', api_key=api_key, force_refresh=force_refresh)
 
-    def _get_exhausted_error_msg(self) -> str:
-        msg = "Ошибка: Все API ключи исчерпаны."
-        from src.config import server_cfg
-        if getattr(server_cfg, "mode", "DEV").upper() == "DEV":
-            if getattr(self, '_key_errors', None):
-                msg += "\n[DEV Детали по ключам]:"
-                for kname, kerr in self._key_errors.items():
-                    msg += f"\n- {kname}: {kerr}"
-            else:
-                last_err = getattr(self, '_last_exception', None)
-                if last_err:
-                    msg += f"\n[DEV Детали]: {last_err}"
-        return msg
-
-    def _record_error(self, ex: Exception | str) -> None:
-        ex_str = str(ex)
-        self._last_exception = ex_str
-        if not hasattr(self, '_key_errors') or self._key_errors is None:
-            self._key_errors = {}
-        key_name = self._key_names_active[0] if self._key_names_active else '?'
-        self._key_errors[key_name] = ex_str
-
-    def __post_init__(self):
-        """Инициализация модели GoogleGenerativeAI с дополнительными настройками."""
-        self._last_exception = None
+    def __post_init__(self) -> None:
+        """Инициализация объекта подключения к Google Generative AI."""
+        self._last_exception = ''
         self._key_errors = {}
-        # Сброс счётчика неудачных 503 при новом запуске
         self._unavailable_attempts = 0
-        self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
-        self.api_key_owners = self._key_names_active  # имя и есть владелец
+
+        self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names)
+        self.api_key_owners = list(self._key_names_active)
+
         if not self.api_keys:
-            print("[!] No available API keys.")
+            logger.warning('GoogleGenerativeAI: Нет доступных API-ключей Gemini.')
             self._all_keys_exhausted = True
             return
-        get_status(self.api_key_names or None)
+
+        get_status(self.api_key_names)
         self.api_key = self.api_keys[0]
-        print(f"[API KEY] Using: {self._key_names_active[0]}")
+        logger.info(f'GoogleGenerativeAI: Инициализация с ключом: {self._key_names_active[0]}')
         self._client = genai.Client(api_key=self.api_key)
         self._chat = self._start_chat()
 
+    def _get_exhausted_error_msg(self) -> str:
+        """Формирование сообщения об исчерпании всех доступных API-ключей.
+
+        Returns:
+            str: Текст сообщения об ошибке с диагностической информацией.
+        """
+        msg: str = 'Ошибка: Все API ключи исчерпаны.'
+        mode: str = getattr(server_cfg, 'mode', 'DEV').upper()
+        if mode == 'DEV':
+            if self._key_errors:
+                msg += '\n[DEV Детали по ключам]:'
+                for kname, kerr in self._key_errors.items():
+                    msg += f'\n- {kname}: {kerr}'
+            elif self._last_exception:
+                msg += f'\n[DEV Детали]: {self._last_exception}'
+        return msg
+
+    def _record_error(self, ex: Exception | str) -> None:
+        """Фиксация последней возникшей ошибки в диагностическом хранилище.
+
+        Args:
+            ex (Exception | str): Объект исключения или строка ошибки.
+        """
+        ex_str: str = str(ex)
+        self._last_exception = ex_str
+        key_name: str = self._key_names_active[0] if self._key_names_active else '?'
+        self._key_errors[key_name] = ex_str
+
     def _invalidate_api_key(self, key: str) -> None:
-        """Логирует невалидный ключ и удаляет его из активного пула."""
-        idx = self.api_keys.index(key) if key in self.api_keys else -1
-        key_name = self._key_names_active[idx] if 0 <= idx < len(self._key_names_active) else '?'
-        logger.warning(f"Invalid API key removed: {key_name}", None, False)
+        """Исключение невалидного ключа из активного пула.
+
+        Args:
+            key (str): Значение недействительного API-ключа.
+        """
+        idx: int = self.api_keys.index(key) if key in self.api_keys else -1
+        key_name: str = self._key_names_active[idx] if 0 <= idx < len(self._key_names_active) else '?'
+        logger.warning(f'GoogleGenerativeAI: Недействительный ключ удален: {key_name}')
         self.api_keys = [k for k in self.api_keys if k != key]
         if idx >= 0:
             self._key_names_active = [n for i, n in enumerate(self._key_names_active) if i != idx]
             self.api_key_owners = [o for i, o in enumerate(self.api_key_owners) if i != idx]
 
     def _mark_key_exhausted(self, key: str) -> None:
-        idx = self.api_keys.index(key) if key in self.api_keys else -1
-        key_name = self._key_names_active[idx] if 0 <= idx < len(self._key_names_active) else key
+        """Маркировка ключа как исчерпавшего суточную квоту.
+
+        Args:
+            key (str): Значение исчерпанного API-ключа.
+        """
+        idx: int = self.api_keys.index(key) if key in self.api_keys else -1
+        key_name: str = self._key_names_active[idx] if 0 <= idx < len(self._key_names_active) else key
         mark_exhausted(key_name)
-        print(f"[!] Daily quota exhausted: {key_name}. Banned for 24h.")
-        logger.warning(f"Daily quota exhausted. {key_name} banned 24h.", None, False)
+        logger.warning(f'GoogleGenerativeAI: Суточная квота ключа {key_name} исчерпана. Блокировка 24ч.')
         self.api_keys = [k for k in self.api_keys if k != key]
         if idx >= 0:
             self._key_names_active = [n for i, n in enumerate(self._key_names_active) if i != idx]
 
     def _switch_api_key(self) -> bool:
-        """Переключается на первый доступный ключ в пуле.
-        Если ключей нет — ждёт разблокировки ближайшего. Возвращает False только при критической ошибке.
+        """Переключение на следующий доступный API-ключ из пула.
+
+        Returns:
+            bool: True при успешном переключении, False при отсутствии доступных ключей.
         """
         if not self.api_keys:
-            wait_sec = next_available_in(None)  # Поиск среди всех ключей файла, включая удалённые из пула
-            if wait_sec > 0:
-                h, rem = divmod(int(wait_sec), 3600)
-                m = rem // 60
-                print(f"[!] All API keys exhausted. Waiting {h}h {m}m for next key...")
-                logger.warning(f"All keys exhausted. Sleeping {h}h {m}m", None, False)
-                if self.sleep_on_exhausted:
-                    time.sleep(wait_sec + 5)
-                    # Перезагружаем ключи после ожидания
-                    self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
-                    if not self.api_keys:
-                        self._all_keys_exhausted = True
-                        return False
-                    self._all_keys_exhausted = False
-                else:
+            wait_sec: float = next_available_in()
+            if wait_sec > 0 and self.sleep_on_exhausted:
+                h: int = int(wait_sec) // 3600
+                m: int = (int(wait_sec) % 3600) // 60
+                logger.warning(f'GoogleGenerativeAI: Все ключи исчерпаны. Ожидание {h}ч {m}м...')
+                time.sleep(wait_sec + 5)
+                self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names)
+                if not self.api_keys:
                     self._all_keys_exhausted = True
                     return False
+                self._all_keys_exhausted = False
             else:
                 self._all_keys_exhausted = True
-                print("[!] All API keys exhausted and no recovery time available.")
-                logger.warning("All API keys exhausted", None, False)
+                logger.warning('GoogleGenerativeAI: Все API-ключи исчерпаны.')
                 return False
+
         self._api_key_index = 0
         self.api_key = self.api_keys[0]
-        key_name = self._key_names_active[0] if self._key_names_active else '?'
-        print(f"[API KEY] Switched to: {key_name}")
+        key_name: str = self._key_names_active[0] if self._key_names_active else '?'
+        logger.info(f'GoogleGenerativeAI: Переключение на ключ: {key_name}')
         self._client = genai.Client(api_key=self.api_key)
         self._chat = self._start_chat()
-        logger.info(f"Switched to API key: {key_name}", None, False)
         return True
 
-    def _build_content_config(self, instruction: str = "", tools: list = (), generation_config: dict = {}) -> types.GenerateContentConfig:
-        cfg_kwargs = {}
-        gen_cfg = {}
+    def _switch_model(self) -> bool:
+        """Переключение на следующую поддерживаемую модель в пуле.
+
+        Returns:
+            bool: True при успешном переключении, False если список пуст.
+        """
+        active_pool: list[str] = self.get_available_models()
+        if not active_pool:
+            active_pool = [
+                'gemini-flash-latest',
+                'gemini-flash-lite-latest',
+                'gemini-3.6-flash',
+                'gemini-3.7-flash',
+                'gemini-pro-latest',
+            ]
+        try:
+            idx: int = active_pool.index(self.model_name)
+            next_idx: int = (idx + 1) % len(active_pool)
+        except ValueError:
+            next_idx = 0
+
+        next_model: str = active_pool[next_idx]
+        if next_model == self.model_name and len(active_pool) <= 1:
+            return False
+
+        logger.info(f'GoogleGenerativeAI: Смена модели {self.model_name} -> {next_model}')
+        self.model_name = next_model
+
+        self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names)
+        if not self.api_keys:
+            return False
+
+        self._all_keys_exhausted = False
+        self.api_key = self.api_keys[0]
+        self._client = genai.Client(api_key=self.api_key)
+        self._chat = self._start_chat()
+        return True
+
+    def _switch_model_down(self) -> bool:
+        """Переключение на менее ресурсоемкую модель (даунгрейд).
+
+        Returns:
+            bool: True при успешном переключении, False если достигнут нижний предел.
+        """
+        active_pool: list[str] = self.get_available_models()
+        if not active_pool:
+            active_pool = [
+                'gemini-flash-latest',
+                'gemini-flash-lite-latest',
+                'gemini-3.6-flash',
+                'gemini-3.7-flash',
+                'gemini-pro-latest',
+            ]
+        try:
+            idx: int = active_pool.index(self.model_name)
+        except ValueError:
+            idx = 0
+
+        next_idx: int = idx + 1
+        if next_idx >= len(active_pool):
+            return False
+
+        next_model: str = active_pool[next_idx]
+        logger.info(f'GoogleGenerativeAI: Понижение модели {self.model_name} -> {next_model}')
+        self.model_name = next_model
+
+        self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names)
+        if not self.api_keys:
+            return False
+
+        self._all_keys_exhausted = False
+        self.api_key = self.api_keys[0]
+        self._client = genai.Client(api_key=self.api_key)
+        self._chat = self._start_chat()
+        return True
+
+    def _build_content_config(
+        self,
+        instruction: str = '',
+        tools: list = (),
+        generation_config: dict = {},
+    ) -> types.GenerateContentConfig:
+        """Построение объекта конфигурации генерации контента для Gemini SDK.
+
+        Args:
+            instruction (str): Системная инструкция. Значение по умолчанию: ''.
+            tools (list): Набор инструментов (функций) модели.
+            generation_config (dict): Дополнительные параметры генерации.
+
+        Returns:
+            types.GenerateContentConfig: Сконфигурированный объект генерации.
+        """
+        cfg_kwargs: dict[str, Any] = {}
+        gen_cfg: dict[str, Any] = {}
+
         if isinstance(self.generation_config, dict):
             gen_cfg.update(self.generation_config)
         if generation_config:
             gen_cfg.update(generation_config)
-            
-        response_type = gen_cfg.pop('response_type', 'both')
 
-        inst = instruction or self.system_instruction or ""
+        response_type: str = gen_cfg.pop('response_type', 'both')
+        inst: str = instruction or self.system_instruction or ''
+
         if inst:
             if response_type == 'chat':
-                format_rule = (
-                    "\n\nCRITICAL: You must format your response for reading on a screen.\n"
-                    "Provide a detailed styled markdown response in Russian for the user to read."
+                format_rule: str = (
+                    '\n\nCRITICAL: You must format your response for reading on a screen.\n'
+                    'Provide a detailed styled markdown response in Russian for the user to read.'
                 )
             elif response_type == 'voice':
                 format_rule = (
-                    "\n\nCRITICAL: You must format your response for a voice narrator (TTS).\n"
-                    "Provide a very concise, clear speech-friendly Russian text, using only Russian letters, no markdown, no special symbols, write all numbers as words."
+                    '\n\nCRITICAL: You must format your response for a voice narrator (TTS).\n'
+                    'Provide a very concise, clear speech-friendly Russian text, using only Russian letters, '
+                    'no markdown, no special symbols, write all numbers as words.'
                 )
             else:
                 format_rule = (
-                    "\n\nCRITICAL: You must format your response exactly as follows, with no extra text outside these blocks:\n"
-                    "[CHAT]\n<detailed styled markdown response in Russian for the user to read>\n"
-                    "[VOICE]\n<very concise, clear speech-friendly Russian text for the narrator, using only Russian letters, no markdown, no special symbols, write all numbers as words>"
+                    '\n\nCRITICAL: You must format your response exactly as follows, with no extra text outside these blocks:\n'
+                    '[CHAT]\n<detailed styled markdown response in Russian for the user to read>\n'
+                    '[VOICE]\n<very concise, clear speech-friendly Russian text for the narrator, using only Russian letters, '
+                    'no markdown, no special symbols, write all numbers as words>'
                 )
             inst += format_rule
             cfg_kwargs['system_instruction'] = inst
-        all_tools = list(tools) if tools else []
-        has_search = any(hasattr(t, 'google_search') or (isinstance(t, dict) and 'google_search' in t) for t in all_tools)
+
+        all_tools: list = list(tools) if tools else []
+        has_search: bool = any(
+            hasattr(t, 'google_search') or (isinstance(t, dict) and 'google_search' in t)
+            for t in all_tools
+        )
         if not has_search:
             all_tools.append(types.Tool(google_search=types.GoogleSearch()))
         cfg_kwargs['tools'] = all_tools
-        
+
         if gen_cfg:
             for k in ['temperature', 'top_p', 'top_k', 'response_mime_type']:
                 val = gen_cfg.get(k)
                 if val:
                     cfg_kwargs[k] = val
+
         return types.GenerateContentConfig(**cfg_kwargs)
 
-    def _start_chat(self, history: list = []):
-        """Запуск чата с начальной настройкой."""
-        config = self._build_content_config()
-        
-        # Если save_history_chat=False, используем просто send_message без создания чата
+    def _start_chat(self, history: list = ()) -> Any:
+        """Инициализация сессии чата с поддержкой сохранения истории.
+
+        Args:
+            history (list): Начальная история сообщений.
+
+        Returns:
+            Any: Экземпляр чата Google GenAI или False если история отключена.
+        """
         if not self.save_history_chat:
             return False
-        
+
+        config = self._build_content_config()
         if history:
-            return self._client.chats.create(model=self.model_name, config=config, history=history)
+            return self._client.chats.create(model=self.model_name, config=config, history=list(history))
         return self._client.chats.create(model=self.model_name, config=config)
 
-    def _switch_model(self) -> bool:
-        """Переключается на следующую поддерживаемую модель из списка. Возвращает False если модели закончились."""
-        active_pool = self.get_available_models()
-        if not active_pool:
-            active_pool = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-pro-latest"]
-        try:
-            idx = active_pool.index(self.model_name)
-            next_idx = (idx + 1) % len(active_pool)
-        except ValueError:
-            next_idx = 0
-        next_model = active_pool[next_idx]
-        if next_model == self.model_name and len(active_pool) <= 1:
-            return False
-        logger.info(f"Switching model: {self.model_name} -> {next_model}", None, False)
-        self.model_name = next_model
-        # Перезагружаем все ключи — у новой модели могут быть другие квоты
-        self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
-        if not self.api_keys:
-            return False
-        self._all_keys_exhausted = False
-        self.api_key = self.api_keys[0]
-        self._client = genai.Client(api_key=self.api_key)
-        self._chat = self._start_chat()
-        print(f"[MODEL] Switched to: {next_model}, key: {self._key_names_active[0]}")
-        return True
-
-    def _switch_model_down(self) -> bool:
-        """Переключается на модель НЕ выше текущей (только вниз по списку мощности).
-        Возвращает False если уже самая слабая модель."""
-        active_pool = self.get_available_models()
-        if not active_pool:
-            active_pool = ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.6-flash", "gemini-3.7-flash", "gemini-pro-latest"]
-        try:
-            idx = active_pool.index(self.model_name)
-        except ValueError:
-            idx = 0
-        next_idx = idx + 1
-        if next_idx >= len(active_pool):
-            return False
-        next_model = active_pool[next_idx]
-        logger.info(f"Switching model down: {self.model_name} -> {next_model}", None, False)
-        self.model_name = next_model
-        # Перезагружаем все ключи — у новой модели могут быть другие квоты
-        self.api_keys, self._key_names_active, _ = load_api_keys(self.api_key_names or None)
-        if not self.api_keys:
-            return False
-        self._all_keys_exhausted = False
-        self.api_key = self.api_keys[0]
-        self._client = genai.Client(api_key=self.api_key)
-        self._chat = self._start_chat()
-        print(f"[MODEL] Switched down to: {next_model}, key: {self._key_names_active[0]}")
-        return True
-
-    async def embed(self, text: str, model_name: str = "text-embedding-004") -> Optional[np.ndarray]:
-        """Генерация эмбеддинга для текста."""
-        try:
-            response = self._client.models.embed_content(
-                model=model_name,
-                contents=text,
-            )
-            return np.array(response.embeddings[0].values)
-        except Exception as ex:
-            logger.error("Ошибка генерации эмбеддинга", ex, False)
-            return None
-
-    def clear_history(self):
-        """Очищает историю чата в памяти."""
+    def clear_history(self) -> None:
+        """Очистка локальной истории диалога в оперативной памяти."""
         self.chat_history = []
 
-    def _restore_chat_from_history(self):
-        """Восстанавливает сессию чата из chat_history в памяти."""
-        history_contents = []
+    def _restore_chat_from_history(self) -> None:
+        """Восстановление состояния сессии чата из накопленной истории сообщений."""
+        history_contents: list[types.Content] = []
         for entry in self.chat_history:
-            role = entry.get('role', 'user')
+            role: str = entry.get('role', 'user')
             if role == 'assistant':
                 role = 'model'
-            parts = entry.get('parts', [])
-            parts_objects = []
+            parts: list = entry.get('parts', [])
+            parts_objects: list[types.Part] = []
             for p in parts:
                 if isinstance(p, str):
                     parts_objects.append(types.Part.from_text(text=p))
                 elif isinstance(p, dict) and 'text' in p:
                     parts_objects.append(types.Part.from_text(text=p['text']))
             history_contents.append(types.Content(role=role, parts=parts_objects))
-            
+
         self._chat = self._start_chat(history=history_contents)
 
-    def _prepare_contents(self, q: str, history: Optional[List[Dict]] = None) -> List[types.Content]:
-        """Подготавливает список объектов Content для stateless API-запроса."""
-        contents = []
+    def _prepare_contents(self, q: str, history: list[dict] = ()) -> list[types.Content]:
+        """Подготовка списка объектов Content для передачи в stateless API-запросы.
+
+        Args:
+            q (str): Текущий текстовый запрос пользователя.
+            history (list[dict]): История предыдущих сообщений.
+
+        Returns:
+            list[types.Content]: Список объектов Content.
+        """
+        contents: list[types.Content] = []
         if history:
             for entry in history:
-                role = entry.get('role')
+                role: str = entry.get('role', '')
                 if not role:
                     continue
                 if role == 'assistant':
                     role = 'model'
-                
+
                 parts = entry.get('parts')
                 if not parts:
-                    content = entry.get('content')
-                    if content:
-                        parts = [types.Part.from_text(text=content)]
+                    content_str: str = entry.get('content', '')
+                    if content_str:
+                        parts = [types.Part.from_text(text=content_str)]
                 else:
-                    new_parts = []
+                    new_parts: list = []
                     for p in parts:
                         if isinstance(p, str):
                             new_parts.append(types.Part.from_text(text=p))
@@ -385,66 +519,245 @@ class GoogleGenerativeAI:
                         else:
                             new_parts.append(p)
                     parts = new_parts
-                
+
                 if parts:
                     contents.append(types.Content(role=role, parts=parts))
-        
+
         contents.append(types.Content(role='user', parts=[types.Part.from_text(text=q)]))
         return contents
 
-    async def chat(self, q: str, history: Optional[List[Dict]] = None, flag: str = "save_chat", system_instruction: Optional[str] = None, attempts: int = 15, model_name: Optional[str] = None) -> Optional[str]:
-        """
-        Обрабатывает чат-запрос.
+    async def _handle_api_error(
+        self,
+        ex: Exception,
+        active_model: str,
+        attempt: int,
+        max_attempts: int,
+    ) -> bool:
+        """Централизованная обработка исключений API и координация повторов.
 
         Args:
-            q (str): Вопрос пользователя.
-            history (Optional[List[Dict]]): История чата из БД. Если передана — восстанавливает сессию.
-            flag (str): "clear" или "start_new" — сбрасывает историю перед запросом.
-            system_instruction (Optional[str]): Временная системная инструкция.
-            attempts (int): Максимальное количество попыток.
-            model_name (Optional[str]): Имя используемой модели.
+            ex (Exception): Возникшее исключение.
+            active_model (str): Наименование используемой модели.
+            attempt (int): Порядковый номер текущей попытки.
+            max_attempts (int): Максимальное количество попыток.
 
         Returns:
-            Optional[str]: Ответ модели.
+            bool: True если необходимо повторить запрос, False если ошибка неустранима.
         """
+        self._record_error(ex)
+        ex_str: str = str(ex)
+        logger.error(f'GoogleGenerativeAI: Ошибка API (попытка {attempt + 1}/{max_attempts}): {ex_str}')
+
+        # 1. Ошибка авторизации (невалидный API-ключ)
+        if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
+            self._invalidate_api_key(self.api_key)
+            return self._switch_api_key()
+
+        # 2. Модель не найдена / устарела (404)
+        if any(
+            k in ex_str
+            for k in [
+                '404',
+                'NOT_FOUND',
+                'is no longer available',
+                'not found for API version',
+                'not supported for generateContent',
+            ]
+        ):
+            add_unsupported_model(active_model, reason=ex_str)
+            return self._switch_model()
+
+        # 3. Сервис временно недоступен (503 UNAVAILABLE)
+        if '503' in ex_str or 'UNAVAILABLE' in ex_str:
+            self._unavailable_attempts += 1
+            if self._unavailable_attempts < 6:
+                wait: int = 2 ** min(self._unavailable_attempts, 5)
+                logger.info(f'GoogleGenerativeAI: 503 UNAVAILABLE. Ожидание {wait}с...')
+                await asyncio.sleep(wait)
+                return True
+            else:
+                switched: bool = self._switch_model_down()
+                self._unavailable_attempts = 0
+                return switched
+
+        # 4. Превышение квоты запросов (429 RESOURCE_EXHAUSTED)
+        if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
+            is_daily: bool = any(
+                k in ex_str.lower()
+                for k in ['perday', 'per_day', 'exceeded your current quota', "quota_limit_value': '0'"]
+            )
+            if is_daily:
+                self._mark_key_exhausted(self.api_key)
+                if self._switch_api_key():
+                    return True
+                return self._switch_model()
+
+            m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
+            base_wait: int = int(float(m.group(1))) + 2 if m else 5
+            wait_time: int = min(base_wait * (2 ** min(attempt, 3)), 60)
+            logger.info(f'GoogleGenerativeAI: 429 Rate Limit. Ожидание {wait_time}с перед повтором...')
+            await asyncio.sleep(wait_time)
+            return True
+
+        # 5. Сетевые ошибки запросов
+        if isinstance(ex, requests.exceptions.RequestException):
+            if attempt < 5:
+                logger.warning('GoogleGenerativeAI: Сетевая ошибка. Ожидание 10с...')
+                await asyncio.sleep(10)
+                return True
+            return False
+
+        # 6. Общие непредвиденные ошибки
+        if attempt < max_attempts - 1:
+            await asyncio.sleep(2 ** min(attempt, 4))
+            return True
+
+        return False
+
+    async def embed(self, text: str, model_name: str = 'text-embedding-004') -> np.ndarray | bool:
+        """Генерация векторного представления (эмбеддинга) для переданного текста.
+
+        Args:
+            text (str): Исходный текст для векторизации.
+            model_name (str): Наименование embedding-модели.
+
+        Returns:
+            np.ndarray | bool: Одномерный массив эмбеддинга или False при сбое.
+
+        Examples:
+            >>> ai = GoogleGenerativeAI()
+            >>> vec = await ai.embed("Тестовый текст")
+        """
+        if not text:
+            return False
+        try:
+            response = self._client.models.embed_content(
+                model=model_name,
+                contents=text,
+            )
+            if response and response.embeddings:
+                return np.array(response.embeddings[0].values)
+            return False
+        except Exception as ex:
+            logger.error('GoogleGenerativeAI: Ошибка генерации эмбеддинга', ex)
+            return False
+
+    async def ask(
+        self,
+        q: str,
+        attempts: int = 15,
+        generation_config: dict = {},
+    ) -> str:
+        """Отправка одиночного текстового запроса модели.
+
+        Args:
+            q (str): Текст запроса.
+            attempts (int): Максимальное количество попыток. Значение по умолчанию: 15.
+            generation_config (dict): Дополнительные параметры генерации.
+
+        Returns:
+            str: Ответ модели или сообщение об ошибке.
+
+        Examples:
+            >>> ai = GoogleGenerativeAI()
+            >>> ans = await ai.ask("Столица Франции?")
+        """
+        if not q:
+            return ''
+
         self._key_errors = {}
         if self._all_keys_exhausted:
             if not self._switch_api_key():
-                print("[!] All API keys exhausted. Aborting.")
                 return self._get_exhausted_error_msg()
             self._all_keys_exhausted = False
 
         for attempt in range(attempts):
-            response = None
             try:
-                # Если save_history_chat=False, не используем историю чата
-                instruction = system_instruction or self.system_instruction
-                active_model = model_name or self.model_name
+                config = self._build_content_config(generation_config=generation_config)
+                response = self._client.models.generate_content(
+                    model=self.model_name,
+                    contents=q,
+                    config=config,
+                )
+                if response and response.text:
+                    response_text: str = normalize_text(response.text)
+                    response_text = remove_html_blocks(response_text)
+                    update_last_run(self._key_names_active[0] if self._key_names_active else '')
+                    self._unavailable_attempts = 0
+                    return response_text
+
+                logger.debug(f'GoogleGenerativeAI: Пустой ответ модели на попытке {attempt + 1}')
+                await asyncio.sleep(2 ** min(attempt, 4))
+            except Exception as ex:
+                should_retry: bool = await self._handle_api_error(ex, self.model_name, attempt, attempts)
+                if not should_retry:
+                    return f'Ошибка модели: {self._last_exception or str(ex)}'
+
+        return self._get_exhausted_error_msg()
+
+    async def chat(
+        self,
+        q: str,
+        history: list[dict] = (),
+        flag: str = 'save_chat',
+        system_instruction: str = '',
+        attempts: int = 15,
+        model_name: str = '',
+    ) -> str:
+        """Обработка сообщения в контексте чат-диалога.
+
+        Args:
+            q (str): Сообщение пользователя.
+            history (list[dict]): Внешняя история сообщений для восстановления контекста.
+            flag (str): Флаг управления историей ('save_chat', 'clear', 'start_new').
+            system_instruction (str): Переопределенная системная инструкция.
+            attempts (int): Максимальное число повторных попыток.
+            model_name (str): Явное переопределение модели для запроса.
+
+        Returns:
+            str: Ответ модели или диагностическое сообщение об ошибке.
+
+        Examples:
+            >>> ai = GoogleGenerativeAI()
+            >>> ans = await ai.chat("Привет!", flag="start_new")
+        """
+        if not q:
+            return ''
+
+        self._key_errors = {}
+        if self._all_keys_exhausted:
+            if not self._switch_api_key():
+                return self._get_exhausted_error_msg()
+            self._all_keys_exhausted = False
+
+        instruction: str = system_instruction or self.system_instruction or ''
+        active_model: str = model_name or self.model_name
+
+        for attempt in range(attempts):
+            try:
+                # 1. Режим без сохранения истории (Stateless)
                 if not self.save_history_chat:
-                    # Используем одиночный запрос без сохранения истории
-                    config = self._build_content_config(instruction or "")
+                    config = self._build_content_config(instruction)
                     response = self._client.models.generate_content(
                         model=active_model,
                         contents=q,
                         config=config,
                     )
                     if response and response.text:
-                        response_text = normalize_text(response.text)
+                        response_text: str = normalize_text(response.text)
                         response_text = remove_html_blocks(response_text)
                         update_last_run(self._key_names_active[0] if self._key_names_active else '')
-                        # Сброс счётчика неудачных 503 после успешного запроса
                         self._unavailable_attempts = 0
                         return response_text
-                    # Пустой ответ — повторяем
-                    logger.debug(f"No response from the model in chat. Attempt: {attempt}\nSleeping for {2 ** attempt}", None, False)
-                    time.sleep(2**attempt)
+
+                    await asyncio.sleep(2 ** min(attempt, 4))
                     continue
-                
-                # Старая логика с историей чата
-                if history is not None:
-                    self.chat_history = history
+
+                # 2. Режим чата с сохранением истории
+                if history:
+                    self.chat_history = list(history)
                     self._restore_chat_from_history()
-                elif flag == "clear" or flag == "start_new":
+                elif flag in ['clear', 'start_new']:
                     self.chat_history = []
                     self._chat = self._start_chat()
 
@@ -452,99 +765,69 @@ class GoogleGenerativeAI:
                 if response and response.text:
                     response_text = normalize_text(response.text)
                     response_text = remove_html_blocks(response_text)
-                    self.chat_history.append({"role": "user", "parts": [q]})
-                    self.chat_history.append({"role": "model", "parts": [response_text]})
-                    # Сброс счётчика неудачных 503 после успешного запроса
+                    self.chat_history.append({'role': 'user', 'parts': [q]})
+                    self.chat_history.append({'role': 'model', 'parts': [response_text]})
                     self._unavailable_attempts = 0
                     return response_text
-                else:
-                    logger.error("Empty response in chat", None, False)
-                    time.sleep(2**attempt)
-                    continue
 
+                logger.error('GoogleGenerativeAI: Пустой ответ модели в чате')
+                await asyncio.sleep(2 ** min(attempt, 4))
             except Exception as ex:
-                self._record_error(ex)
-                ex_str = str(ex)
-                logger.error(f"Ошибка чата (attempt {attempt}):\n {response=}", ex, False)
-                
-                if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
-                    self._invalidate_api_key(self.api_key)
-                    if not self._switch_api_key():
-                        return None
-                    continue
-                
-                if '404' in ex_str or 'NOT_FOUND' in ex_str or 'is no longer available' in ex_str or 'not found for API version' in ex_str or 'not supported for generateContent' in ex_str:
-                    add_unsupported_model(active_model, reason=ex_str)
-                    if self._switch_model():
-                        continue
-                    return None
-                
-                if '503' in ex_str or 'UNAVAILABLE' in ex_str:
-                    self._unavailable_attempts += 1
-                    if self._unavailable_attempts < 6:
-                        wait = 2 ** min(self._unavailable_attempts, 5)
-                        logger.info(f"503 UNAVAILABLE (attempt {self._unavailable_attempts}). Waiting {wait}s...", None, False)
-                        time.sleep(wait)
-                        continue
-                    else:
-                        if not self._switch_model_down():
-                            return None
-                        self._unavailable_attempts = 0
-                        continue
-                
-                if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'perday' in ex_str.lower() or 'per_day' in ex_str.lower() or 'exceeded your current quota' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if not self._switch_api_key():
-                            if not self._switch_model():
-                                return self._get_exhausted_error_msg()
-                        continue
-                    m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
-                    base_wait = int(float(m.group(1))) + 2 if m else 5
-                    wait = min(base_wait * (2 ** min(attempt, 3)), 60)
-                    logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
-                    time.sleep(wait)
-                    continue
-                
-                if attempt >= attempts - 1:
-                    return f"Ошибка модели после {attempts} попыток: {ex_str}"
-                time.sleep(2 ** attempt)
-                continue
+                should_retry: bool = await self._handle_api_error(ex, active_model, attempt, attempts)
+                if not should_retry:
+                    return f'Ошибка чата: {self._last_exception or str(ex)}'
 
         return self._get_exhausted_error_msg()
 
-    async def chat_stream(self, q: str, history: Optional[List[Dict]] = None, flag: str = "save_chat", system_instruction: Optional[str] = None, attempts: int = 15, model_name: Optional[str] = None, generation_config: dict = {}):
+    async def chat_stream(
+        self,
+        q: str,
+        history: list[dict] = (),
+        flag: str = 'save_chat',
+        system_instruction: str = '',
+        attempts: int = 15,
+        model_name: str = '',
+        generation_config: dict = {},
+    ) -> AsyncGenerator[str, None]:
+        """Потоковая генерация ответа модели в виде асинхронного генератора.
+
+        Args:
+            q (str): Вопрос пользователя.
+            history (list[dict]): История сообщений.
+            flag (str): Флаг управления историей.
+            system_instruction (str): Системная инструкция.
+            attempts (int): Максимальное число попыток.
+            model_name (str): Переопределение модели.
+            generation_config (dict): Настройки генерации.
+
+        Yields:
+            str: Очередной сгенерированный фрагмент текста (чанк).
         """
-        Асинхронный генератор ответов модели.
-        """
+        if not q:
+            return
+
         self._key_errors = {}
         if self._all_keys_exhausted:
             if not self._switch_api_key():
-                print("[!] All API keys exhausted. Aborting.")
                 yield self._get_exhausted_error_msg()
                 return
             self._all_keys_exhausted = False
 
+        instruction: str = system_instruction or self.system_instruction or ''
+        active_model: str = model_name or self.model_name
+
         for attempt in range(attempts):
             try:
-                instruction = system_instruction or self.system_instruction
-                active_model = model_name or self.model_name
-                
                 if not self.save_history_chat:
-                    config = self._build_content_config(instruction or "", generation_config=generation_config)
+                    config = self._build_content_config(instruction, generation_config=generation_config)
                     contents = self._prepare_contents(q, history)
 
-                    # Run blocking Gemini streaming in thread pool to avoid blocking event loop
-                    def _collect_stateless(_client=self._client, _model=active_model, _contents=contents, _config=config):
-                        result = []
-                        for _chunk in _client.models.generate_content_stream(
-                            model=_model,
-                            contents=_contents,
-                            config=_config,
-                        ):
-                            if _chunk.text:
-                                result.append(_chunk.text)
-                        return result
+                    def _collect_stateless(_client=self._client, _m=active_model, _c=contents, _cfg=config):
+                        res: list[str] = []
+                        for chunk in _client.models.generate_content_stream(model=_m, contents=_c, config=_cfg):
+                            if chunk.text:
+                                res.append(chunk.text)
+                        return res
 
                     chunks = await asyncio.to_thread(_collect_stateless)
                     if chunks:
@@ -554,236 +837,92 @@ class GoogleGenerativeAI:
                         self._unavailable_attempts = 0
                         return
 
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2 ** min(attempt, 4))
                     continue
-                
-                if history is not None:
-                    self.chat_history = history
+
+                if history:
+                    self.chat_history = list(history)
                     self._restore_chat_from_history()
-                elif flag == "clear" or flag == "start_new":
+                elif flag in ['clear', 'start_new']:
                     self.chat_history = []
                     self._chat = self._start_chat()
 
-                # Run blocking chat streaming in thread pool
                 _chat_ref = self._chat
-                def _collect_chat(_chat=_chat_ref, _q=q):
-                    result = []
-                    for _chunk in _chat.send_message_stream(_q):
-                        if _chunk.text:
-                            result.append(_chunk.text)
-                    return result
+
+                def _collect_chat(_chat=_chat_ref, _query=q):
+                    res: list[str] = []
+                    for chunk in _chat.send_message_stream(_query):
+                        if chunk.text:
+                            res.append(chunk.text)
+                    return res
 
                 chunks = await asyncio.to_thread(_collect_chat)
-                full_response_text = "".join(chunks)
-
-                if full_response_text:
+                full_text: str = ''.join(chunks)
+                if full_text:
                     for chunk_text in chunks:
                         yield chunk_text
-                    normalized = normalize_text(full_response_text)
-                    normalized = remove_html_blocks(normalized)
-                    self.chat_history.append({"role": "user", "parts": [q]})
-                    self.chat_history.append({"role": "model", "parts": [normalized]})
+                    normalized: str = remove_html_blocks(normalize_text(full_text))
+                    self.chat_history.append({'role': 'user', 'parts': [q]})
+                    self.chat_history.append({'role': 'model', 'parts': [normalized]})
                     self._unavailable_attempts = 0
                     return
-                else:
-                    logger.error("Empty response stream in chat", None, False)
-                    await asyncio.sleep(2 ** attempt)
-                    continue
 
+                await asyncio.sleep(2 ** min(attempt, 4))
             except Exception as ex:
-                self._record_error(ex)
-                ex_str = str(ex)
-                logger.error(f"Ошибка чата-стриминга (attempt {attempt}):", ex, False)
-                
-                if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
-                    self._invalidate_api_key(self.api_key)
-                    if not self._switch_api_key():
-                        yield "Ошибка авторизации (API_KEY_INVALID)."
-                        return
-                    continue
-
-                if '404' in ex_str or 'NOT_FOUND' in ex_str or 'is no longer available' in ex_str or 'not found for API version' in ex_str or 'not supported for generateContent' in ex_str:
-                    add_unsupported_model(active_model, reason=ex_str)
-                    if self._switch_model():
-                        continue
-                    yield f"Ошибка: Модель {active_model} не найдена или устарела (404)."
+                should_retry: bool = await self._handle_api_error(ex, active_model, attempt, attempts)
+                if not should_retry:
+                    yield f'Ошибка стриминга: {self._last_exception or str(ex)}'
                     return
-                
-                if '503' in ex_str or 'UNAVAILABLE' in ex_str:
-                    self._unavailable_attempts += 1
-                    if self._unavailable_attempts < 6:
-                        wait = 2 ** min(self._unavailable_attempts, 5)
-                        logger.info(f"503 UNAVAILABLE (attempt {self._unavailable_attempts}). Waiting {wait}s...", None, False)
-                        await asyncio.sleep(wait)
-                        continue
-                    else:
-                        if not self._switch_model_down():
-                            yield "Ошибка: Модель недоступна (503)."
-                            return
-                        self._unavailable_attempts = 0
-                        continue
 
-                if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'perday' in ex_str.lower() or 'per_day' in ex_str.lower() or 'exceeded your current quota' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if not self._switch_api_key():
-                            if not self._switch_model():
-                                yield self._get_exhausted_error_msg()
-                                return
-                        continue
-                    m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
-                    base_wait = int(float(m.group(1))) + 2 if m else 5
-                    wait = min(base_wait * (2 ** min(attempt, 3)), 60)
-                    logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
-                    await asyncio.sleep(wait)
-                    continue
-
-                yield f"Ошибка: {ex_str}"
-                return
-
-    async def ask(self, q: str, attempts: int = 15, generation_config: dict = {}) -> Optional[str]:
-        """
-        Метод отправляет текстовый запрос модели и возвращает ответ.
-        """
-        self._key_errors = {}
-        if self._all_keys_exhausted:
-            if not self._switch_api_key():
-                print("[!] All API keys exhausted. Aborting.")
-                return self._get_exhausted_error_msg()
-            self._all_keys_exhausted = False
-        for attempt in range(attempts):
-            try:
-                # При save_history_chat=False не используем _chat, отправляем напрямую
-                config = self._build_content_config(generation_config=generation_config)
-                response = self._client.models.generate_content(
-                    model=self.model_name,
-                    contents=q,
-                    config=config,
-                )
-               
-                if not response.text:
-                    logger.debug(
-                        f"No response from the model. Attempt: {attempt}\nSleeping for {2 ** attempt}",
-                        None,
-                        False
-                    )
-                    time.sleep(2**attempt)
-                    continue  # Повторить попытку
-                response_text = normalize_text(response.text)
-                response_text = remove_html_blocks(response.text)
-                update_last_run(self._key_names_active[0] if self._key_names_active else '')
-                # Сброс счётчика неудачных 503 после успешного запроса
-                self._unavailable_attempts = 0
-                return response_text
-
-            except requests.exceptions.RequestException as ex:
-                self._record_error(ex)
-                max_attempts = 5
-                if attempt > max_attempts:
-                    break
-                logger.debug(
-                    f"Network error. Attempt: {attempt}\nSleeping for 20 min",
-                    ex,
-                    False,
-                )
-                time.sleep(1200)
-                continue  # Повторить попытку
-
-            except Exception as ex:
-                self._record_error(ex)
-                ex_str = str(ex)
-                logger.error(f"Unexpected error: {ex_str}", ex, False)
-                if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
-                    self._invalidate_api_key(self.api_key)
-                    if not self._switch_api_key():
-                        return f"Ошибка авторизации: {ex_str}"
-                    continue
-                if '404' in ex_str or 'NOT_FOUND' in ex_str or 'is no longer available' in ex_str or 'not found for API version' in ex_str or 'not supported for generateContent' in ex_str:
-                    add_unsupported_model(self.model_name, reason=ex_str)
-                    if self._switch_model():
-                        continue
-                    return f"Ошибка: Модель {self.model_name} не найдена или устарела (404)."
-                if '503' in ex_str or 'UNAVAILABLE' in ex_str:
-                    self._unavailable_attempts += 1
-                    if self._unavailable_attempts < 6:
-                        # До 6 попыток — просто перезапускаем с той же моделью
-                        wait = 2 ** min(self._unavailable_attempts, 5)
-                        logger.info(f"503 UNAVAILABLE (attempt {self._unavailable_attempts}). Waiting {wait}s...", None, False)
-                        time.sleep(wait)
-                        continue
-                    else:
-                        # После 6 попыток — переключаемся на модель НЕ выше текущей
-                        if not self._switch_model_down():
-                            return f"Ошибка: Модель недоступна (503) и переключение не удалось: {ex_str}"
-                        self._unavailable_attempts = 0
-                        continue
-                if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'perday' in ex_str.lower() or 'per_day' in ex_str.lower() or 'exceeded your current quota' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if not self._switch_api_key():
-                            if not self._switch_model():
-                                return "Ошибка: Все модели и API ключи исчерпаны."
-                        continue
-                    # Короткий таймаут — retry_after
-                    m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
-                    base_wait = int(float(m.group(1))) + 2 if m else 5
-                    wait = min(base_wait * (2 ** min(attempt, 3)), 60)
-                    logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
-                    time.sleep(wait)
-                    continue
-                return f"Ошибка: {ex_str}"
-
-        return self._get_exhausted_error_msg()
-
-
-    async def ask_with_tools(self, q: str, tools: list, tool_dispatcher, system_instruction: Optional[str] = None, model_name: Optional[str] = None) -> str:
-        """Отправка запроса с поддержкой function calling (agentic loop).
-
-        Модель сама решает когда вызвать инструмент. Цикл продолжается
-        пока модель возвращает function calls; финальный текстовый ответ
-        возвращается вызывающему коду.
+    async def ask_with_tools(
+        self,
+        q: str,
+        tools: list,
+        tool_dispatcher: Any,
+        system_instruction: str = '',
+        model_name: str = '',
+    ) -> str:
+        """Выполнение запроса с поддержкой вызова внешних функций (Agentic loop).
 
         Args:
-            q (str): Вопрос пользователя.
-            tools (list): Список types.Tool для передачи модели.
-            tool_dispatcher: Callable(name, args) -> str — диспетчер вызовов.
-            system_instruction (Optional[str]): Временная системная инструкция.
-            model_name (Optional[str]): Имя используемой модели.
+            q (str): Текстовый запрос пользователя.
+            tools (list): Список определений инструментов types.Tool.
+            tool_dispatcher (Any): Диспетчер вызова функций (name, args) -> str.
+            system_instruction (str): Системная инструкция.
+            model_name (str): Наименование используемой модели.
 
         Returns:
             str: Финальный текстовый ответ модели.
 
         Examples:
-            >>> from plugins.media_organizer.media_tools import MEDIA_TOOLS, dispatch_tool_call
-            >>> answer = await ai.ask_with_tools('Карточка Титаника', [MEDIA_TOOLS], dispatch_tool_call)
+            >>> ans = await ai.ask_with_tools("Погода в Париже", tools, dispatcher)
         """
-        contents = [types.Content(role='user', parts=[types.Part.from_text(text=q)])]
-        instruction = system_instruction or self.system_instruction
-        active_model = model_name or self.model_name
-        config = self._build_content_config(instruction or "", tools)
-        for _ in range(10):  # Максимум 10 итераций agentic loop
+        if not q:
+            return ''
+
+        contents: list[types.Content] = [types.Content(role='user', parts=[types.Part.from_text(text=q)])]
+        instruction: str = system_instruction or self.system_instruction or ''
+        active_model: str = model_name or self.model_name
+        config = self._build_content_config(instruction, tools)
+
+        for _ in range(10):
             response = self._client.models.generate_content(
                 model=active_model,
                 contents=contents,
                 config=config,
             )
-            candidate = response.candidates[0] if response.candidates else None
+            candidate = response.candidates[0] if response and response.candidates else False
             if not candidate:
                 break
 
-            # Сбор всех частей ответа
             tool_calls = [p for p in candidate.content.parts if p.function_call]
             text_parts = [p.text for p in candidate.content.parts if p.text]
 
             if not tool_calls:
-                # Финальный текстовый ответ — выходим из цикла
                 return '\n'.join(text_parts)
 
-            # Добавляем ответ модели в историю
             contents.append(candidate.content)
-
-            # Выполняем все function calls и добавляем результаты
-            tool_results = []
+            tool_results: list[types.Part] = []
             for part in tool_calls:
                 fc = part.function_call
                 result = tool_dispatcher(fc.name, dict(fc.args))
@@ -797,19 +936,37 @@ class GoogleGenerativeAI:
 
         return ''
 
-    async def ask_with_tools_stream(self, q: str, tools: list, tool_dispatcher, system_instruction: Optional[str] = None, model_name: Optional[str] = None, history: Optional[List[Dict]] = None):
-        """Отправка запроса с поддержкой function calling и стримингом.
+    async def ask_with_tools_stream(
+        self,
+        q: str,
+        tools: list,
+        tool_dispatcher: Any,
+        system_instruction: str = '',
+        model_name: str = '',
+        history: list[dict] = (),
+    ) -> AsyncGenerator[dict[str, str], None]:
+        """Выполнение запроса с вызовом функций и потоковой отдачей финального ответа.
+
+        Args:
+            q (str): Запрос пользователя.
+            tools (list): Список инструментов.
+            tool_dispatcher (Any): Диспетчер вызова функций.
+            system_instruction (str): Системная инструкция.
+            model_name (str): Наименование модели.
+            history (list[dict]): История сообщений.
 
         Yields:
-            dict: События вида {"text": "chunk"} или {"status": "message"}
+            dict[str, str]: События вида {"text": "chunk"} или {"status": "message"}.
         """
-        contents = self._prepare_contents(q, history)
-        instruction = system_instruction or self.system_instruction
-        active_model = model_name or self.model_name
-        config = self._build_content_config(instruction or "", tools)
-        for i in range(10):
-            # Нам не нужен стриминг, если модель решает вызвать функцию.
-            # Стриминг нужен только для финального ответа.
+        if not q:
+            return
+
+        contents: list[types.Content] = self._prepare_contents(q, history)
+        instruction: str = system_instruction or self.system_instruction or ''
+        active_model: str = model_name or self.model_name
+        config = self._build_content_config(instruction, tools)
+
+        for _ in range(10):
             try:
                 response = await asyncio.to_thread(
                     self._client.models.generate_content,
@@ -818,30 +975,21 @@ class GoogleGenerativeAI:
                     config=config,
                 )
             except Exception as ex:
-                ex_str = str(ex)
-                logger.error(f"[ask_with_tools_stream] Ошибка generate_content: {ex_str}")
-                if '404' in ex_str or 'NOT_FOUND' in ex_str or 'is no longer available' in ex_str or 'not found for API version' in ex_str or 'not supported for generateContent' in ex_str:
-                    add_unsupported_model(active_model, reason=ex_str)
-                    if self._switch_model():
-                        active_model = self.model_name
-                        continue
-                if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'perday' in ex_str.lower() or 'per_day' in ex_str.lower() or 'exceeded your current quota' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if self._switch_api_key():
-                            continue
-                raise
-            
-            candidate = response.candidates[0] if response.candidates else None
+                should_retry: bool = await self._handle_api_error(ex, active_model, 0, 3)
+                if should_retry:
+                    active_model = self.model_name
+                    continue
+                yield {'status': f'Ошибка generate_content: {str(ex)}'}
+                return
+
+            candidate = response.candidates[0] if response and response.candidates else False
             if not candidate:
                 break
 
             tool_calls = [p for p in candidate.content.parts if p.function_call]
             text_parts = [p.text for p in candidate.content.parts if p.text]
 
-            # Если вызовов функций больше нет, значит это финальный ответ.
             if not tool_calls:
-                # Стримим финальный ответ
                 try:
                     response_stream = self._client.models.generate_content_stream(
                         model=active_model,
@@ -850,24 +998,19 @@ class GoogleGenerativeAI:
                     )
                     for chunk in response_stream:
                         if chunk.text:
-                            yield {"text": chunk.text}
+                            yield {'text': chunk.text}
                 except Exception as ex:
-                    ex_str = str(ex)
-                    logger.error(f"[ask_with_tools_stream] Ошибка стриминга: {ex_str}")
+                    logger.error(f'GoogleGenerativeAI: Ошибка стриминга ask_with_tools_stream: {ex}')
                     if text_parts:
-                        yield {"text": "".join(text_parts)}
-                    else:
-                        raise
+                        yield {'text': ''.join(text_parts)}
                 return
 
-            # Добавляем ответ модели с вызовом функций в контекст
             contents.append(candidate.content)
-
-            tool_results = []
+            tool_results: list[types.Part] = []
             for part in tool_calls:
                 fc = part.function_call
-                import json
-                yield {"status": f"Вызов функции {fc.name}({json.dumps(dict(fc.args), ensure_ascii=False)})"}
+                args_json: str = json.dumps(dict(fc.args), ensure_ascii=False)
+                yield {'status': f'Вызов функции {fc.name}({args_json})'}
                 result = tool_dispatcher(fc.name, dict(fc.args))
                 tool_results.append(
                     types.Part.from_function_response(
@@ -877,146 +1020,88 @@ class GoogleGenerativeAI:
                 )
             contents.append(types.Content(role='tool', parts=tool_results))
 
-        return
-
     async def describe_image(
-        self, image: Path | bytes, mime_type: Optional[str] = 'image/jpeg', prompt: Optional[str] = '', attempts: int = 10
-    ) -> Optional[str]:
-        """
-        Отправляет изображение в Gemini Pro Vision и возвращает его текстовое описание.
+        self,
+        image: Path | bytes,
+        mime_type: str = 'image/jpeg',
+        prompt: str = '',
+        attempts: int = 10,
+    ) -> str | bool:
+        """Формирование текстового описания переданного изображения.
 
         Args:
-            image: Путь к файлу изображения или байты изображения
-            mime_type: MIME тип изображения
-            prompt: Промпт для описания
-            attempts: Максимальное количество попыток
+            image (Path | bytes): Путь к изображению или его бинарное содержимое.
+            mime_type (str): MIME-тип изображения. Значение по умолчанию: 'image/jpeg'.
+            prompt (str): Дополнительный текстовый промпт. Значение по умолчанию: ''.
+            attempts (int): Максимальное число попыток. Значение по умолчанию: 10.
 
         Returns:
-            str: Текстовое описание изображения.
-            None: Если произошла ошибка.
+            str | bool: Текстовое описание или False при сбое.
+
+        Examples:
+            >>> ai = GoogleGenerativeAI()
+            >>> desc = await ai.describe_image(Path("poster.jpg"))
         """
-        ex_str = ""
+        img_bytes: bytes = get_image_bytes(image) if isinstance(image, Path) else image
+        if not img_bytes:
+            return False
+
         for attempt in range(attempts):
             try:
-                if isinstance(image, Path):
-                    image = get_image_bytes(image)
-
                 response = self._client.models.generate_content(
                     model=self.model_name,
                     contents=[
-                        types.Part.from_bytes(data=image, mime_type=mime_type),
-                        types.Part.from_text(text=prompt),
+                        types.Part.from_bytes(data=img_bytes, mime_type=mime_type),
+                        types.Part.from_text(text=prompt or 'Опиши это изображение.'),
                     ],
                 )
-                if response.text:
+                if response and response.text:
                     return response.text
-                else:
-                    print("Модель вернула пустой ответ.")
-                    time.sleep(2**attempt)
-                    continue
 
+                logger.debug(f'GoogleGenerativeAI: Пустой ответ describe_image (попытка {attempt + 1})')
+                await asyncio.sleep(2 ** min(attempt, 4))
             except Exception as ex:
-                ex_str = str(ex)
-                logger.error(f"Ошибка описания изображения (attempt {attempt}):", ex, False)
-                
-                if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
-                    self._invalidate_api_key(self.api_key)
-                    if not self._switch_api_key():
-                        return None
-                    continue
-                
-                if '503' in ex_str or 'UNAVAILABLE' in ex_str:
-                    self._unavailable_attempts += 1
-                    if self._unavailable_attempts < 6:
-                        wait = 2 ** min(self._unavailable_attempts, 5)
-                        logger.info(f"503 UNAVAILABLE (attempt {self._unavailable_attempts}). Waiting {wait}s...", None, False)
-                        time.sleep(wait)
-                        continue
-                    else:
-                        if not self._switch_model_down():
-                            return None
-                        self._unavailable_attempts = 0
-                        continue
-                
-                if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if not self._switch_api_key():
-                            if not self._switch_model():
-                                return None
-                        continue
-                    m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
-                    base_wait = int(float(m.group(1))) + 2 if m else 5
-                    wait = min(base_wait * (2 ** min(attempt, 3)), 60)
-                    logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
-                    time.sleep(wait)
-                    continue
-                
-                if attempt >= attempts - 1:
-                    return None
-                time.sleep(2 ** attempt)
-                continue
-        
-        return None
-
-    async def upload_file(
-        self, file: str | Path | IOBase, file_name: Optional[str] = None, attempts: int = 10
-    ) -> bool:
-        """
-        https://github.com/google-gemini/generative-ai-python/blob/main/docs/api/google/generativeai/upload_file.md
-        response (file_types.File)
-        """
-
-        response = None
-        ex_str = ""
-        for attempt in range(attempts):
-            try:
-                response = self._client.files.upload(path=file, config=types.UploadFileConfig(display_name=file_name))
-                logger.debug(f"Файл {file_name} записан", None, False)
-                return response
-            except Exception as ex:
-                ex_str = str(ex)
-                logger.error(f"Ошибка записи файла {file_name=} (attempt {attempt}):", ex, False)
-                
-                if '401' in ex_str or 'API_KEY_INVALID' in ex_str or 'PERMISSION_DENIED' in ex_str:
-                    self._invalidate_api_key(self.api_key)
-                    if not self._switch_api_key():
-                        return False
-                    continue
-                
-                if '503' in ex_str or 'UNAVAILABLE' in ex_str:
-                    self._unavailable_attempts += 1
-                    if self._unavailable_attempts < 6:
-                        wait = 2 ** min(self._unavailable_attempts, 5)
-                        logger.info(f"503 UNAVAILABLE (attempt {self._unavailable_attempts}). Waiting {wait}s...", None, False)
-                        time.sleep(wait)
-                        continue
-                    else:
-                        if not self._switch_model_down():
-                            return False
-                        self._unavailable_attempts = 0
-                        continue
-                
-                if '429' in ex_str or 'RESOURCE_EXHAUSTED' in ex_str:
-                    if 'PerDay' in ex_str or 'per_day' in ex_str.lower() or "quota_limit_value': '0'" in ex_str:
-                        self._mark_key_exhausted(self.api_key)
-                        if not self._switch_api_key():
-                            if not self._switch_model():
-                                return False
-                        continue
-                    m = re.search(r'retry\D*(\d+(?:\.\d+)?)s', ex_str, re.IGNORECASE)
-                    base_wait = int(float(m.group(1))) + 2 if m else 5
-                    wait = min(base_wait * (2 ** min(attempt, 3)), 60)
-                    logger.info(f"Rate limit 429 (retry_after). Waiting {wait}s before retry (attempt {attempt})", None, False)
-                    time.sleep(wait)
-                    continue
-                
-                if attempt >= attempts - 1:
+                should_retry: bool = await self._handle_api_error(ex, self.model_name, attempt, attempts)
+                if not should_retry:
                     return False
-                time.sleep(2 ** attempt)
-                continue
-        
-        logger.error(f" upload_file failed after {attempts} attempts: {ex_str}", None, False)
+
         return False
 
+    async def upload_file(
+        self,
+        file: str | Path | IOBase,
+        file_name: str = '',
+        attempts: int = 10,
+    ) -> bool:
+        """Загрузка медиа-файла в хранилище Google GenAI File API.
 
+        Args:
+            file (str | Path | IOBase): Путь к файлу или файловый дескриптор.
+            file_name (str): Отображаемое имя файла. Значение по умолчанию: ''.
+            attempts (int): Максимальное количество попыток. Значение по умолчанию: 10.
+
+        Returns:
+            bool: True при успешной загрузке, False при ошибке.
+
+        Examples:
+            >>> ai = GoogleGenerativeAI()
+            >>> success = await ai.upload_file(Path("data.pdf"), file_name="data.pdf")
+        """
+        for attempt in range(attempts):
+            try:
+                upload_kwargs = (
+                    {'config': types.UploadFileConfig(display_name=file_name)}
+                    if file_name
+                    else {}
+                )
+                response = self._client.files.upload(path=file, **upload_kwargs)
+                if response:
+                    logger.debug(f'GoogleGenerativeAI: Файл {file_name} успешно загружен')
+                    return True
+                return False
+            except Exception as ex:
+                should_retry: bool = await self._handle_api_error(ex, self.model_name, attempt, attempts)
+                if not should_retry:
+                    return False
+
+        return False

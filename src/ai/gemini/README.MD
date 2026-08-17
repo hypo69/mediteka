@@ -1,184 +1,76 @@
+# Модуль интеграции с Google Gemini AI
 
-# Google Gemini API Интеграция
+## 📋 Описание
+Модуль `src/ai/gemini` предоставляет высокоуровневый интерфейс `GoogleGenerativeAI` для работы с моделями генеративного искусственного интеллекта Google Gemini через официальный SDK `google-genai`.
 
-Этот проект предоставляет класс `GoogleGenerativeAI` для взаимодействия с моделями Google Generative AI (Gemini). Он позволяет отправлять текстовые запросы, вести диалоги, описывать изображения и загружать файлы, используя API Google Gemini.
+Модуль обеспечивает отказоустойчивость корпоративного уровня: автоматическую ротацию пула API-ключей, восстановление контекста при сбоях квот (429/Resource Exhausted), понижение моделей при недоступности сервиса (503/Service Unavailable) и поддержку вызова функций (Agentic Tools Loop).
 
-## Особенности
+---
 
-- Поддержка различных моделей Gemini.
-- Сохранение истории диалогов в JSON и текстовый файлы.
-- Работа с текстом, изображениями и файлами.
-- Обработка ошибок с механизмом повторных попыток.
-- Возможность настраивать параметры генерации и системные инструкции.
--  Пример использования в `main()` с загрузкой и чтением изображений и файлов, а также с интерактивным чатом.
+## ⚙️ Основные возможности
+1. **Управление пулом API-ключей:**
+   - Автоматическая балансировка нагрузки по времени последнего обращения (`last_run`).
+   - Автоматическая 24-часовая блокировка ключей при исчерпании суточной квоты.
+   - Исключение недействительных ключей (401/Invalid API Key) из активного пула.
+2. **Отказоустойчивость и динамическая ротация моделей:**
+   - Автоматическое переключение на поддерживаемые модели при получении ошибок 404/Unsupported.
+   - Экспоненциальный откат (Backoff) при кратковременных сбоях 503 с последующим даунгрейдом модели.
+   - Поддержка ожидания разблокировки суточных квот (`sleep_on_exhausted`).
+3. **Генерация и стриминг:**
+   - Одиночные запросы (`ask`).
+   - Диалоговые сессии с историей (`chat`).
+   - Асинхронный генератор потока ответов (`chat_stream`).
+   - Поддержка мультимодальных запросов (`describe_image`) и загрузки файлов (`upload_file`).
+   - Векторизация текста через Embedding API (`embed`).
+4. **Поддержка инструментов (Agentic Tool Dispatching):**
+   - Интеграция с Google Search Grounding по умолчанию.
+   - Диспетчеризация пользовательских функций (`ask_with_tools`, `ask_with_tools_stream`).
 
-## Требования
+---
 
-- Python 3.7 или выше
-- Установленные библиотеки:
-    - `google-generativeai`
-    - `requests`
-    - `grpcio`
-    - `google-api-core`
-    - `google-auth`
-- Действительный API ключ Google Gemini (замените `gs.credentials.gemini.api_key` на свой)
+## 🚀 Примеры использования
 
-## Установка
-
-1.  **Клонировать репозиторий:**
-
-    ```bash
-    git clone <repository_url>
-    cd <repository_directory>
-    ```
-
-2.  **Установка зависимостей:**
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-3.  **Создайте или настройте файл конфигурации:**
-
-    В `/src/ai/gemini/config.json`  можете поместить настройки, которые потребуются для вашей работы.
-    Пример:
-    ```json
-    {
-        "api_key": "YOUR_API_KEY",
-        "model_name": "gemini-2.0-flash-exp",
-        "generation_config": {
-            "response_mime_type": "text/plain"
-        }
-    }
-
-    ```
-
-    **Примечание:** API ключ необходимо заменить на свой.
-
-## Использование
-
-### Инициализация
-
-```python
-from src.ai.gemini import GoogleGenerativeAI
-import gs
-
-system_instruction = "Ты - полезный ассистент. Отвечай на все вопросы кратко"
-ai = GoogleGenerativeAI(api_key=gs.credentials.gemini.api_key, system_instruction=system_instruction)
-```
-
-### Методы класса `GoogleGenerativeAI`
-
-- **`__init__(api_key: str, model_name: str = "gemini-2.0-flash-exp", generation_config: Dict = None, system_instruction: Optional[str] = None)`:**
-    - Инициализирует объект `GoogleGenerativeAI` с API-ключом, именем модели и настройками генерации.
-    - Параметр `system_instruction` позволяет задать системные инструкции для модели.
-    
-- **`ask(q: str, attempts: int = 15) -> Optional[str]`:**
-    - Отправляет текстовый запрос `q` к модели и возвращает ответ.
-    - `attempts` - количество попыток, если запрос не удался.
-
-- **`chat(q: str) -> Optional[str]`:**
-    - Отправляет запрос `q` в чат, поддерживая историю диалога.
-    - Возвращает ответ модели.
-    - История чата сохраняется в JSON файл.
-
-- **`describe_image(image: Path | bytes, mime_type: Optional[str] = 'image/jpeg', prompt: Optional[str] = '') -> Optional[str]`:**
-    - Описывает изображение, отправленное в виде пути к файлу или байтов.
-    - `image`: путь к файлу изображения или байты изображения.
-    - `mime_type`: mime-тип изображения.
-    - `prompt`: текстовый промпт для описания изображения.
-    - Возвращает текстовое описание изображения.
-
-- **`upload_file(file: str | Path | IOBase, file_name: Optional[str] = None) -> bool`:**
-    - Загружает файл в Gemini API.
-    - `file`: путь к файлу, имя файла или файловый объект.
-    - `file_name`: имя файла для Gemini API.
-
-### Пример использования
-
+### Инициализация и текстовый запрос
 ```python
 import asyncio
-from pathlib import Path
-
-# Замените на свой ключ API
-system_instruction = "Ты - полезный ассистент. Отвечай на все вопросы кратко"
-ai = GoogleGenerativeAI(api_key=gs.credentials.gemini.api_key, system_instruction=system_instruction)
+from src.ai.gemini import GoogleGenerativeAI
 
 async def main():
-    # Пример вызова describe_image с промптом
-    image_path = Path(r"test.jpg")  # Замените на путь к вашему изображению
-
-    if not image_path.is_file():
-        print(
-            f"Файл {image_path} не существует. Поместите в корневую папку с программой файл с названием test.jpg"
-        )
-    else:
-        prompt = """Проанализируй это изображение. Выдай ответ в формате JSON,
-        где ключом будет имя объекта, а значением его описание.
-         Если есть люди, опиши их действия."""
-
-        description = await ai.describe_image(image_path, prompt=prompt)
-        if description:
-            print("Описание изображения (с JSON форматом):")
-            print(description)
-            try:
-                parsed_description = j_loads(description)
-
-            except Exception as ex:
-                print("Не удалось распарсить JSON. Получен текст:")
-                print(description)
-
-        else:
-            print("Не удалось получить описание изображения.")
-
-        # Пример без JSON вывода
-        prompt = "Проанализируй это изображение. Перечисли все объекты, которые ты можешь распознать."
-        description = await ai.describe_image(image_path, prompt=prompt)
-        if description:
-            print("Описание изображения (без JSON формата):")
-            print(description)
-
-    file_path = Path('test.txt')
-    with open(file_path, "w") as f:
-        f.write("Hello, Gemini!")
-
-    file_upload = await ai.upload_file(file_path, 'test_file.txt')
-    print(file_upload)
-
-    # Пример чата
-    while True:
-        user_message = input("You: ")
-        if user_message.lower() == 'exit':
-            break
-        ai_message = await ai.chat(user_message)
-        if ai_message:
-            print(f"Gemini: {ai_message}")
-        else:
-            print("Gemini: Ошибка получения ответа")
-
+    # Инициализация с системной инструкцией
+    ai = GoogleGenerativeAI(system_instruction="Ты — эксперт по анализу медиа-контента.")
+    
+    # Одиночный запрос
+    response = await ai.ask("Кратко опиши фильм Начало (2010)")
+    print(response)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
 ```
 
-## Дополнительно
+### Диалог с сохранением истории
+```python
+async def chat_example():
+    ai = GoogleGenerativeAI(save_history_chat=True)
+    
+    msg1 = await ai.chat("Привет! Посоветуй фантастический сериал.")
+    print("AI:", msg1)
+    
+    msg2 = await ai.chat("Сколько в нем сезонов?")
+    print("AI:", msg2)
+```
 
-- **Логирование:** Все диалоги и ошибки записываются в соответствующие файлы в директории `external_storage/gemini_data`.
-- **История чата:** История диалогов хранится в JSON и текстовых файлах в директории `external_storage/gemini_data/history/`.
-- **Обработка ошибок:** Программа обрабатывает сетевые ошибки, ошибки аутентификации и ошибки API с механизмом повторных попыток.
+### Потоковая генерация ответа
+```python
+async def stream_example():
+    ai = GoogleGenerativeAI()
+    async for chunk in ai.chat_stream("Напиши краткий обзор фильма Матрица"):
+        print(chunk, end="", flush=True)
+```
 
-## Замечания
+---
 
-- Обязательно замените `gs.credentials.gemini.api_key` на ваш действительный API-ключ Google Gemini.
-- Убедитесь, что у вас установлен `google-generativeai`, `requests`, `grpcio`, `google-api-core` и `google-auth` .
--  Убедитесь, что у вас есть файл `test.jpg` в корневой папке с программой или измените путь к изображению в примере `main`.
-
-## Лицензия
-
-Этот проект распространяется под [MIT].
-
-## Автор
-
-[hypo69]
-
+## 📐 Архитектура и стандарты разработки
+- Разработка строго соответствует инженерному регламенту `CODE_RULES.md` v1.0.
+- Все вызовы API обернуты в централизованный отказоустойчивый диспетчер ошибок `_handle_api_error`.
+- Логирование осуществляется строго через `src.logger.logger`.
+- Исключены запрещенные значения `None`, код ориентирован на строгие типы данных Python 3.12+.

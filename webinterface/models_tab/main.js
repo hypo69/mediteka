@@ -6,26 +6,16 @@ async function initModelsTab() {
   const keysListBody = document.getElementById('keys-list-body');
   const refreshKeysBtn = document.getElementById('btn-refresh-keys');
   const addKeyBtn = document.getElementById('btn-add-key');
-  
-  if (!modelSelect || !saveBtn || !keysListBody) return;
-
-  // --- 1. Load Models list & Active model ---
-  await loadTabModels(modelSelect, saveBtn);
-
-  // --- 2. Load API keys ---
-  await refreshKeysList(keysListBody);
-
-  // --- 2.5 Load Foundry Configuration ---
-  await loadFoundryConfig();
-
-  // --- 2.6 Load Ollama Configuration ---
-  await loadOllamaConfig();
-
-  // --- 2.7 Load Antigravity (AGY) Configuration ---
-  await loadAgyConfig();
-
-  // --- 3. Bind Event Handlers ---
   const saveAgyBtn = document.getElementById('btn-save-agy');
+  const saveFoundryBtn = document.getElementById('btn-save-foundry');
+  const saveOllamaBtn = document.getElementById('btn-save-ollama');
+  const saveBtnInstr = document.getElementById('btn-save-instruction');
+  const reloadBtnInstr = document.getElementById('btn-reload-instruction');
+
+  // 1. Bind event handlers immediately
+  if (saveBtnInstr) saveBtnInstr.onclick = saveSystemInstruction;
+  if (reloadBtnInstr) reloadBtnInstr.onclick = loadSystemInstruction;
+
   if (saveAgyBtn) {
     saveAgyBtn.onclick = async () => {
       const enabled = document.getElementById('agy-enabled')?.checked ?? true;
@@ -40,7 +30,7 @@ async function initModelsTab() {
           body: JSON.stringify({ enabled, model, key })
         });
         showModelsNotification('Настройки Antigravity (AGY) успешно сохранены', 'success');
-        await loadTabModels(modelSelect, saveBtn);
+        if (modelSelect && saveBtn) await loadTabModels(modelSelect, saveBtn);
       } catch (err) {
         console.error('Ошибка сохранения Antigravity:', err);
         showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
@@ -50,7 +40,6 @@ async function initModelsTab() {
     };
   }
 
-  const saveFoundryBtn = document.getElementById('btn-save-foundry');
   if (saveFoundryBtn) {
     saveFoundryBtn.onclick = async () => {
       const enabled = document.getElementById('foundry-enabled')?.checked || false;
@@ -65,8 +54,7 @@ async function initModelsTab() {
           body: JSON.stringify({ enabled, url, key })
         });
         showModelsNotification('Настройки Microsoft Foundry успешно сохранены', 'success');
-        // Reload models selection as it might have changed
-        await loadTabModels(modelSelect, saveBtn);
+        if (modelSelect && saveBtn) await loadTabModels(modelSelect, saveBtn);
       } catch (err) {
         console.error('Ошибка сохранения Foundry:', err);
         showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
@@ -76,7 +64,6 @@ async function initModelsTab() {
     };
   }
 
-  const saveOllamaBtn = document.getElementById('btn-save-ollama');
   if (saveOllamaBtn) {
     saveOllamaBtn.onclick = async () => {
       const enabled = document.getElementById('ollama-enabled')?.checked || false;
@@ -90,7 +77,7 @@ async function initModelsTab() {
           body: JSON.stringify({ enabled, url })
         });
         showModelsNotification('Настройки Ollama успешно сохранены', 'success');
-        await loadTabModels(modelSelect, saveBtn);
+        if (modelSelect && saveBtn) await loadTabModels(modelSelect, saveBtn);
       } catch (err) {
         console.error('Ошибка сохранения Ollama:', err);
         showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
@@ -100,33 +87,34 @@ async function initModelsTab() {
     };
   }
 
-  saveBtn.onclick = async () => {
-    const selectedModel = modelSelect.value;
-    saveBtn.disabled = true;
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = 'Сохранение...';
-    
-    try {
-      await window.api.fetch('/auth/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: selectedModel })
-      });
-      showModelsNotification('Модель успешно обновлена на: ' + selectedModel, 'success');
+  if (saveBtn && modelSelect) {
+    saveBtn.onclick = async () => {
+      const selectedModel = modelSelect.value;
+      saveBtn.disabled = true;
+      const originalText = saveBtn.textContent;
+      saveBtn.textContent = 'Сохранение...';
       
-      // Also update the selector on the other tab if it exists
-      const otherModelSelect = document.getElementById('admin-model-select');
-      if (otherModelSelect) {
-        otherModelSelect.value = selectedModel;
+      try {
+        await window.api.fetch('/auth/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: selectedModel })
+        });
+        showModelsNotification('Модель успешно обновлена на: ' + selectedModel, 'success');
+        
+        const otherModelSelect = document.getElementById('admin-model-select');
+        if (otherModelSelect) {
+          otherModelSelect.value = selectedModel;
+        }
+      } catch (err) {
+        console.error('Ошибка сохранения модели:', err);
+        showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
       }
-    } catch (err) {
-      console.error('Ошибка сохранения модели:', err);
-      showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = originalText;
-    }
-  };
+    };
+  }
 
   if (refreshKeysBtn) {
     refreshKeysBtn.onclick = async () => {
@@ -142,7 +130,7 @@ async function initModelsTab() {
       } finally {
         refreshKeysBtn.disabled = false;
         refreshKeysBtn.textContent = originalText;
-        await refreshKeysList(keysListBody);
+        if (keysListBody) await refreshKeysList(keysListBody);
       }
     };
   }
@@ -171,7 +159,7 @@ async function initModelsTab() {
         showModelsNotification(`Ключ "${name}" успешно добавлен`, 'success');
         nameInput.value = '';
         valueInput.value = '';
-        await refreshKeysList(keysListBody);
+        if (keysListBody) await refreshKeysList(keysListBody);
       } catch (err) {
         console.error('Ошибка добавления ключа:', err);
         showModelsNotification('Ошибка добавления: ' + err.message, 'danger');
@@ -181,12 +169,15 @@ async function initModelsTab() {
     };
   }
 
-  // --- 4. Load System Instruction ---
-  await loadSystemInstruction();
-  const saveBtnInstr = document.getElementById('btn-save-instruction');
-  const reloadBtnInstr = document.getElementById('btn-reload-instruction');
-  if (saveBtnInstr) saveBtnInstr.onclick = saveSystemInstruction;
-  if (reloadBtnInstr) reloadBtnInstr.onclick = loadSystemInstruction;
+  // 2. Load all components concurrently
+  await Promise.allSettled([
+    modelSelect && saveBtn ? loadTabModels(modelSelect, saveBtn) : Promise.resolve(),
+    keysListBody ? refreshKeysList(keysListBody) : Promise.resolve(),
+    loadFoundryConfig(),
+    loadOllamaConfig(),
+    loadAgyConfig(),
+    loadSystemInstruction()
+  ]);
 }
 
 // Helper to load models list
@@ -489,26 +480,43 @@ async function loadAgyConfig() {
 
 async function loadSystemInstruction() {
   const editor = document.getElementById('system-instruction-editor');
+  const statusBadge = document.getElementById('system-instruction-status');
   if (!editor) return;
   
-  editor.value = 'Загрузка...';
   editor.disabled = true;
+  if (statusBadge) {
+    statusBadge.className = 'badge bg-warning text-dark';
+    statusBadge.textContent = 'Загрузка...';
+    statusBadge.style.removeProperty('display');
+  }
   
   try {
     const data = await window.api.fetch('/api/admin/system_instruction');
     editor.value = data.content || '';
-    editor.disabled = false;
+    if (statusBadge) {
+      statusBadge.className = 'badge bg-success';
+      statusBadge.textContent = 'Загружено';
+      setTimeout(() => {
+        if (statusBadge) statusBadge.style.display = 'none';
+      }, 2500);
+    }
   } catch (err) {
     console.error('Ошибка загрузки системной инструкции:', err);
-    editor.value = '';
-    editor.disabled = false;
+    if (statusBadge) {
+      statusBadge.className = 'badge bg-danger';
+      statusBadge.textContent = 'Ошибка';
+      statusBadge.style.removeProperty('display');
+    }
     showModelsNotification('Ошибка загрузки системной инструкции: ' + err.message, 'danger');
+  } finally {
+    editor.disabled = false;
   }
 }
 
 async function saveSystemInstruction() {
   const editor = document.getElementById('system-instruction-editor');
   const saveBtn = document.getElementById('btn-save-instruction');
+  const statusBadge = document.getElementById('system-instruction-status');
   if (!editor || !saveBtn) return;
 
   const originalHtml = saveBtn.innerHTML;
@@ -522,8 +530,21 @@ async function saveSystemInstruction() {
       body: JSON.stringify({ content: editor.value })
     });
     showModelsNotification('✅ Системная инструкция успешно сохранена', 'success');
+    if (statusBadge) {
+      statusBadge.className = 'badge bg-success';
+      statusBadge.textContent = 'Сохранено';
+      statusBadge.style.removeProperty('display');
+      setTimeout(() => {
+        if (statusBadge) statusBadge.style.display = 'none';
+      }, 3000);
+    }
   } catch (err) {
     console.error('Ошибка сохранения системной инструкции:', err);
+    if (statusBadge) {
+      statusBadge.className = 'badge bg-danger';
+      statusBadge.textContent = 'Ошибка сохранения';
+      statusBadge.style.removeProperty('display');
+    }
     showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');
   } finally {
     saveBtn.disabled = false;
