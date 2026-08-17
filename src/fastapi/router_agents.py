@@ -224,6 +224,18 @@ def init_agents_router(prefix: str = '/api/agents') -> APIRouter:
                 ],
                 'default_model': 'gemini-2.5-flash'
             },
+            'gemini_cli': {
+                'name': 'Google Gemini CLI',
+                'description': 'Автономная среда Gemini CLI (локальный агентный инструмент)',
+                'models': [
+                    {'id': 'gemini-3.1-flash-lite', 'name': 'Gemini 3.1 Flash Lite (По умолчанию)'},
+                    {'id': 'gemini-2.5-flash', 'name': 'Gemini 2.5 Flash'},
+                    {'id': 'gemini-2.5-pro', 'name': 'Gemini 2.5 Pro'},
+                    {'id': 'gemini-3.1-pro-preview', 'name': 'Gemini 3.1 Pro Preview'},
+                    {'id': 'gemini-3.1-flash-lite-preview', 'name': 'Gemini 3.1 Flash Lite Preview'}
+                ],
+                'default_model': ai_section.get('gemini_cli_model_id', 'gemini-3.1-flash-lite')
+            },
             'agy': {
                 'name': 'Google Antigravity (AGY)',
                 'description': 'Агентная среда Antigravity с встроенным поиском',
@@ -353,7 +365,9 @@ def init_agents_router(prefix: str = '/api/agents') -> APIRouter:
         try:
             from src.fastapi.router_chat import get_chat_model
             model_key = req.model
-            if req.provider == 'foundry' and not model_key.startswith('foundry:'):
+            if req.provider == 'gemini_cli' and not model_key.startswith('gemini_cli:'):
+                model_key = f'gemini_cli:{model_key}'
+            elif req.provider == 'foundry' and not model_key.startswith('foundry:'):
                 model_key = f'foundry:{model_key}'
             elif req.provider == 'ollama' and not model_key.startswith('ollama:'):
                 model_key = f'ollama:{model_key}'
@@ -444,7 +458,9 @@ def init_agents_router(prefix: str = '/api/agents') -> APIRouter:
         try:
             from src.fastapi.router_chat import get_chat_model
             model_key = model_name
-            if provider == 'foundry' and not model_key.startswith('foundry:'):
+            if provider == 'gemini_cli' and not model_key.startswith('gemini_cli:'):
+                model_key = f'gemini_cli:{model_key}'
+            elif provider == 'foundry' and not model_key.startswith('foundry:'):
                 model_key = f'foundry:{model_key}'
             elif provider == 'ollama' and not model_key.startswith('ollama:'):
                 model_key = f'ollama:{model_key}'

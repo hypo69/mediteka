@@ -1,66 +1,91 @@
-// -*- coding: utf-8 -*-
-// =============================================================================
-// Название процесса: Логика вкладки управления и конструирования агентов ИИ
-// =============================================================================
+/**
+ * =============================================================================
+ * Process Name: AI Agents Management and Builder Interface
+ * =============================================================================
+ * Description:
+ *   Client-side controller for managing AI agent registry, model pool binding,
+ *   automated specification generation, and execution sandbox testing.
+ *
+ * File: main.js
+ * Project: Mediteka
+ * Module: AgentsTab
+ * Author: hypo69
+ * Copyright: © 2026 hypo69
+ * =============================================================================
+ */
 
-let _agentsState = {
+'use strict';
+
+/**
+ * Global reactive state for the AI Agents tab.
+ */
+const _state = {
   agents: [],
   tools: [],
   providers: {},
   currentFilter: 'all',
   activeSandboxAgent: null,
-  lastGeneratedSpec: null
+  lastGeneratedSpec: null,
+  isEventsBound: false
 };
 
-let _isEventsBound = false;
-
 /**
- * Инициализация вкладки агентов (вызывается при переключении вкладок в админке).
+ * Initializes the AI Agents management tab.
+ * Called on tab switch from the main admin interface.
+ *
+ * @returns {Promise<void>}
  */
 async function initAgentsTab() {
-  console.log('[AgentsTab] Инициализация вкладки ИИ-Агентов...');
-  
-  // Привязка обработчиков интерфейса
-  _bindStaticEventListeners();
-
-  // Первичная загрузка данных
+  _bindStaticEvents();
   await _loadAllData();
 }
 
 window.initAgentsTab = initAgentsTab;
 
 /**
- * Загрузка всех необходимых справочников и списка агентов с сервера.
+ * Executes an HTTP JSON request using window.api or standard fetch.
+ *
+ * @param {string} endpoint - Target API endpoint path.
+ * @param {RequestInit} [options={}] - Optional fetch configuration options.
+ * @returns {Promise<any>} Parsed JSON response.
+ * @throws {Error} Thrown if response status is not OK.
+ */
+async function _fetchJson(endpoint, options = {}) {
+  if (window.api && typeof window.api.fetch === 'function') {
+    return await window.api.fetch(endpoint, options);
+  }
+  const response = await fetch(endpoint, options);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+/**
+ * Loads agents, capabilities catalog, and model providers from the backend API.
+ *
+ * @returns {Promise<void>}
  */
 async function _loadAllData() {
-  const fetchJson = async (url) => {
-    if (window.api && typeof window.api.fetch === 'function') {
-      return await window.api.fetch(url);
-    }
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
-  };
-
   try {
     const [agentsRes, toolsRes, providersRes] = await Promise.all([
-      fetchJson('/api/agents'),
-      fetchJson('/api/agents/tools'),
-      fetchJson('/api/agents/providers')
+      _fetchJson('/api/agents'),
+      _fetchJson('/api/agents/tools'),
+      _fetchJson('/api/agents/providers')
     ]);
 
-    _agentsState.agents = agentsRes || [];
-    _agentsState.tools = toolsRes || [];
-    _agentsState.providers = providersRes || {};
+    _state.agents = Array.isArray(agentsRes) ? agentsRes : [];
+    _state.tools = Array.isArray(toolsRes) ? toolsRes : [];
+    _state.providers = providersRes ?? {};
 
-    _renderFilterCounters();
-    _renderAgentsGrid();
+    _renderCounters();
+    _renderGrid();
     _populateToolsMatrix();
-    _updateProviderModelsDropdown('agent-provider', 'agent-model');
-    _updateProviderModelsDropdown('ai-builder-provider', 'ai-builder-model');
+    _updateModelDropdown('agent-provider', 'agent-model');
+    _updateModelDropdown('ai-builder-provider', 'ai-builder-model');
   } catch (err) {
-    console.error('[AgentsTab] Ошибка загрузки данных агентов:', err);
-    _showToast('Ошибка загрузки данных: ' + err.message, 'danger');
+    console.error('[AgentsTab] Failed to load data:', err);
+    _showToast(`Failed to load data: ${err.message}`, 'danger');
     const grid = document.getElementById('agents-grid');
     if (grid) {
       grid.innerHTML = `
@@ -76,12 +101,15 @@ async function _loadAllData() {
 }
 
 /**
- * Привязка статических обработчиков событий кнопок и модалок.
+ * Binds static DOM event listeners for buttons, filters, and modal templates.
+ *
+ * @returns {void}
  */
-function _bindStaticEventListeners() {
-  if (_isEventsBound) return;
-  _isEventsBound = true;
-  // Кнопка обновления
+function _bindStaticEvents() {
+  if (_state.isEventsBound) return;
+  _state.isEventsBound = true;
+
+  // Refresh agents list
   const refreshBtn = document.getElementById('btn-refresh-agents');
   if (refreshBtn) {
     refreshBtn.onclick = async () => {
@@ -92,48 +120,32 @@ function _bindStaticEventListeners() {
     };
   }
 
-  // Фильтры списка агентов
+  // Filter toolbar buttons
   const filterGroup = document.getElementById('agents-filter-group');
   if (filterGroup) {
-    filterGroup.querySelectorAll('button').forEach(btn => {
-      btn.onclick = (e) => {
-        filterGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    filterGroup.querySelectorAll('button').forEach((btn) => {
+      btn.onclick = () => {
+        filterGroup.querySelectorAll('button').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        _agentsState.currentFilter = btn.getAttribute('data-filter') || 'all';
-        _renderAgentsGrid();
+        _state.currentFilter = btn.getAttribute('data-filter') ?? 'all';
+        _renderGrid();
       };
     });
   }
 
-  // Кнопка открытия создания вручную
-  const createBtn = document.getElementById('btn-open-create-agent');
-  if (createBtn) {
-    createBtn.onclick = () => _openAgentEditor(null);
-  }
+  // Modal trigger buttons
+  document.getElementById('btn-open-create-agent')?.addEventListener('click', () => _openEditor(null));
+  document.getElementById('btn-open-ai-builder')?.addEventListener('click', _openAiBuilder);
 
-  // Кнопка открытия AI Builder
-  const aiBuilderBtn = document.getElementById('btn-open-ai-builder');
-  if (aiBuilderBtn) {
-    aiBuilderBtn.onclick = () => _openAiBuilder();
-  }
+  // Provider change handlers
+  document.getElementById('agent-provider')?.addEventListener('change', () => {
+    _updateModelDropdown('agent-provider', 'agent-model');
+  });
+  document.getElementById('ai-builder-provider')?.addEventListener('change', () => {
+    _updateModelDropdown('ai-builder-provider', 'ai-builder-model');
+  });
 
-  // Смена провайдера в редакторе агента
-  const agentProviderSel = document.getElementById('agent-provider');
-  if (agentProviderSel) {
-    agentProviderSel.onchange = () => {
-      _updateProviderModelsDropdown('agent-provider', 'agent-model');
-    };
-  }
-
-  // Смена провайдера в AI Builder
-  const builderProviderSel = document.getElementById('ai-builder-provider');
-  if (builderProviderSel) {
-    builderProviderSel.onchange = () => {
-      _updateProviderModelsDropdown('ai-builder-provider', 'ai-builder-model');
-    };
-  }
-
-  // Слайдер температуры
+  // Temperature slider synchronization
   const tempSlider = document.getElementById('agent-temperature');
   const tempVal = document.getElementById('agent-temp-val');
   if (tempSlider && tempVal) {
@@ -142,53 +154,46 @@ function _bindStaticEventListeners() {
     };
   }
 
-  // Кнопка сохранения агента в редакторе
-  const saveAgentBtn = document.getElementById('btn-save-agent');
-  if (saveAgentBtn) {
-    saveAgentBtn.onclick = _handleSaveAgent;
-  }
+  // Action buttons
+  document.getElementById('btn-save-agent')?.addEventListener('click', _handleSaveAgent);
+  document.getElementById('btn-run-ai-generate')?.addEventListener('click', _handleRunAiGenerate);
 
-  // Кнопка генерации в AI Builder
-  const runAiGenBtn = document.getElementById('btn-run-ai-generate');
-  if (runAiGenBtn) {
-    runAiGenBtn.onclick = _handleRunAiGenerate;
-  }
+  // Apply AI Generated specification to editor
+  document.getElementById('btn-apply-ai-generated')?.addEventListener('click', () => {
+    if (!_state.lastGeneratedSpec) return;
+    const builderModalEl = document.getElementById('modal-ai-builder');
+    bootstrap.Modal.getInstance(builderModalEl)?.hide();
+    _openEditor(null, _state.lastGeneratedSpec);
+  });
 
-  // Кнопка применения сгенерированного агента
-  const applyAiBtn = document.getElementById('btn-apply-ai-generated');
-  if (applyAiBtn) {
-    applyAiBtn.onclick = () => {
-      if (_agentsState.lastGeneratedSpec) {
-        const builderModalEl = document.getElementById('modal-ai-builder');
-        const builderModal = bootstrap.Modal.getInstance(builderModalEl);
-        if (builderModal) builderModal.hide();
-        _openAgentEditor(null, _agentsState.lastGeneratedSpec);
-      }
-    };
-  }
+  // System Prompt templates
+  document.getElementById('btn-insert-react-template')?.addEventListener('click', () => {
+    const promptInput = document.getElementById('agent-system-prompt');
+    if (promptInput) {
+      promptInput.value =
+        'Ты автономный ReAct-агент Mediteka.\n\n' +
+        'ПРИНЦИП РАБОТЫ (Thought -> Action -> Observation):\n' +
+        '1. Тщательно анализируй вопрос пользователя (Thought).\n' +
+        '2. Выбирай необходимый инструмент из доступных (Action) с корректными параметрами.\n' +
+        '3. Анализируй результат выполнения инструмента (Observation).\n' +
+        '4. Сформируй итоговый структурированный ответ пользователю.\n\n' +
+        'ФОРМАТ ОТВЕТА:\n' +
+        '- Используй Markdown с красивым форматированием (списки, жирный шрифт, эмодзи).\n' +
+        '- Не выводи технические ошибки напрямую, объясняй суть решения.';
+    }
+  });
 
-  // Шаблоны промптов
-  const btnReAct = document.getElementById('btn-insert-react-template');
-  if (btnReAct) {
-    btnReAct.onclick = () => {
-      const ta = document.getElementById('agent-system-prompt');
-      if (ta) {
-        ta.value = "Ты автономный ReAct-агент Mediteka.\n\nПРИНЦИП РАБОТЫ (Thought -> Action -> Observation):\n1. Тщательно анализируй вопрос пользователя (Thought).\n2. Выбирай необходимый инструмент из доступных (Action) с корректными параметрами.\n3. Анализируй результат выполнения инструмента (Observation).\n4. Сформируй итоговый структурированный ответ пользователю.\n\nФОРМАТ ОТВЕТА:\n- Используй Markdown с красивым форматированием (списки, жирный шрифт, эмодзи).\n- Не выводи технические ошибки напрямую, объясняй суть решения.";
-      }
-    };
-  }
+  document.getElementById('btn-insert-json-template')?.addEventListener('click', () => {
+    const promptInput = document.getElementById('agent-system-prompt');
+    if (promptInput) {
+      promptInput.value =
+        'Ты специализированный аналитический агент Mediteka.\n\n' +
+        'Твоя задача: структурировать полученные данные и всегда отвечать строго валидным JSON-объектом без лишнего обрамления и markdown-блоков.\n\n' +
+        'Пример структуры:\n{\n  "status": "success",\n  "items": [],\n  "summary": "краткое резюме"\n}';
+    }
+  });
 
-  const btnJson = document.getElementById('btn-insert-json-template');
-  if (btnJson) {
-    btnJson.onclick = () => {
-      const ta = document.getElementById('agent-system-prompt');
-      if (ta) {
-        ta.value = "Ты специализированный аналитический агент Mediteka.\n\nТвоя задача: структурировать полученные данные и всегда отвечать строго валидным JSON-объектом без лишнего обрамления и markdown-блоков.\n\nПример структуры:\n{\n  \"status\": \"success\",\n  \"items\": [],\n  \"summary\": \"краткое резюме\"\n}";
-      }
-    };
-  }
-
-  // Отправка в Sandbox
+  // Sandbox inputs
   const sandboxSendBtn = document.getElementById('btn-sandbox-send');
   const sandboxInput = document.getElementById('sandbox-input-msg');
   if (sandboxSendBtn && sandboxInput) {
@@ -200,13 +205,15 @@ function _bindStaticEventListeners() {
 }
 
 /**
- * Рендеринг счетчиков на кнопках фильтров.
+ * Updates filter counter badges on top toolbar buttons.
+ *
+ * @returns {void}
  */
-function _renderFilterCounters() {
-  const allCount = _agentsState.agents.length;
-  const activeCount = _agentsState.agents.filter(a => a.enabled).length;
-  const systemCount = _agentsState.agents.filter(a => a.is_system).length;
-  const customCount = _agentsState.agents.filter(a => !a.is_system).length;
+function _renderCounters() {
+  const allCount = _state.agents.length;
+  const activeCount = _state.agents.filter((a) => a.enabled).length;
+  const systemCount = _state.agents.filter((a) => a.is_system).length;
+  const customCount = _state.agents.filter((a) => !a.is_system).length;
 
   document.getElementById('count-all')?.replaceChildren(document.createTextNode(String(allCount)));
   document.getElementById('count-active')?.replaceChildren(document.createTextNode(String(activeCount)));
@@ -215,18 +222,20 @@ function _renderFilterCounters() {
 }
 
 /**
- * Отрисовка сетки карточек агентов.
+ * Renders the responsive agent cards grid based on current filter state.
+ *
+ * @returns {void}
  */
-function _renderAgentsGrid() {
+function _renderGrid() {
   const grid = document.getElementById('agents-grid');
   if (!grid) return;
 
-  const filter = _agentsState.currentFilter;
-  let items = _agentsState.agents;
+  const filter = _state.currentFilter;
+  let items = _state.agents;
 
-  if (filter === 'active') items = items.filter(a => a.enabled);
-  else if (filter === 'system') items = items.filter(a => a.is_system);
-  else if (filter === 'custom') items = items.filter(a => !a.is_system);
+  if (filter === 'active') items = items.filter((a) => a.enabled);
+  else if (filter === 'system') items = items.filter((a) => a.is_system);
+  else if (filter === 'custom') items = items.filter((a) => !a.is_system);
 
   if (items.length === 0) {
     grid.innerHTML = `
@@ -239,135 +248,153 @@ function _renderAgentsGrid() {
     return;
   }
 
-  grid.innerHTML = items.map(agent => {
-    const isSystem = agent.is_system;
-    const isEnabled = agent.enabled;
-    const providerName = _getProviderDisplayName(agent.provider);
-    const toolsBadges = (agent.tools || []).map(tId => {
-      const toolObj = _agentsState.tools.find(t => t.id === tId);
-      const icon = toolObj ? toolObj.icon : '🔧';
-      const name = toolObj ? toolObj.name : tId;
-      return `<span class="badge tool-badge me-1 mb-1 font-monospace">${icon} <span>${name}</span></span>`;
-    }).join('');
+  grid.innerHTML = items
+    .map((agent) => {
+      const isSystem = Boolean(agent.is_system);
+      const isEnabled = Boolean(agent.enabled);
+      const providerName = _getProviderDisplayName(agent.provider);
 
-    return `
-      <div class="col-xl-4 col-lg-6">
-        <div class="card h-100 agent-card shadow-sm" style="${!isEnabled ? 'opacity: 0.65;' : ''}">
-          <div class="card-header d-flex justify-content-between align-items-center py-2 px-3">
-            <div class="d-flex align-items-center gap-2">
-              <span class="fs-5">${isSystem ? '⚙️' : '🧩'}</span>
-              <strong class="text-white fs-6 fw-bold">${agent.name}</strong>
-              ${isSystem ? '<span class="badge fw-bold" style="font-size: 0.7rem; background-color: #0284c7 !important; color: #ffffff !important;">SYSTEM</span>' : '<span class="badge fw-bold" style="font-size: 0.7rem; background-color: #d97706 !important; color: #ffffff !important;">CUSTOM</span>'}
-            </div>
-            <div class="form-check form-switch m-0" title="Включить / Выключить">
-              <input class="form-check-input agent-toggle-switch" type="checkbox" data-agent-id="${agent.id}" ${isEnabled ? 'checked' : ''}>
-            </div>
-          </div>
-          <div class="card-body p-3 d-flex flex-column">
-            <p class="small mb-3 flex-grow-1 agent-desc" style="min-height: 40px; color: #cbd5e1; line-height: 1.45;">${agent.description || 'Описание отсутствует'}</p>
-            
-            <div class="agent-spec-box mb-3 small">
-              <div class="d-flex justify-content-between align-items-center mb-1 pb-1" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-                <span class="spec-label">Провайдер &amp; Модель:</span>
-                <span class="badge spec-value-badge text-truncate" style="max-width: 190px;">${providerName}: ${agent.model}</span>
+      const toolsBadges = (agent.tools ?? [])
+        .map((toolId) => {
+          const tool = _state.tools.find((t) => t.id === toolId);
+          const icon = tool?.icon ?? '🔧';
+          const name = tool?.name ?? toolId;
+          return `<span class="badge tool-badge me-1 mb-1 font-monospace">${icon} <span>${name}</span></span>`;
+        })
+        .join('');
+
+      return `
+        <div class="col-xl-4 col-lg-6">
+          <div class="card h-100 agent-card shadow-sm" style="${!isEnabled ? 'opacity: 0.65;' : ''}">
+            <div class="card-header d-flex justify-content-between align-items-center py-2 px-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="fs-5">${isSystem ? '⚙️' : '🧩'}</span>
+                <strong class="text-white fs-6 fw-bold">${agent.name}</strong>
+                ${
+                  isSystem
+                    ? '<span class="badge fw-bold" style="font-size: 0.7rem; background-color: #0284c7 !important; color: #ffffff !important;">SYSTEM</span>'
+                    : '<span class="badge fw-bold" style="font-size: 0.7rem; background-color: #d97706 !important; color: #ffffff !important;">CUSTOM</span>'
+                }
               </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="spec-label">Температура / Шаги:</span>
-                <span class="spec-tech-val font-monospace">T: ${agent.temperature} <span style="color: #64748b;">|</span> Max: ${agent.max_steps}</span>
+              <div class="form-check form-switch m-0" title="Включить / Выключить">
+                <input class="form-check-input agent-toggle-switch" type="checkbox" data-agent-id="${agent.id}" ${isEnabled ? 'checked' : ''}>
               </div>
             </div>
+            <div class="card-body p-3 d-flex flex-column">
+              <p class="small mb-3 flex-grow-1 agent-desc" style="min-height: 40px; color: #cbd5e1; line-height: 1.45;">${agent.description || 'Описание отсутствует'}</p>
+              
+              <div class="agent-spec-box mb-3 small">
+                <div class="d-flex justify-content-between align-items-center mb-1 pb-1" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                  <span class="spec-label">Провайдер &amp; Модель:</span>
+                  <span class="badge spec-value-badge text-truncate" style="max-width: 190px;">${providerName}: ${agent.model}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="spec-label">Температура / Шаги:</span>
+                  <span class="spec-tech-val font-monospace">T: ${agent.temperature} <span style="color: #64748b;">|</span> Max: ${agent.max_steps}</span>
+                </div>
+              </div>
 
-            <div class="mb-3">
-              <div class="small fw-semibold mb-2" style="color: #f1f5f9;">Инструменты (${(agent.tools || []).length}):</div>
-              <div class="d-flex flex-wrap">${toolsBadges || '<span class="small" style="color: #94a3b8;">Без внешних инструментов</span>'}</div>
-            </div>
+              <div class="mb-3">
+                <div class="small fw-semibold mb-2" style="color: #f1f5f9;">Инструменты (${(agent.tools ?? []).length}):</div>
+                <div class="d-flex flex-wrap">${toolsBadges || '<span class="small" style="color: #94a3b8;">Без внешних инструментов</span>'}</div>
+              </div>
 
-            <div class="mt-auto d-flex justify-content-between gap-2 pt-2" style="border-top: 1px solid #334155;">
-              <button class="btn btn-sm rounded-pill px-3 btn-test-sandbox" data-agent-id="${agent.id}">
-                <i class="bi bi-play-fill"></i> Тест в Sandbox
-              </button>
-              <div class="d-flex gap-1">
-                <button class="btn btn-sm rounded-pill px-2 btn-edit-agent" data-agent-id="${agent.id}" title="Редактировать">
-                  <i class="bi bi-pencil-fill"></i>
+              <div class="mt-auto d-flex justify-content-between gap-2 pt-2" style="border-top: 1px solid #334155;">
+                <button class="btn btn-sm rounded-pill px-3 btn-test-sandbox" data-agent-id="${agent.id}">
+                  <i class="bi bi-play-fill"></i> Тест в Sandbox
                 </button>
-                ${!isSystem ? `
-                  <button class="btn btn-sm rounded-pill px-2 btn-delete-agent" data-agent-id="${agent.id}" title="Удалить">
-                    <i class="bi bi-trash-fill"></i>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm rounded-pill px-2 btn-edit-agent" data-agent-id="${agent.id}" title="Редактировать">
+                    <i class="bi bi-pencil-fill"></i>
                   </button>
-                ` : ''}
+                  ${
+                    !isSystem
+                      ? `
+                    <button class="btn btn-sm rounded-pill px-2 btn-delete-agent" data-agent-id="${agent.id}" title="Удалить">
+                      <i class="bi bi-trash-fill"></i>
+                    </button>
+                  `
+                      : ''
+                  }
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    })
+    .join('');
 
-  // Привязка обработчиков карточек
-  grid.querySelectorAll('.agent-toggle-switch').forEach(sw => {
-    sw.onchange = async (e) => {
+  // Attach card event listeners
+  grid.querySelectorAll('.agent-toggle-switch').forEach((sw) => {
+    sw.onchange = async () => {
       const agentId = sw.getAttribute('data-agent-id');
-      const newState = sw.checked;
-      await _toggleAgentState(agentId, newState);
+      if (agentId) await _toggleAgentState(agentId, sw.checked);
     };
   });
 
-  grid.querySelectorAll('.btn-test-sandbox').forEach(btn => {
+  grid.querySelectorAll('.btn-test-sandbox').forEach((btn) => {
     btn.onclick = () => {
       const agentId = btn.getAttribute('data-agent-id');
-      _openSandbox(agentId);
+      if (agentId) _openSandbox(agentId);
     };
   });
 
-  grid.querySelectorAll('.btn-edit-agent').forEach(btn => {
+  grid.querySelectorAll('.btn-edit-agent').forEach((btn) => {
     btn.onclick = () => {
       const agentId = btn.getAttribute('data-agent-id');
-      _openAgentEditor(agentId);
+      if (agentId) _openEditor(agentId);
     };
   });
 
-  grid.querySelectorAll('.btn-delete-agent').forEach(btn => {
+  grid.querySelectorAll('.btn-delete-agent').forEach((btn) => {
     btn.onclick = () => {
       const agentId = btn.getAttribute('data-agent-id');
-      _deleteAgent(agentId);
+      if (agentId) _deleteAgent(agentId);
     };
   });
 }
 
 /**
- * Переключение активности агента.
+ * Toggles an agent's enabled state and persists it to the server.
+ *
+ * @param {string} agentId - Target agent unique identifier.
+ * @param {boolean} enabled - New enabled state.
+ * @returns {Promise<void>}
  */
 async function _toggleAgentState(agentId, enabled) {
-  const agent = _agentsState.agents.find(a => a.id === agentId);
+  const agent = _state.agents.find((a) => a.id === agentId);
   if (!agent) return;
 
   agent.enabled = enabled;
   try {
-    const fetchFunc = window.api ? window.api.fetch : (url, opt) => fetch(url, opt).then(r => r.json());
-    await fetchFunc(`/api/agents/${agentId}`, {
+    await _fetchJson(`/api/agents/${agentId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(agent)
     });
-    _renderFilterCounters();
-    _renderAgentsGrid();
+    _renderCounters();
+    _renderGrid();
     _showToast(`Агент "${agent.name}" ${enabled ? 'включен' : 'отключен'}`, 'success');
   } catch (err) {
-    console.error('[AgentsTab] Ошибка переключения агента:', err);
-    _showToast('Ошибка: ' + err.message, 'danger');
+    console.error('[AgentsTab] Error toggling agent:', err);
+    _showToast(`Ошибка: ${err.message}`, 'danger');
     await _loadAllData();
   }
 }
 
 /**
- * Отрисовка чекбоксов инструментов в модалке редактора.
+ * Populates capability checkboxes inside the editor modal.
+ *
+ * @returns {void}
  */
 function _populateToolsMatrix() {
   const container = document.getElementById('agent-tools-matrix');
   if (!container) return;
 
-  container.innerHTML = _agentsState.tools.map(tool => {
-    return `
+  container.innerHTML = _state.tools
+    .map(
+      (tool) => `
       <div class="col-md-6">
         <div class="p-3 rounded h-100" style="background: #1e293b; border: 1px solid #334155;">
           <div class="form-check form-switch m-0">
@@ -379,47 +406,59 @@ function _populateToolsMatrix() {
           <div class="small mt-1" style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.4;">${tool.description}</div>
         </div>
       </div>
-    `;
-  }).join('');
+    `
+    )
+    .join('');
 
-  container.querySelectorAll('.tool-checkbox').forEach(chk => {
+  container.querySelectorAll('.tool-checkbox').forEach((chk) => {
     chk.onchange = _updateSelectedToolsCounter;
   });
 }
 
+/**
+ * Updates selected capabilities counter badge in the editor modal.
+ *
+ * @returns {void}
+ */
 function _updateSelectedToolsCounter() {
-  const checked = document.querySelectorAll('#agent-tools-matrix .tool-checkbox:checked').length;
+  const count = document.querySelectorAll('#agent-tools-matrix .tool-checkbox:checked').length;
   const badge = document.getElementById('agent-tools-count');
-  if (badge) badge.textContent = `${checked} выбрано`;
+  if (badge) badge.textContent = `${count} выбрано`;
 }
 
 /**
- * Обновление выпадающего списка моделей в зависимости от выбранного провайдера.
+ * Updates model selection dropdown options when provider selection changes.
+ *
+ * @param {string} providerSelectId - ID of provider select element.
+ * @param {string} modelSelectId - ID of model select element.
+ * @param {string} [selectedModel=''] - Model ID to select by default.
+ * @returns {void}
  */
-function _updateProviderModelsDropdown(providerSelectId, modelSelectId, selectedModel = '') {
+function _updateModelDropdown(providerSelectId, modelSelectId, selectedModel = '') {
   const pSel = document.getElementById(providerSelectId);
   const mSel = document.getElementById(modelSelectId);
   if (!pSel || !mSel) return;
 
-  const provKey = pSel.value;
-  const provObj = _agentsState.providers[provKey];
-  const models = provObj ? provObj.models : [];
+  const prov = _state.providers[pSel.value];
+  const models = prov?.models ?? [];
 
-  mSel.innerHTML = models.map(m => {
-    return `<option value="${m.id}">${m.name || m.id}</option>`;
-  }).join('');
+  mSel.innerHTML = models.map((m) => `<option value="${m.id}">${m.name || m.id}</option>`).join('');
 
-  if (selectedModel && models.some(m => m.id === selectedModel)) {
+  if (selectedModel && models.some((m) => m.id === selectedModel)) {
     mSel.value = selectedModel;
-  } else if (provObj && provObj.default_model) {
-    mSel.value = provObj.default_model;
+  } else if (prov?.default_model) {
+    mSel.value = prov.default_model;
   }
 }
 
 /**
- * Открытие модалки создания/редактирования агента.
+ * Opens agent editor modal for creating or updating an agent.
+ *
+ * @param {string|null} [agentId=null] - Agent ID to edit, or null for create.
+ * @param {object|null} [prefillData=null] - Pre-filled data from AI builder.
+ * @returns {void}
  */
-function _openAgentEditor(agentId = null, prefillData = null) {
+function _openEditor(agentId = null, prefillData = null) {
   const modalEl = document.getElementById('modal-agent-editor');
   if (!modalEl) return;
 
@@ -429,76 +468,71 @@ function _openAgentEditor(agentId = null, prefillData = null) {
   const descInput = document.getElementById('agent-desc');
   const enabledChk = document.getElementById('agent-enabled');
   const providerSel = document.getElementById('agent-provider');
-  const modelSel = document.getElementById('agent-model');
   const tempSlider = document.getElementById('agent-temperature');
   const tempVal = document.getElementById('agent-temp-val');
   const maxStepsInput = document.getElementById('agent-max-steps');
   const timeoutInput = document.getElementById('agent-timeout');
   const promptTa = document.getElementById('agent-system-prompt');
 
-  // Сброс чекбоксов инструментов
-  document.querySelectorAll('#agent-tools-matrix .tool-checkbox').forEach(chk => {
+  // Reset tools checkboxes
+  document.querySelectorAll('#agent-tools-matrix .tool-checkbox').forEach((chk) => {
     chk.checked = false;
   });
 
   if (agentId) {
-    // Режим редактирования
-    const agent = _agentsState.agents.find(a => a.id === agentId);
+    const agent = _state.agents.find((a) => a.id === agentId);
     if (!agent) return;
 
     if (modeInput) modeInput.value = 'edit';
     if (idInput) {
       idInput.value = agent.id;
-      idInput.disabled = true; // ID нельзя менять
+      idInput.disabled = true;
     }
     if (nameInput) nameInput.value = agent.name;
-    if (descInput) descInput.value = agent.description || '';
-    if (enabledChk) enabledChk.checked = agent.enabled;
-    if (providerSel) providerSel.value = agent.provider || 'gemini';
-    
-    _updateProviderModelsDropdown('agent-provider', 'agent-model', agent.model);
-    
+    if (descInput) descInput.value = agent.description ?? '';
+    if (enabledChk) enabledChk.checked = Boolean(agent.enabled);
+    if (providerSel) providerSel.value = agent.provider ?? 'gemini';
+
+    _updateModelDropdown('agent-provider', 'agent-model', agent.model);
+
     if (tempSlider) {
       tempSlider.value = agent.temperature ?? 0.3;
       if (tempVal) tempVal.textContent = tempSlider.value;
     }
-    if (maxStepsInput) maxStepsInput.value = agent.max_steps || 15;
-    if (timeoutInput) timeoutInput.value = agent.timeout_seconds || 60;
-    if (promptTa) promptTa.value = agent.system_prompt || '';
+    if (maxStepsInput) maxStepsInput.value = agent.max_steps ?? 15;
+    if (timeoutInput) timeoutInput.value = agent.timeout_seconds ?? 60;
+    if (promptTa) promptTa.value = agent.system_prompt ?? '';
 
-    // Отметка инструментов
-    (agent.tools || []).forEach(tId => {
+    (agent.tools ?? []).forEach((tId) => {
       const chk = document.getElementById(`tool-chk-${tId}`);
       if (chk) chk.checked = true;
     });
   } else if (prefillData) {
-    // Режим создания с предзаполнением из AI Builder
     if (modeInput) modeInput.value = 'create';
     if (idInput) {
       idInput.value = (prefillData.name || 'agent').toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 25);
       idInput.disabled = false;
     }
-    if (nameInput) nameInput.value = prefillData.name || 'Новый ИИ-Агент';
-    if (descInput) descInput.value = prefillData.description || '';
+    if (nameInput) nameInput.value = prefillData.name ?? 'Новый ИИ-Агент';
+    if (descInput) descInput.value = prefillData.description ?? '';
     if (enabledChk) enabledChk.checked = true;
-    if (providerSel) providerSel.value = prefillData.provider || 'gemini';
+    if (providerSel) providerSel.value = prefillData.provider ?? 'gemini';
 
-    _updateProviderModelsDropdown('agent-provider', 'agent-model', prefillData.model);
+    _updateModelDropdown('agent-provider', 'agent-model', prefillData.model);
 
     if (tempSlider) {
       tempSlider.value = prefillData.temperature ?? 0.3;
       if (tempVal) tempVal.textContent = tempSlider.value;
     }
-    if (maxStepsInput) maxStepsInput.value = prefillData.max_steps || 15;
+    if (maxStepsInput) maxStepsInput.value = prefillData.max_steps ?? 15;
     if (timeoutInput) timeoutInput.value = 60;
-    if (promptTa) promptTa.value = prefillData.system_prompt || '';
+    if (promptTa) promptTa.value = prefillData.system_prompt ?? '';
 
-    (prefillData.recommended_tools || []).forEach(tId => {
+    (prefillData.recommended_tools ?? []).forEach((tId) => {
       const chk = document.getElementById(`tool-chk-${tId}`);
       if (chk) chk.checked = true;
     });
   } else {
-    // Чистый режим создания
     if (modeInput) modeInput.value = 'create';
     if (idInput) {
       idInput.value = '';
@@ -509,7 +543,7 @@ function _openAgentEditor(agentId = null, prefillData = null) {
     if (enabledChk) enabledChk.checked = true;
     if (providerSel) providerSel.value = 'gemini';
 
-    _updateProviderModelsDropdown('agent-provider', 'agent-model');
+    _updateModelDropdown('agent-provider', 'agent-model');
 
     if (tempSlider) {
       tempSlider.value = 0.3;
@@ -521,25 +555,26 @@ function _openAgentEditor(agentId = null, prefillData = null) {
   }
 
   _updateSelectedToolsCounter();
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
+  new bootstrap.Modal(modalEl).show();
 }
 
 /**
- * Сохранение агента (POST / PUT).
+ * Saves agent configuration (POST create or PUT update).
+ *
+ * @returns {Promise<void>}
  */
 async function _handleSaveAgent() {
-  const mode = document.getElementById('agent-edit-mode')?.value || 'create';
+  const mode = document.getElementById('agent-edit-mode')?.value ?? 'create';
   const id = document.getElementById('agent-id')?.value.trim();
   const name = document.getElementById('agent-name')?.value.trim();
   const desc = document.getElementById('agent-desc')?.value.trim();
   const enabled = document.getElementById('agent-enabled')?.checked ?? true;
-  const provider = document.getElementById('agent-provider')?.value || 'gemini';
-  const model = document.getElementById('agent-model')?.value || 'gemini-2.5-flash';
-  const temperature = parseFloat(document.getElementById('agent-temperature')?.value || '0.3');
-  const max_steps = parseInt(document.getElementById('agent-max-steps')?.value || '15', 10);
-  const timeout_seconds = parseInt(document.getElementById('agent-timeout')?.value || '60', 10);
-  const system_prompt = document.getElementById('agent-system-prompt')?.value.trim() || '';
+  const provider = document.getElementById('agent-provider')?.value ?? 'gemini';
+  const model = document.getElementById('agent-model')?.value ?? 'gemini-2.5-flash';
+  const temperature = parseFloat(document.getElementById('agent-temperature')?.value ?? '0.3');
+  const max_steps = parseInt(document.getElementById('agent-max-steps')?.value ?? '15', 10);
+  const timeout_seconds = parseInt(document.getElementById('agent-timeout')?.value ?? '60', 10);
+  const system_prompt = document.getElementById('agent-system-prompt')?.value.trim() ?? '';
 
   if (!id || !name) {
     _showToast('ID и Название агента обязательны для заполнения', 'warning');
@@ -547,7 +582,7 @@ async function _handleSaveAgent() {
   }
 
   const selectedTools = [];
-  document.querySelectorAll('#agent-tools-matrix .tool-checkbox:checked').forEach(chk => {
+  document.querySelectorAll('#agent-tools-matrix .tool-checkbox:checked').forEach((chk) => {
     selectedTools.push(chk.value);
   });
 
@@ -569,16 +604,15 @@ async function _handleSaveAgent() {
   if (saveBtn) saveBtn.disabled = true;
 
   try {
-    const fetchFunc = window.api ? window.api.fetch : (url, opt) => fetch(url, opt).then(r => r.json());
     if (mode === 'create') {
-      await fetchFunc('/api/agents', {
+      await _fetchJson('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       _showToast(`Агент "${name}" успешно создан!`, 'success');
     } else {
-      await fetchFunc(`/api/agents/${id}`, {
+      await _fetchJson(`/api/agents/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -587,23 +621,24 @@ async function _handleSaveAgent() {
     }
 
     const modalEl = document.getElementById('modal-agent-editor');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-    if (modal) modal.hide();
-
+    bootstrap.Modal.getInstance(modalEl)?.hide();
     await _loadAllData();
   } catch (err) {
-    console.error('[AgentsTab] Ошибка сохранения агента:', err);
-    _showToast('Ошибка сохранения: ' + err.message, 'danger');
+    console.error('[AgentsTab] Error saving agent:', err);
+    _showToast(`Ошибка сохранения: ${err.message}`, 'danger');
   } finally {
     if (saveBtn) saveBtn.disabled = false;
   }
 }
 
 /**
- * Удаление агента.
+ * Deletes an existing custom agent after confirmation.
+ *
+ * @param {string} agentId - Target agent unique identifier.
+ * @returns {Promise<void>}
  */
 async function _deleteAgent(agentId) {
-  const agent = _agentsState.agents.find(a => a.id === agentId);
+  const agent = _state.agents.find((a) => a.id === agentId);
   if (!agent) return;
 
   if (!confirm(`Вы действительно хотите удалить агента "${agent.name}" (${agent.id})?`)) {
@@ -611,20 +646,19 @@ async function _deleteAgent(agentId) {
   }
 
   try {
-    const fetchFunc = window.api ? window.api.fetch : (url, opt) => fetch(url, opt).then(r => r.json());
-    await fetchFunc(`/api/agents/${agentId}`, {
-      method: 'DELETE'
-    });
+    await _fetchJson(`/api/agents/${agentId}`, { method: 'DELETE' });
     _showToast(`Агент "${agent.name}" удален`, 'success');
     await _loadAllData();
   } catch (err) {
-    console.error('[AgentsTab] Ошибка удаления агента:', err);
-    _showToast('Ошибка удаления: ' + err.message, 'danger');
+    console.error('[AgentsTab] Error deleting agent:', err);
+    _showToast(`Ошибка удаления: ${err.message}`, 'danger');
   }
 }
 
 /**
- * Открытие модалки AI Builder.
+ * Opens AI prompt architect builder modal.
+ *
+ * @returns {void}
  */
 function _openAiBuilder() {
   const modalEl = document.getElementById('modal-ai-builder');
@@ -634,19 +668,20 @@ function _openAiBuilder() {
   const resultBox = document.getElementById('ai-builder-result');
   if (promptInput) promptInput.value = '';
   if (resultBox) resultBox.classList.add('d-none');
-  _agentsState.lastGeneratedSpec = null;
+  _state.lastGeneratedSpec = null;
 
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
+  new bootstrap.Modal(modalEl).show();
 }
 
 /**
- * Запуск AI Генерации спецификации агента через модель из пула.
+ * Generates an agent specification using selected LLM architect model.
+ *
+ * @returns {Promise<void>}
  */
 async function _handleRunAiGenerate() {
   const taskDesc = document.getElementById('ai-builder-prompt')?.value.trim();
-  const provider = document.getElementById('ai-builder-provider')?.value || 'gemini';
-  const model = document.getElementById('ai-builder-model')?.value || 'gemini-2.5-flash';
+  const provider = document.getElementById('ai-builder-provider')?.value ?? 'gemini';
+  const model = document.getElementById('ai-builder-model')?.value ?? 'gemini-2.5-flash';
 
   if (!taskDesc) {
     _showToast('Пожалуйста, опишите задачу агента', 'warning');
@@ -660,24 +695,14 @@ async function _handleRunAiGenerate() {
   }
 
   try {
-    const fetchFunc = window.api ? window.api.fetch : (url, opt) => fetch(url, opt).then(r => r.json());
-    const res = await fetchFunc('/api/agents/generate-prompt', {
+    const res = await _fetchJson('/api/agents/generate-prompt', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        task_description: taskDesc,
-        provider,
-        model
-      })
+      body: JSON.stringify({ task_description: taskDesc, provider, model })
     });
 
-    if (res && res.data) {
-      _agentsState.lastGeneratedSpec = {
-        ...res.data,
-        provider,
-        model
-      };
-
+    if (res?.data) {
+      _state.lastGeneratedSpec = { ...res.data, provider, model };
       const resultBox = document.getElementById('ai-builder-result');
       const previewBox = document.getElementById('ai-builder-preview-box');
       if (resultBox && previewBox) {
@@ -685,15 +710,15 @@ async function _handleRunAiGenerate() {
         previewBox.innerHTML = `
           <div><strong style="color: #38bdf8;">Название:</strong> <span class="text-white fw-bold">${res.data.name}</span></div>
           <div class="mt-1"><strong style="color: #cbd5e1;">Описание:</strong> <span style="color: #f1f5f9;">${res.data.description}</span></div>
-          <div class="mt-1"><strong style="color: #4ade80;">Инструменты:</strong> <span style="color: #f8fafc;">${(res.data.recommended_tools || []).join(', ') || 'нет'}</span></div>
+          <div class="mt-1"><strong style="color: #4ade80;">Инструменты:</strong> <span style="color: #f8fafc;">${(res.data.recommended_tools ?? []).join(', ') || 'нет'}</span></div>
           <div class="mt-2 p-2 rounded" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; white-space: pre-wrap; font-size: 0.85rem; line-height: 1.45;">${res.data.system_prompt}</div>
         `;
       }
       _showToast('Спецификация агента успешно сгенерирована!', 'success');
     }
   } catch (err) {
-    console.error('[AgentsTab] Ошибка AI-генератора:', err);
-    _showToast('Ошибка генерации: ' + err.message, 'danger');
+    console.error('[AgentsTab] AI Generator error:', err);
+    _showToast(`Ошибка генерации: ${err.message}`, 'danger');
   } finally {
     if (runBtn) {
       runBtn.disabled = false;
@@ -703,37 +728,41 @@ async function _handleRunAiGenerate() {
 }
 
 /**
- * Открытие песочницы для тестирования конкретного агента.
+ * Opens sandbox modal for interactive agent testing.
+ *
+ * @param {string} agentId - Target agent unique identifier.
+ * @returns {void}
  */
 function _openSandbox(agentId) {
-  const agent = _agentsState.agents.find(a => a.id === agentId);
+  const agent = _state.agents.find((a) => a.id === agentId);
   if (!agent) return;
 
-  _agentsState.activeSandboxAgent = agent;
+  _state.activeSandboxAgent = agent;
   const modalEl = document.getElementById('modal-agent-sandbox');
   if (!modalEl) return;
 
   document.getElementById('sandbox-agent-name')?.replaceChildren(document.createTextNode(agent.name));
   const modelBadge = document.getElementById('sandbox-agent-model');
   if (modelBadge) modelBadge.textContent = `${_getProviderDisplayName(agent.provider)}: ${agent.model}`;
-  
+
   const toolsSummary = document.getElementById('sandbox-agent-tools-summary');
-  if (toolsSummary) toolsSummary.textContent = `Инструментов: ${(agent.tools || []).length}`;
+  if (toolsSummary) toolsSummary.textContent = `Инструментов: ${(agent.tools ?? []).length}`;
 
   const msgsList = document.getElementById('sandbox-messages-list');
   const placeholder = document.getElementById('sandbox-placeholder');
   if (msgsList) msgsList.innerHTML = '';
   if (placeholder) placeholder.style.display = 'block';
 
-  const modal = new bootstrap.Modal(modalEl);
-  modal.show();
+  new bootstrap.Modal(modalEl).show();
 }
 
 /**
- * Запуск тестового сообщения в песочнице.
+ * Executes a test query against the active sandbox agent and renders execution trace.
+ *
+ * @returns {Promise<void>}
  */
 async function _handleRunSandboxTest() {
-  const agent = _agentsState.activeSandboxAgent;
+  const agent = _state.activeSandboxAgent;
   const input = document.getElementById('sandbox-input-msg');
   const sendBtn = document.getElementById('btn-sandbox-send');
   const msgsList = document.getElementById('sandbox-messages-list');
@@ -745,7 +774,7 @@ async function _handleRunSandboxTest() {
 
   if (placeholder) placeholder.style.display = 'none';
 
-  // Добавляем сообщение пользователя
+  // Append user message
   const userMsgEl = document.createElement('div');
   userMsgEl.className = 'd-flex justify-content-end mb-3';
   userMsgEl.innerHTML = `
@@ -758,7 +787,7 @@ async function _handleRunSandboxTest() {
   input.value = '';
   if (sendBtn) sendBtn.disabled = true;
 
-  // Контейнер ответа с лоадером
+  // Append response placeholder with loader
   const botMsgEl = document.createElement('div');
   botMsgEl.className = 'd-flex flex-column mb-3';
   botMsgEl.innerHTML = `
@@ -774,31 +803,29 @@ async function _handleRunSandboxTest() {
   msgsList.scrollTop = msgsList.scrollHeight;
 
   try {
-    const fetchFunc = window.api ? window.api.fetch : (url, opt) => fetch(url, opt).then(r => r.json());
-    const res = await fetchFunc('/api/agents/test', {
+    const res = await _fetchJson('/api/agents/test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        agent_id: agent.id,
-        test_message: query
-      })
+      body: JSON.stringify({ agent_id: agent.id, test_message: query })
     });
 
-    const stepsHtml = (res.steps || []).map(s => {
-      let icon = '🔹';
-      if (s.type === 'tool_init') icon = '🛠️';
-      else if (s.type === 'action') icon = '⚡';
-      else if (s.type === 'finish') icon = '✅';
-      else if (s.type === 'error') icon = '❌';
+    const stepsHtml = (res.steps ?? [])
+      .map((s) => {
+        let icon = '🔹';
+        if (s.type === 'tool_init') icon = '🛠️';
+        else if (s.type === 'action') icon = '⚡';
+        else if (s.type === 'finish') icon = '✅';
+        else if (s.type === 'error') icon = '❌';
 
-      return `<div class="mb-1">${icon} <span style="color: #38bdf8; font-weight: bold;">[Шаг ${s.step}]</span> <span style="color: #e2e8f0;">${s.content}</span></div>`;
-    }).join('');
+        return `<div class="mb-1">${icon} <span style="color: #38bdf8; font-weight: bold;">[Шаг ${s.step}]</span> <span style="color: #e2e8f0;">${s.content}</span></div>`;
+      })
+      .join('');
 
     botMsgEl.innerHTML = `
       <div class="p-3 rounded small" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc;">
         <div class="d-flex justify-content-between align-items-center mb-2 pb-1" style="border-bottom: 1px solid #334155;">
           <strong style="color: #38bdf8; font-size: 0.95rem;">🤖 ${agent.name}</strong>
-          <span class="badge" style="background: #334155; color: #f8fafc; font-weight: 600;">${res.duration_ms || 0} мс</span>
+          <span class="badge" style="background: #334155; color: #f8fafc; font-weight: 600;">${res.duration_ms ?? 0} мс</span>
         </div>
         
         <div class="mb-2" style="white-space: pre-wrap; color: #f8fafc; line-height: 1.5;">${res.response || 'Пустой ответ'}</div>
@@ -823,28 +850,31 @@ async function _handleRunSandboxTest() {
 }
 
 /**
- * Хелпер понятного имени провайдера.
+ * Returns human-readable display name for provider identifier.
+ *
+ * @param {string} provKey - Provider key (e.g. 'gemini', 'agy', 'foundry', 'ollama').
+ * @returns {string} Provider display label.
  */
 function _getProviderDisplayName(provKey) {
-  const p = _agentsState.providers[provKey];
-  return p ? p.name : provKey;
+  return _state.providers[provKey]?.name ?? provKey;
 }
 
 /**
- * Вывод уведомления Toast.
+ * Displays floating feedback notification toast.
+ *
+ * @param {string} message - Notification text message.
+ * @param {string} [type='info'] - Bootstrap color variant ('info', 'success', 'warning', 'danger').
+ * @returns {void}
  */
 function _showToast(message, type = 'info') {
-  console.log(`[AgentsTab] Toast [${type}]:`, message);
-  // Используем системную нотификацию если доступна в admin
   if (typeof window.showModelsNotification === 'function') {
     window.showModelsNotification(message, type);
-  } else {
-    // Всплывающее сообщение fallback
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} position-fixed bottom-0 end-0 m-3 shadow`;
-    alertDiv.style.zIndex = '9999';
-    alertDiv.textContent = message;
-    document.body.appendChild(alertDiv);
-    setTimeout(() => alertDiv.remove(), 3500);
+    return;
   }
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} position-fixed bottom-0 end-0 m-3 shadow`;
+  alertDiv.style.zIndex = '9999';
+  alertDiv.textContent = message;
+  document.body.appendChild(alertDiv);
+  setTimeout(() => alertDiv.remove(), 3500);
 }

@@ -3,7 +3,7 @@
 # Название процесса: Управление жизненным циклом и кэшированием моделей ИИ
 # =============================================================================
 # Описание:
-#   Централизованный реестр моделей ИИ для провайдеров Gemini, AGY, Foundry и Ollama.
+# Централизованный реестр моделей ИИ для провайдеров Gemini, Gemini CLI, AGY, Foundry и Ollama.
 #   Реализация разовой актуализации через SDK, фильтрация устаревших моделей по config.json
 #   и долговременное кэширование на протяжении жизненного цикла приложения.
 #
@@ -49,6 +49,26 @@ _GEMINI_PRIORITY_ORDER: List[str] = [
     "gemini-pro-latest",
 ]
 
+_DEFAULT_GEMINI_CLI_FALLBACK: List[str] = [
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
+]
+
+_GEMINI_CLI_PRIORITY_ORDER: List[str] = [
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
+]
+
 
 def _normalize_model_name(name: str) -> str:
     """Нормализация идентификатора модели для единообразного сравнения."""
@@ -62,7 +82,7 @@ def load_unsupported_models(provider: str = "gemini") -> Set[str]:
     """Загрузка списка неподдерживаемых моделей из файлов конфигурации.
 
     Args:
-        provider (str): Имя провайдера ('gemini', 'agy', 'foundry', 'ollama').
+        provider (str): Имя провайдера ('gemini', 'gemini_cli', 'agy', 'foundry', 'ollama').
                         Значение по умолчанию: 'gemini'.
 
     Returns:
@@ -78,7 +98,7 @@ def load_unsupported_models(provider: str = "gemini") -> Set[str]:
     unsupported: Set[str] = set()
 
     # Загрузка из конфигурации модуля Gemini при необходимости
-    if prov in ("gemini", "agy"):
+    if prov in ("gemini", "gemini_cli", "agy"):
         gemini_cfg = j_loads(_GEMINI_CONFIG_PATH)
         if isinstance(gemini_cfg, dict):
             raw_list = gemini_cfg.get("unsupported_models", [])
@@ -107,7 +127,7 @@ def add_unsupported_model(provider: str = "gemini", model_name: str = "", reason
     """Добавление неподдерживаемой модели в файл конфигурации и удаление из кэша.
 
     Args:
-        provider (str): Имя провайдера ('gemini', 'agy', 'foundry', 'ollama').
+        provider (str): Имя провайдера ('gemini', 'gemini_cli', 'agy', 'foundry', 'ollama').
                         Значение по умолчанию: 'gemini'.
         model_name (str): Имя модели для исключения.
                           Значение по умолчанию: ''.
@@ -129,7 +149,7 @@ def add_unsupported_model(provider: str = "gemini", model_name: str = "", reason
     norm_name = _normalize_model_name(model_name)
 
     # 1. Обновление конфигурации Gemini
-    if prov in ("gemini", "agy"):
+    if prov in ("gemini", "gemini_cli", "agy"):
         gemini_cfg = j_loads(_GEMINI_CONFIG_PATH)
         if isinstance(gemini_cfg, dict):
             curr_list = gemini_cfg.get("unsupported_models", [])
@@ -286,6 +306,15 @@ def _fetch_ollama_models_sync(base_url: str = "") -> List[str]:
     return []
 
 
+def _fetch_gemini_cli_models_sync() -> List[str]:
+    """Синхронное получение списка моделей для Gemini CLI с фильтрацией."""
+    unsupported = load_unsupported_models("gemini_cli")
+    pool = [m for m in _DEFAULT_GEMINI_CLI_FALLBACK if m not in unsupported]
+    if not pool:
+        pool = ["gemini-3.1-flash-lite", "gemini-2.5-flash"]
+    return pool
+
+
 def get_available_models(
     provider: str = "gemini",
     api_key: str = "",
@@ -297,7 +326,7 @@ def get_available_models(
     на весь жизненный цикл приложения. Исключает неподдерживаемые модели из config.json.
 
     Args:
-        provider (str): Имя провайдера ('gemini', 'agy', 'foundry', 'ollama').
+        provider (str): Имя провайдера ('gemini', 'gemini_cli', 'agy', 'foundry', 'ollama').
                         Значение по умолчанию: 'gemini'.
         api_key (str): Опциональный API ключ для Gemini.
                        Значение по умолчанию: ''.
@@ -324,6 +353,11 @@ def get_available_models(
     if prov == "gemini":
         result_models = _fetch_gemini_models_from_sdk(api_key=api_key)
         _CACHED_MODELS["gemini"] = result_models
+        return list(result_models)
+
+    elif prov in ("gemini_cli", "gemini-cli"):
+        result_models = _fetch_gemini_cli_models_sync()
+        _CACHED_MODELS["gemini_cli"] = result_models
         return list(result_models)
 
     elif prov == "agy":
@@ -374,14 +408,16 @@ async def actualize_all_models(force_refresh: bool = True) -> Dict[str, List[str
 
     # Параллельный опрос провайдеров в отдельных потоках
     gemini_task = loop.run_in_executor(None, get_available_models, "gemini", "", force_refresh)
+    gemini_cli_task = loop.run_in_executor(None, get_available_models, "gemini_cli", "", force_refresh)
     foundry_task = loop.run_in_executor(None, get_available_models, "foundry", "", force_refresh)
     ollama_task = loop.run_in_executor(None, get_available_models, "ollama", "", force_refresh)
 
-    gemini_res, foundry_res, ollama_res = await asyncio.gather(
-        gemini_task, foundry_task, ollama_task, return_exceptions=True
+    gemini_res, gemini_cli_res, foundry_res, ollama_res = await asyncio.gather(
+        gemini_task, gemini_cli_task, foundry_task, ollama_task, return_exceptions=True
     )
 
     gemini_list = gemini_res if isinstance(gemini_res, list) else []
+    gemini_cli_list = gemini_cli_res if isinstance(gemini_cli_res, list) else []
     foundry_list = foundry_res if isinstance(foundry_res, list) else []
     ollama_list = ollama_res if isinstance(ollama_res, list) else []
 
@@ -390,6 +426,7 @@ async def actualize_all_models(force_refresh: bool = True) -> Dict[str, List[str
 
     result_pool = {
         "gemini": gemini_list,
+        "gemini_cli": gemini_cli_list,
         "agy": agy_list,
         "foundry": foundry_list,
         "ollama": ollama_list,
@@ -397,6 +434,7 @@ async def actualize_all_models(force_refresh: bool = True) -> Dict[str, List[str
 
     logger.info(
         f"[ModelManager] Актуализация завершена: Gemini={len(gemini_list)}, "
-        f"AGY={len(agy_list)}, Foundry={len(foundry_list)}, Ollama={len(ollama_list)}"
+        f"Gemini_CLI={len(gemini_cli_list)}, AGY={len(agy_list)}, "
+        f"Foundry={len(foundry_list)}, Ollama={len(ollama_list)}"
     )
     return result_pool

@@ -141,7 +141,7 @@ class TestWebSearchPluginEngines:
         mock_ai.chat = AsyncMock(return_value="Суммаризированный ответ")
 
         p = WebSearchPlugin(mock_ai)
-        p._get_engine = MagicMock(return_value="gemini")
+        p._get_config = MagicMock(return_value={"engine": "gemini", "gemini_model": "gemini-2.5-flash"})
         
         mock_searcher = MagicMock()
         mock_searcher.search_and_extract = AsyncMock(return_value="Контекст поиска Gemini")
@@ -163,7 +163,7 @@ class TestWebSearchPluginEngines:
         mock_ai.chat = AsyncMock(return_value="Суммаризированный ответ")
 
         p = WebSearchPlugin(mock_ai)
-        p._get_engine = MagicMock(return_value="agy")
+        p._get_config = MagicMock(return_value={"engine": "agy", "agy_model": "agy-flash"})
         
         mock_searcher = MagicMock()
         mock_searcher.search_and_extract = AsyncMock(return_value="Контекст поиска AGY")

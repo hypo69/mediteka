@@ -84,6 +84,8 @@ class UnifiedChatModel:
             self.ollama_model.system_prompt = new_instruction
         if hasattr(self, 'agy_model') and self.agy_model:
             self.agy_model.system_prompt = new_instruction
+        if hasattr(self, 'gemini_cli_model') and self.gemini_cli_model:
+            self.gemini_cli_model.system_prompt = new_instruction
         import logging
         logger = logging.getLogger(__name__)
         logger.info("[UnifiedChatModel] Системная инструкция успешно обновлена")
@@ -99,6 +101,8 @@ class UnifiedChatModel:
             self.foundry_model.model_id = val.replace("foundry:", "")
         if self.ollama_model:
             self.ollama_model.model_id = val.replace("ollama:", "")
+        if hasattr(self, 'gemini_cli_model') and self.gemini_cli_model:
+            self.gemini_cli_model.model_id = val
         if self.gemini_model:
             self.gemini_model.model_name = val
             
@@ -113,6 +117,8 @@ class UnifiedChatModel:
             self.foundry_model.model_id = val.replace("foundry:", "")
         if self.ollama_model:
             self.ollama_model.model_id = val.replace("ollama:", "")
+        if hasattr(self, 'gemini_cli_model') and self.gemini_cli_model:
+            self.gemini_cli_model.model_id = val
         if self.gemini_model:
             self.gemini_model.model_name = val
 
@@ -132,6 +138,17 @@ class UnifiedChatModel:
     def _get_active_model(self, model_name: Optional[str] = None):
         active_name = model_name or self._model_name
         
+        if active_name.startswith("gemini_cli:") or active_name.startswith("gemini-cli-"):
+            if not hasattr(self, 'gemini_cli_model') or not self.gemini_cli_model:
+                from src.ai.gemini_cli_chat import GeminiCliChatBase
+                self.gemini_cli_model = GeminiCliChatBase(
+                    model_id=active_name,
+                    system_prompt=self.system_instruction or "",
+                )
+            else:
+                self.gemini_cli_model.model_id = active_name
+            return self.gemini_cli_model, active_name
+
         if active_name.startswith("ollama:"):
             if not self.ollama_model:
                 from src.ai.ollama_chat import OllamaChatBase
@@ -145,7 +162,7 @@ class UnifiedChatModel:
             return self.ollama_model, active_name
 
         if active_name.startswith("agy-") or 'agy' in active_name.lower():
-            if not hasattr(self, 'agy_model') or self.agy_model is None:
+            if not hasattr(self, 'agy_model') or not self.agy_model:
                 from src.ai.agy_chat import AgyChatBase
                 self.agy_model = AgyChatBase(
                     model_id=active_name,

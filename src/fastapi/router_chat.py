@@ -48,14 +48,21 @@ class SaveRagRequest(BaseModel):
     voice_text: str
 
 
-def get_chat_model(selected_model_name: str, system_instruction: str = None):
+def get_chat_model(selected_model_name: str, system_instruction: str = ""):
     """Dynamically construct/retrieve the appropriate AI model instance."""
+    is_gemini_cli = selected_model_name.startswith('gemini_cli:') or selected_model_name.startswith('gemini-cli-')
     is_foundry = selected_model_name.startswith('foundry:')
     is_ollama = selected_model_name.startswith('ollama:')
-    is_gemini = selected_model_name.startswith('gemini-') or 'gemini' in selected_model_name.lower()
     is_agy = selected_model_name.startswith('agy-') or 'agy' in selected_model_name.lower()
+    is_gemini = not is_gemini_cli and (selected_model_name.startswith('gemini-') or 'gemini' in selected_model_name.lower())
 
-    if is_foundry:
+    if is_gemini_cli:
+        from src.ai.gemini_cli_chat import GeminiCliChatBase
+        return GeminiCliChatBase(
+            model_id=selected_model_name,
+            system_prompt=system_instruction or "You are a helpful AI assistant.",
+        )
+    elif is_foundry:
         # Явный префикс foundry: для выбора Foundry модели
         model_id = selected_model_name[len('foundry:'):]
         from src.ai.foundry_chat import FoundryChatBase

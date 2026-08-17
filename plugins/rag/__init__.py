@@ -7,8 +7,9 @@
 #   Поддерживает:
 #   - Рулетку/карусель случайного выбора тайтла
 #   - Direct Play (запуск на плеере без LLM)
-#   - Direct RAG (мгновенный возврат карточки из БД)
-#   - Полнотекстовый/векторный поиск с суммаризацией через LLM
+#   - Direct RAG (мгновенный возврат карточки из БД без вызова LLM)
+#   - Direct Multi-item RAG (мгновенный возврат структурированного списка тайтлов из БД без LLM)
+#   - Fallback через веб-поиск и LLM при отсутствии тайтла в локальной медиатеке
 #   - Поиск по технической документации для разработчиков
 #
 # File: plugins/rag/__init__.py
@@ -23,7 +24,7 @@ import asyncio
 import json
 import os
 import sqlite3
-from typing import AsyncGenerator
+from typing import AsyncIterator, List, Dict, Any
 
 from header import __root__
 from plugins.media_organizer.core import MEDIA_DB
@@ -33,7 +34,7 @@ from plugins.media_organizer.core.media_rag_functions import (
     make_play_dispatcher,
 )
 from plugins.plugin import BasePlugin
-from src.logger import logger
+from src.logger.logger import logger
 
 _DEV_KEYWORDS = (
     "код", "функци", "класс", "модул", "скрипт", "ошибк", "баг",
@@ -103,9 +104,10 @@ class RAGPlugin(BasePlugin):
         if len(low) >= 3 and MEDIA_DB.exists():
             try:
                 with sqlite3.connect(MEDIA_DB) as conn:
+                    conn.create_function("py_lower", 1, lambda s: s.lower() if s else "")
                     row = conn.execute(
-                        "SELECT 1 FROM media WHERE LOWER(title) = ? OR LOWER(title_ru) = ? OR LOWER(title_orig) = ? LIMIT 1",
-                        (low, low, low)
+                        "SELECT 1 FROM media WHERE py_lower(title) LIKE ? OR py_lower(title_ru) LIKE ? OR py_lower(title_orig) LIKE ? LIMIT 1",
+                        (f"%{low}%", f"%{low}%", f"%{low}%")
                     ).fetchone()
                     if row:
                         return True
@@ -122,7 +124,7 @@ class RAGPlugin(BasePlugin):
         """Проверяет, может ли RAG плагин обработать входящее сообщение."""
         return self._is_media_query(message) or self._is_dev_query(message)
 
-    async def _handle_carousel(self, kwargs: dict) -> AsyncGenerator[dict, None]:
+    async def _handle_carousel(self, kwargs: dict) -> AsyncIterator[dict]:
         """Обрабатывает выбор случайного фильма (карусель)."""
         from src.fastapi.router_control import manager
         yield {"status": "🎡 Выбор случайного фильма через карусель..."}
@@ -182,7 +184,7 @@ class RAGPlugin(BasePlugin):
         yield {"text": response_text}
         yield {"voice": f"Я выбрала фильм {title_ru or title}. {status_msg}"}
 
-    async def _handle_direct_play(self, best_item: dict, kwargs: dict) -> AsyncGenerator[dict, None]:
+    async def _handle_direct_play(self, best_item: dict, kwargs: dict) -> AsyncIterator[dict]:
         """Прямой запуск фильма на плеере без обращения к LLM."""
         base_title = best_item.get('clean_title', best_item.get('title', ''))
         room_id = kwargs.get('room_id', '')
@@ -193,9 +195,10 @@ class RAGPlugin(BasePlugin):
         try:
             with sqlite3.connect(MEDIA_DB) as conn:
                 conn.row_factory = sqlite3.Row
+                conn.create_function("py_lower", 1, lambda s: s.lower() if s else "")
                 row = conn.execute(
                     "SELECT path, stream_url, title_ru, title FROM media "
-                    "WHERE (LOWER(title) LIKE ? OR LOWER(title_ru) LIKE ?) "
+                    "WHERE (py_lower(title) LIKE ? OR py_lower(title_ru) LIKE ?) "
                     "ORDER BY ROWID ASC LIMIT 1",
                     (f"%{base_title.lower()}%", f"%{base_title.lower()}%")
                 ).fetchone()
@@ -227,7 +230,7 @@ class RAGPlugin(BasePlugin):
         elif stream_url:
             response_text = f"🌐 <film>{display_title}</film> доступен онлайн: {stream_url}"
         elif file_path:
-            response_text = f"📱 Нашла <film>{display_title}</film>. Плеер не подключён — запустите вручную."
+            response_text = f"📱 Найдено: <film>{display_title}</film>. Плеер не подключён — запустите вручную."
         else:
             response_text = f"❌ Не удалось найти «{base_title}» на дисках или онлайн."
 
@@ -235,7 +238,7 @@ class RAGPlugin(BasePlugin):
         yield {"text": response_text}
         yield {"voice": response_text}
 
-    async def _handle_direct_rag(self, best_item: dict) -> AsyncGenerator[dict, None]:
+    async def _handle_direct_rag(self, best_item: dict) -> AsyncIterator[dict]:
         """Прямой возврат карточки медиа из БД без вызова LLM."""
         raw_text = best_item.get('text', '')
         base_title = best_item.get('clean_title', best_item.get('title', ''))
@@ -245,24 +248,92 @@ class RAGPlugin(BasePlugin):
             card_json = get_media_card(best_item.get('disk_name', ''), base_title, m_type)
             card_data = json.loads(card_json)
             if not card_data.get('error') and (card_data.get('title') or card_data.get('title_ru')):
-                yield {"status": f"⚡ Карточка медиа ({base_title})..."}
-                yield {"prompt_dump": "[DIRECT RAG — без вызова LLM]\nОтправка JSON-карточки фильма."}
+                display_title = card_data.get('title_ru') or card_data.get('title') or base_title
+                yield {"status": f"⚡ Карточка медиа ({display_title})..."}
+                yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nКарточка: {display_title}"}
                 yield {"text": card_json}
-                yield {"voice": card_data.get('plot') or card_data.get('why_watch') or base_title}
+                voice_text = card_data.get('plot') or card_data.get('why_watch') or f"Найдено в медиатеке: {display_title}."
+                if len(voice_text) > 300:
+                    voice_text = voice_text[:297] + "..."
+                yield {"voice": voice_text}
                 return
         except Exception as ex:
             logger.error(f"[RAGPlugin] Ошибка при парсинге карточки: {ex}")
 
         if raw_text:
             yield {"status": f"⚡ Ответ из локальной базы ({base_title})..."}
-            yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nДокумент: {base_title}\n\n{raw_text[:300]}..."}
-            fallback_text = f"🎬 **{base_title}**\n\n{raw_text}"
+            yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nДокумент: {base_title}"}
+            fallback_text = f"🎬 **<film>{base_title}</film>**\n\n{raw_text}"
             yield {"text": fallback_text}
-            yield {"voice": raw_text}
+            yield {"voice": raw_text[:300]}
 
-    async def _handle_llm_rag(self, message: str, results: list[dict], kwargs: dict) -> AsyncGenerator[dict, None]:
-        """Генерация ответа ИИ с учетом данных RAG-поиска."""
-        yield {"status": "🤖 Генерация ответа ИИ с учетом данных RAG..."}
+    async def _handle_direct_multi_items(self, message: str, items: list[dict], kwargs: dict) -> AsyncIterator[dict]:
+        """Прямой возврат структурированного списка найденных фильмов/сериалов из БД без вызова LLM."""
+        dynamic_ctx = kwargs.get('dynamic_context', '')
+        is_male = "мужского лица" in dynamic_ctx
+        found_word = "нашел" if is_male else "нашла"
+
+        yield {"status": f"⚡ Формирование списка из локальной медиатеки ({len(items)} тайтлов)..."}
+
+        formatted_items = []
+        titles_for_voice = []
+
+        for idx, item in enumerate(items[:5], 1):
+            base_title = item.get('clean_title', item.get('title', ''))
+            m_type = item.get('media_type') or item.get('type', 'series')
+            disk_name = item.get('disk_name', '')
+
+            card_data = {}
+            try:
+                card_json = get_media_card(disk_name, base_title, m_type)
+                card_data = json.loads(card_json)
+            except Exception as ex:
+                logger.warning(f"[RAGPlugin] Не удалось получить карточку для {base_title}: {ex}")
+
+            display_title = card_data.get('title_ru') or card_data.get('title') or base_title
+            orig_title = card_data.get('title_orig', '')
+            year = card_data.get('year') or item.get('year', '')
+
+            genres_list = card_data.get('genres') or []
+            genres_str = ", ".join(genres_list) if genres_list else (card_data.get('main_category') or item.get('category', ''))
+
+            cast_list = card_data.get('cast') or []
+            cast_str = ", ".join(cast_list[:4]) if cast_list else ""
+
+            plot = card_data.get('plot') or card_data.get('why_watch') or item.get('text', '')
+            if len(plot) > 250:
+                plot = plot[:247] + "..."
+
+            item_header = f"{idx}. 🎬 **<film>{display_title}</film>**"
+            meta_chips = []
+            if orig_title and orig_title.strip().lower() != display_title.strip().lower():
+                meta_chips.append(f"*{orig_title}*")
+            if year:
+                meta_chips.append(f"{year} г.")
+            if genres_str:
+                meta_chips.append(f"📂 {genres_str}")
+            if meta_chips:
+                item_header += f" ({', '.join(meta_chips)})"
+
+            item_body = []
+            if cast_str:
+                item_body.append(f"   👤 **В ролях:** {cast_str}")
+            if plot:
+                item_body.append(f"   📝 {plot}")
+
+            formatted_items.append(item_header + ("\n" + "\n".join(item_body) if item_body else ""))
+            titles_for_voice.append(display_title)
+
+        full_text = f"🎬 **Я {found_word} в локальной медиатеке:**\n\n" + "\n\n".join(formatted_items)
+        voice_text = f"Я {found_word} {len(items)} тайтлов в медиатеке: {', '.join(titles_for_voice[:3])}."
+
+        yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nНайдено {len(items)} тайтлов по запросу «{message}»."}
+        yield {"text": full_text}
+        yield {"voice": voice_text}
+
+    async def _handle_llm_rag(self, message: str, results: list[dict], kwargs: dict) -> AsyncIterator[dict]:
+        """Генерация ответа ИИ при отсутствии результатов в локальной медиатеке."""
+        yield {"status": "🤖 Поиск информации и генерация ответа ИИ..."}
 
         context_parts = []
         for idx, item in enumerate(results, 1):
@@ -336,7 +407,7 @@ class RAGPlugin(BasePlugin):
 
         try:
             yield {"prompt_dump": system_prompt}
-            yield {"status": "🎬 Выполняю команду..."}
+            yield {"status": "🎬 Генерация ответа..."}
             full_text = ""
 
             try:
@@ -366,14 +437,15 @@ class RAGPlugin(BasePlugin):
                         yield {"text": c}
 
             if not full_text:
-                yield {"text": "Команда выполнена", "voice": "Команда выполнена"}
+                fallback_msg = f"❌ Не удалось получить ответ от ассистента по запросу «{message}»."
+                yield {"text": fallback_msg, "voice": "Не удалось получить ответ."}
             else:
                 yield {"voice": full_text}
         except Exception as e:
             logger.error(f"Ошибка при вызове ИИ в RAG-плагине: {e}")
             yield {"text": f"❌ Ошибка: {str(e)}"}
 
-    async def _handle(self, message: str, **kwargs) -> AsyncGenerator[dict, None]:
+    async def _handle(self, message: str, **kwargs) -> AsyncIterator[dict]:
         """Главный диспетчер обработки запроса."""
         low_message = message.lower()
 
@@ -429,15 +501,22 @@ class RAGPlugin(BasePlugin):
                     yield chunk
                 return
 
-            # В режиме 'rag' (только локальная база) выдаем карточку или сообщение об отсутствии
-            if rag_mode == "rag":
-                if unique_results:
+            # Если результаты найдены в локальной базе — отдаем напрямую без обращения к LLM
+            if unique_results:
+                if len(unique_results) == 1:
                     handled = False
                     async for chunk in self._handle_direct_rag(unique_results[0]):
                         handled = True
                         yield chunk
                     if handled:
                         return
+                else:
+                    async for chunk in self._handle_direct_multi_items(message, unique_results, kwargs):
+                        yield chunk
+                    return
+
+            # Если в локальной базе ничего не найдено
+            if rag_mode == "rag":
                 yield {
                     "status": "⚡ Ответ в локальной базе не найден.",
                     "text": f"❌ В локальной базе ничего не найдено по запросу «{message}».",
@@ -446,8 +525,8 @@ class RAGPlugin(BasePlugin):
                 }
                 return
 
-            # В режиме 'rag+model' и 'model' генерируем ответ через LLM с локальным контекстом
-            async for chunk in self._handle_llm_rag(message, results, kwargs):
+            # В режиме 'rag+model' и 'model' при отсутствии локальных результатов — поиск в интернете / LLM
+            async for chunk in self._handle_llm_rag(message, results=[], kwargs=kwargs):
                 yield chunk
             return
 
