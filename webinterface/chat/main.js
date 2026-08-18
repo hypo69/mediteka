@@ -161,12 +161,11 @@ function initChatTab() {
 let chatGroupedModels = {};
 
 async function initChatDebuggerToolbar() {
-  const providerSelect = document.getElementById('chat-provider-select');
   const modelSelect = document.getElementById('chat-model-select');
   const searchSelect = document.getElementById('chat-search-select');
   const setDefaultBtn = document.getElementById('btn-chat-set-default');
 
-  if (!providerSelect || !modelSelect) return;
+  if (!modelSelect) return;
 
   // 1. Загрузка списка доступных моделей
   try {
@@ -185,6 +184,7 @@ async function initChatDebuggerToolbar() {
   // 2. Загрузка текущих настроек пользователя и поиска
   let currentModel = window.activeModelName || '';
   let currentSearch = window.activeSearchEngine || 'gemini_cli';
+  let searchConfig = {};
 
   try {
     const sRes = await fetch('/auth/settings');
@@ -194,66 +194,168 @@ async function initChatDebuggerToolbar() {
       if (settings.search_engine) currentSearch = settings.search_engine;
     }
   } catch (e) {
-    console.error('[ChatDebugger] Ошибка загрузки настроек:', e);
+    console.error('[ChatDebugger] Ошибка загрузки настроек пользователя:', e);
   }
 
-  // Функция определения провайдера по имени модели
-  function detectProvider(modelName) {
-    if (!modelName) return 'gemini';
-    if (modelName.startsWith('foundry:')) return 'foundry';
-    if (modelName.startsWith('ollama:')) return 'ollama';
-    if (modelName.startsWith('agy-') || (chatGroupedModels.agy && chatGroupedModels.agy.includes(modelName))) return 'agy';
-    return 'gemini';
+  try {
+    if (window.api && window.api.fetch) {
+      const cfg = await window.api.fetch('/api/admin/web-search/config');
+      if (cfg) {
+        searchConfig = cfg;
+        if (cfg.engine && !currentSearch) {
+          currentSearch = cfg.engine;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[ChatDebugger] Ошибка загрузки конфига веб-поиска:', e);
   }
 
-  // Функция заполнения списка моделей по выбранному провайдеру
-  function populateModels(provider, preselectModel = '') {
+  // 3. Заполнение иерархического списка моделей ИИ (optgroups по провайдерам)
+  function populateHierarchicalModels(modelsGrouped, targetModel = '') {
     modelSelect.innerHTML = '';
-    const list = chatGroupedModels[provider] || [];
-    if (list.length === 0) {
+
+    const providerMeta = {
+      'gemini': { label: '✨ Google Gemini', order: 1 },
+      'agy': { label: '🚀 Google Antigravity (AGY)', order: 2 },
+      'foundry': { label: '⚙️ Microsoft Foundry', order: 3 },
+      'ollama': { label: '🦙 Ollama (Local)', order: 4 }
+    };
+
+    const providers = Object.keys(modelsGrouped).sort((a, b) => {
+      const oA = providerMeta[a]?.order ?? 99;
+      const oB = providerMeta[b]?.order ?? 99;
+      return oA - oB;
+    });
+
+    let totalModels = 0;
+    let firstModel = '';
+
+    providers.forEach(p => {
+      const list = modelsGrouped[p] || [];
+      if (!Array.isArray(list) || list.length === 0) return;
+
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = providerMeta[p]?.label || `🤖 ${p.toUpperCase()}`;
+
+      list.forEach(m => {
+        totalModels++;
+        if (!firstModel) firstModel = m;
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        optgroup.appendChild(opt);
+      });
+
+      modelSelect.appendChild(optgroup);
+    });
+
+    if (totalModels === 0) {
       const opt = document.createElement('option');
       opt.value = '';
       opt.textContent = 'Нет доступных моделей';
       modelSelect.appendChild(opt);
-    } else {
-      list.forEach(m => {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
-        modelSelect.appendChild(opt);
-      });
-      if (preselectModel && list.includes(preselectModel)) {
-        modelSelect.value = preselectModel;
-      } else if (list.length > 0) {
-        modelSelect.value = list[0];
+    } else if (targetModel) {
+      modelSelect.value = targetModel;
+      if (!modelSelect.value && firstModel) {
+        modelSelect.value = firstModel;
       }
+    } else if (firstModel) {
+      modelSelect.value = firstModel;
     }
   }
 
-  // Инициализация значений селекторов
-  const activeProvider = detectProvider(currentModel);
-  providerSelect.value = activeProvider;
-  populateModels(activeProvider, currentModel);
+  // 4. Заполнение иерархического списка провайдеров и моделей веб-поиска (optgroups)
+  function populateHierarchicalSearchEngines(modelsGrouped, targetSearch = 'gemini_cli', cfg = {}) {
+    if (!searchSelect) return;
+    searchSelect.innerHTML = '';
 
-  if (searchSelect && currentSearch) {
-    searchSelect.value = currentSearch;
+    const geminiList = modelsGrouped.gemini || ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-3.1-flash-lite'];
+    const geminiCliList = modelsGrouped.gemini_cli || ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
+    const agyList = modelsGrouped.agy || ['agy-flash', 'agy-pro', 'agy-gemma-4-26b-a4b-it'];
+
+    const searchStructure = [
+      {
+        label: '💻 Google Gemini CLI',
+        engine: 'gemini_cli',
+        models: geminiCliList,
+        defaultModel: cfg.gemini_cli_model || 'gemini-3.1-flash-lite'
+      },
+      {
+        label: '♊ Google Gemini Grounding',
+        engine: 'gemini',
+        models: geminiList,
+        defaultModel: cfg.gemini_model || 'gemini-2.5-flash'
+      },
+      {
+        label: '🚀 Google Antigravity (AGY)',
+        engine: 'agy',
+        models: agyList,
+        defaultModel: cfg.agy_model || 'agy-flash'
+      },
+      {
+        label: '🦜 LangChain MCP Agent',
+        engine: 'langchain',
+        models: ['gemini-2.5-flash', 'ollama:qwen2.5:7b'],
+        defaultModel: 'gemini-2.5-flash'
+      },
+      {
+        label: '🎭 Playwright Browser MCP',
+        engine: 'playwright',
+        models: ['chromium'],
+        defaultModel: 'chromium'
+      }
+    ];
+
+    let targetEngine = targetSearch;
+    let targetMdl = '';
+    if (targetSearch && targetSearch.includes(':') && !targetSearch.startsWith('ollama:') && !targetSearch.startsWith('foundry:')) {
+      const p = targetSearch.split(':');
+      targetEngine = p[0];
+      targetMdl = p.slice(1).join(':');
+    }
+
+    let selectedValueToSet = '';
+
+    searchStructure.forEach(group => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = group.label;
+
+      group.models.forEach(m => {
+        const opt = document.createElement('option');
+        const val = `${group.engine}:${m}`;
+        opt.value = val;
+        opt.textContent = m;
+        optgroup.appendChild(opt);
+
+        if (group.engine === targetEngine) {
+          if (targetMdl && m === targetMdl) {
+            selectedValueToSet = val;
+          } else if (group.defaultModel && m === group.defaultModel && !selectedValueToSet) {
+            selectedValueToSet = val;
+          } else if (!selectedValueToSet) {
+            selectedValueToSet = val;
+          }
+        }
+      });
+
+      searchSelect.appendChild(optgroup);
+    });
+
+    if (selectedValueToSet) {
+      searchSelect.value = selectedValueToSet;
+    }
   }
+
+  populateHierarchicalModels(chatGroupedModels, currentModel);
+  populateHierarchicalSearchEngines(chatGroupedModels, currentSearch, searchConfig);
 
   // Синхронизация бейджей
   if (typeof window.updateChatBadges === 'function') {
     window.updateChatBadges(modelSelect.value, searchSelect ? searchSelect.value : currentSearch);
   }
 
-  // Обработчик смены провайдера
-  providerSelect.onchange = () => {
-    const prov = providerSelect.value;
-    populateModels(prov);
-    if (typeof window.updateChatBadges === 'function') {
-      window.updateChatBadges(modelSelect.value, searchSelect ? searchSelect.value : undefined);
-    }
-  };
-
-  // Обработчик смены модели
+  // Обработчик смены модели в иерархическом списке
   modelSelect.onchange = () => {
     if (typeof window.updateChatBadges === 'function') {
       window.updateChatBadges(modelSelect.value, searchSelect ? searchSelect.value : undefined);
@@ -269,36 +371,95 @@ async function initChatDebuggerToolbar() {
     };
   }
 
-  // Обработчик кнопки «Установить как дефолтную»
-  if (setDefaultBtn) {
-    setDefaultBtn.onclick = async () => {
+  const setDefaultModelBtn = document.getElementById('btn-chat-set-default-model');
+  const setDefaultSearchBtn = document.getElementById('btn-chat-set-default-search');
+
+  // Обработчик кнопки «Дефолтная модель внутренней генерации»
+  if (setDefaultModelBtn) {
+    setDefaultModelBtn.onclick = async () => {
       const chosenModel = modelSelect.value;
-      const chosenSearch = searchSelect ? searchSelect.value : 'gemini_cli';
 
       if (!chosenModel) {
         alert('Выберите модель перед сохранением!');
         return;
       }
 
-      setDefaultBtn.disabled = true;
-      const origText = setDefaultBtn.innerHTML;
-      setDefaultBtn.innerHTML = '⏳ Сохранение...';
+      setDefaultModelBtn.disabled = true;
+      const origText = setDefaultModelBtn.innerHTML;
+      setDefaultModelBtn.innerHTML = '⏳ Сохранение...';
 
       try {
-        // 1. Сохраняем модель в настройках пользователя
         await fetch('/auth/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: chosenModel })
         });
 
-        // 2. Сохраняем поисковый движок в конфигурации веб-поиска (если админ)
+        if (typeof window.updateChatBadges === 'function') {
+          window.updateChatBadges(chosenModel, undefined);
+        }
+
+        const otherModelSelect = document.getElementById('admin-model-select');
+        if (otherModelSelect) otherModelSelect.value = chosenModel;
+        const modelsTabSelect = document.getElementById('models-tab-select');
+        if (modelsTabSelect) modelsTabSelect.value = chosenModel;
+
+        setDefaultModelBtn.classList.remove('btn-outline-warning');
+        setDefaultModelBtn.classList.add('btn-success');
+        setDefaultModelBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Установлена!';
+        setTimeout(() => {
+          setDefaultModelBtn.classList.remove('btn-success');
+          setDefaultModelBtn.classList.add('btn-outline-warning');
+          setDefaultModelBtn.innerHTML = origText;
+          setDefaultModelBtn.disabled = false;
+        }, 2500);
+
+      } catch (err) {
+        console.error('[ChatDebugger] Ошибка сохранения дефолтной модели:', err);
+        alert('Ошибка сохранения модели: ' + err.message);
+        setDefaultModelBtn.disabled = false;
+        setDefaultModelBtn.innerHTML = origText;
+      }
+    };
+  }
+
+  // Обработчик кнопки «Дефолтный модуль веб-поиска»
+  if (setDefaultSearchBtn) {
+    setDefaultSearchBtn.onclick = async () => {
+      const rawSearchVal = searchSelect ? searchSelect.value : 'gemini_cli';
+
+      let chosenSearchEngine = rawSearchVal;
+      let chosenSearchModel = '';
+      if (rawSearchVal.includes(':') && !rawSearchVal.startsWith('ollama:') && !rawSearchVal.startsWith('foundry:')) {
+        const parts = rawSearchVal.split(':');
+        chosenSearchEngine = parts[0];
+        chosenSearchModel = parts.slice(1).join(':');
+      }
+
+      setDefaultSearchBtn.disabled = true;
+      const origText = setDefaultSearchBtn.innerHTML;
+      setDefaultSearchBtn.innerHTML = '⏳ Сохранение...';
+
+      try {
+        // 1. Сохраняем поисковый движок в настройках пользователя
+        await fetch('/auth/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ search_engine: rawSearchVal })
+        });
+
+        // 2. Сохраняем поисковый движок и его модель в конфигурации веб-поиска (если админ)
         try {
           if (window.api && window.api.fetch) {
+            const searchPayload = { engine: chosenSearchEngine };
+            if (chosenSearchEngine === 'gemini') searchPayload.gemini_model = chosenSearchModel;
+            if (chosenSearchEngine === 'gemini_cli') searchPayload.gemini_cli_model = chosenSearchModel;
+            if (chosenSearchEngine === 'agy') searchPayload.agy_model = chosenSearchModel;
+
             await window.api.fetch('/api/admin/web-search/config', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ engine: chosenSearch })
+              body: JSON.stringify(searchPayload)
             });
           }
         } catch (searchErr) {
@@ -307,32 +468,27 @@ async function initChatDebuggerToolbar() {
 
         // 3. Обновляем глобальные бейджи и селекторы
         if (typeof window.updateChatBadges === 'function') {
-          window.updateChatBadges(chosenModel, chosenSearch);
+          window.updateChatBadges(undefined, rawSearchVal);
         }
 
-        const otherModelSelect = document.getElementById('admin-model-select');
-        if (otherModelSelect) otherModelSelect.value = chosenModel;
-        const modelsTabSelect = document.getElementById('models-tab-select');
-        if (modelsTabSelect) modelsTabSelect.value = chosenModel;
         const searchTabEngine = document.getElementById('search-tab-engine-selector');
-        if (searchTabEngine) searchTabEngine.value = chosenSearch;
+        if (searchTabEngine) searchTabEngine.value = chosenSearchEngine;
 
-        // Показываем подтверждение
-        setDefaultBtn.classList.remove('btn-outline-warning');
-        setDefaultBtn.classList.add('btn-success');
-        setDefaultBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Установлено!';
+        setDefaultSearchBtn.classList.remove('btn-outline-info');
+        setDefaultSearchBtn.classList.add('btn-success');
+        setDefaultSearchBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Установлен!';
         setTimeout(() => {
-          setDefaultBtn.classList.remove('btn-success');
-          setDefaultBtn.classList.add('btn-outline-warning');
-          setDefaultBtn.innerHTML = origText;
-          setDefaultBtn.disabled = false;
+          setDefaultSearchBtn.classList.remove('btn-success');
+          setDefaultSearchBtn.classList.add('btn-outline-info');
+          setDefaultSearchBtn.innerHTML = origText;
+          setDefaultSearchBtn.disabled = false;
         }, 2500);
 
       } catch (err) {
-        console.error('[ChatDebugger] Ошибка сохранения дефолтных настроек:', err);
-        alert('Ошибка сохранения настроек: ' + err.message);
-        setDefaultBtn.disabled = false;
-        setDefaultBtn.innerHTML = origText;
+        console.error('[ChatDebugger] Ошибка сохранения дефолтного поиска:', err);
+        alert('Ошибка сохранения поиска: ' + err.message);
+        setDefaultSearchBtn.disabled = false;
+        setDefaultSearchBtn.innerHTML = origText;
       }
     };
   }

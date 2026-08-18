@@ -349,14 +349,25 @@ window.chatService = {
 // Форматирование отображаемого названия поискового движка
 function formatSearchEngine(engine) {
   if (!engine) return '';
+  let eng = engine;
+  let mdl = '';
+  if (engine.includes(':') && !engine.startsWith('ollama:') && !engine.startsWith('foundry:')) {
+    const parts = engine.split(':');
+    eng = parts[0];
+    mdl = parts.slice(1).join(':');
+  }
   const map = {
-    'gemini_cli': '🔍 gemini_cli',
-    'gemini': '🔍 gemini',
-    'agy': '🔍 agy',
-    'langchain': '🔍 langchain',
-    'playwright': '🔍 playwright'
+    'gemini_cli': '💻 gemini_cli',
+    'gemini': '♊ gemini',
+    'agy': '🚀 agy',
+    'langchain': '🦜 langchain',
+    'playwright': '🎭 playwright'
   };
-  return map[engine] || `🔍 ${engine}`;
+  const iconAndName = map[eng] || `🔍 ${eng}`;
+  if (mdl && !mdl.startsWith('chromium')) {
+    return `${iconAndName} (${mdl})`;
+  }
+  return iconAndName;
 }
 
 window.formatSearchEngine = formatSearchEngine;

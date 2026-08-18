@@ -89,6 +89,111 @@ _PLAY_KEYWORDS = (
 )
 
 
+
+_GENERIC_STOP_WORDS = {
+    "расскажи", "расскажите", "расскажи-ка", "покажи", "покажите", "найди", "найдите",
+    "посоветуй", "посоветуйте", "порекомендуй", "порекомендуйте", "подскажи", "подскажите",
+    "что", "как", "где", "когда", "кто", "чем", "почему", "зачем", "за", "про", "просто",
+    "о", "об", "обо", "в", "во", "на", "с", "со", "из", "к", "ко", "по", "для", "от", "до",
+    "фильм", "фильмы", "фильма", "фильме", "фильму", "фильмом", "фильмах", "фильмов",
+    "кино", "кинолента", "кинокартина", "картина", "картину", "тайтл", "тайтлы", "видео",
+    "сериал", "сериалы", "сериала", "сериале", "сериалу", "сериалом", "сериалах", "сериалов",
+    "мультфильм", "мультфильмы", "мульт", "мультик", "мультики", "мультсериал", "аниме",
+    "сезон", "сезоны", "сезона", "сезоне", "серия", "серии", "серий", "эпизод", "эпизоды",
+    "сюжет", "описание", "информация", "информацию", "содержание", "смысл", "суть",
+    "актер", "актеры", "актриса", "актрисы", "роль", "ролях", "режиссер", "режиссера",
+    "онлайн", "смотреть", "посмотреть", "глянуть", "включи", "включай", "запусти", "запускай",
+    "поставь", "скачать", "трейлер", "отзыв", "отзывы", "рейтинг", "топ", "новинка", "новинки",
+    "хороший", "хорошие", "лучший", "лучшие", "интересный", "интересные", "какой", "какие",
+    "пожалуйста", "плиз", "привет", "здравствуй", "здравствуйте",
+    "the", "a", "an", "movie", "movies", "film", "films", "series", "show", "shows",
+    "about", "tell", "me", "watch", "find", "search", "play", "info", "plot",
+}
+
+_GENRE_AND_DISCOVERY_WORDS = {
+    "боевик", "боевики", "action",
+    "комедия", "комедии", "комеди", "comedy",
+    "триллер", "триллеры", "thriller",
+    "драма", "драмы", "drama",
+    "ужасы", "хоррор", "ужастик", "ужастики", "horror",
+    "фантастика", "фантастик", "sci-fi",
+    "фэнтези", "fantasy",
+    "детектив", "детективы", "detective", "расследование", "расследования",
+    "приключения", "adventure", "adventures",
+    "мелодрама", "мелодрамы", "romance",
+    "криминал", "криминальное", "crime",
+    "вестерн", "вестерны", "western",
+    "семейный", "семейные", "family",
+    "мистика", "mystery",
+    "военный", "военные", "war",
+    "исторический", "исторические", "история", "history",
+    "документальный", "документальные", "documentary",
+    "мюзикл", "мюзиклы", "musical",
+    "шпион", "шпионы", "шпионские", "spy",
+    "биография", "биографические", "bio",
+    "спорт", "спортивные", "sport",
+    "киберпанк", "cyberpunk",
+    "аниме", "anime",
+    "посоветуй", "порекомендуй", "подскажи", "посоветуйте", "порекомендуйте",
+    "подборка", "подборку", "подборки", "список", "топ", "лучшие", "новинки", "премьеры",
+    "что посмотреть", "что глянуть", "посмотреть", "глянуть", "хороший", "хорошие",
+}
+
+
+def _extract_specific_title_keywords(query: str) -> list[str]:
+    """Извлекает ключевые слова названия фильма/сериала для адресных запросов."""
+    import re
+    # 1. Если есть кавычки — берем содержимое внутри кавычек
+    quoted = re.findall(r'["«»\'](.*?)["«»\']', query)
+    if quoted:
+        q_text = " ".join(quoted).strip()
+        words = [w.lower() for w in re.findall(r'[a-zA-Zа-яА-Я0-9]+', q_text) if len(w) >= 2]
+        meaningful_quoted = [w for w in words if w not in _GENERIC_STOP_WORDS]
+        if meaningful_quoted:
+            return meaningful_quoted
+
+    # 2. Иначе очищаем от стоп-слов и жанровых категорий
+    all_words = [w.lower() for w in re.findall(r'[a-zA-Zа-яА-Я0-9]+', query) if len(w) >= 2]
+    meaningful = [w for w in all_words if w not in _GENERIC_STOP_WORDS]
+
+    # Если все оставшиеся слова — это жанры/категории/подборки, то это не адресный запрос
+    if not meaningful or all(w in _GENRE_AND_DISCOVERY_WORDS for w in meaningful):
+        return []
+
+    return [w for w in meaningful if w not in _GENRE_AND_DISCOVERY_WORDS]
+
+
+def _is_item_title_match(item: dict, title_keywords: list[str]) -> bool:
+    """Проверяет, совпадает ли хотя бы одно ключевое слово названия с документом."""
+    if not title_keywords:
+        return True
+
+    searchable_texts = []
+    meta = item.get('meta', {})
+    for key in ('title', 'clean_title', 'title_ru', 'title_orig'):
+        val = item.get(key) or meta.get(key)
+        if val:
+            searchable_texts.append(str(val).lower())
+
+    raw_text = item.get('text', '')
+    if raw_text:
+        first_line = raw_text.split('\n')[0].strip().lower()
+        searchable_texts.append(first_line)
+
+    combined_text = " ".join(searchable_texts)
+
+    for kw in title_keywords:
+        kw_clean = kw.strip().lower()
+        if len(kw_clean) < 3:
+            if kw_clean in combined_text.split():
+                return True
+        else:
+            stem = kw_clean[:max(3, len(kw_clean) - 1)]
+            if stem in combined_text:
+                return True
+    return False
+
+
 def _format_count_word(count: int) -> str:
     """Формирует текстовое числительное для количества вариантов."""
     _words = {
@@ -267,13 +372,49 @@ class RAGPlugin(BasePlugin):
             card_data = json.loads(card_json)
             if not card_data.get('error') and (card_data.get('title') or card_data.get('title_ru')):
                 display_title = card_data.get('title_ru') or card_data.get('title') or base_title
+                orig_title = card_data.get('title_orig', '')
+                year = card_data.get('year', '')
+                country = card_data.get('country', '')
+                genres_list = card_data.get('genres') or []
+                genres_str = ", ".join(genres_list) if genres_list else (card_data.get('main_category') or '')
+                directors_list = card_data.get('directors') or []
+                directors_str = ", ".join(directors_list)
+                cast_list = card_data.get('cast') or []
+                cast_str = ", ".join(cast_list[:5])
+                plot_desc = card_data.get('plot') or card_data.get('why_watch') or ""
+                why_watch = card_data.get('why_watch', '')
+
+                # Построение структурированного Markdown описания
+                md_header = f"🎬 **<film>{display_title}</film>**"
+                meta_chips = []
+                if orig_title and orig_title.strip().lower() != display_title.strip().lower():
+                    meta_chips.append(f"*{orig_title}*")
+                if year:
+                    meta_chips.append(f"{year} г.")
+                if country:
+                    meta_chips.append(country)
+                if meta_chips:
+                    md_header += f" ({', '.join(meta_chips)})"
+
+                md_body = []
+                if genres_str:
+                    md_body.append(f"📂 **Жанр:** {genres_str}")
+                if directors_str:
+                    md_body.append(f"🎬 **Режиссёр:** {directors_str}")
+                if cast_str:
+                    md_body.append(f"👤 **В главных ролях:** {cast_str}")
+                if plot_desc:
+                    md_body.append(f"\n📝 **Сюжет:**\n{plot_desc}")
+                if why_watch and why_watch.strip() != plot_desc.strip():
+                    md_body.append(f"\n💡 **Почему стоит посмотреть:**\n{why_watch}")
+
+                full_md_text = md_header + "\n" + "\n".join(md_body)
+
                 yield {"status": f"⚡ Карточка медиа ({display_title})..."}
                 yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nКарточка: {display_title}"}
-                yield {"text": card_json}
+                yield {"text": full_md_text}
 
-                genres_list = card_data.get('genres') or []
                 primary_genre = genres_list[0].strip().lower() if genres_list else ""
-                cast_list = card_data.get('cast') or []
                 actors_part = ""
                 if cast_list:
                     if len(cast_list) >= 2:
@@ -281,7 +422,6 @@ class RAGPlugin(BasePlugin):
                     else:
                         actors_part = f"в главной роли {cast_list[0]}"
 
-                plot_desc = card_data.get('why_watch') or card_data.get('plot') or ""
                 first_sent = ""
                 if plot_desc:
                     first_sent = plot_desc.split('.')[0].strip()
@@ -309,13 +449,19 @@ class RAGPlugin(BasePlugin):
             logger.error(f"[RAGPlugin] Ошибка при парсинге карточки: {ex}")
 
         if raw_text:
-            yield {"status": f"⚡ Ответ из локальной базы ({base_title})..."}
-            yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nДокумент: {base_title}"}
-            fallback_text = f"🎬 **<film>{base_title}</film>**\n\n{raw_text}"
+            clean_heading = base_title
+            if raw_text.startswith('#'):
+                first_line = raw_text.split('\n')[0].lstrip('#').strip()
+                if first_line:
+                    clean_heading = first_line
+
+            yield {"status": f"⚡ Ответ из локальной базы ({clean_heading})..."}
+            yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nДокумент: {clean_heading}"}
+            fallback_text = f"🎬 **<film>{clean_heading}</film>**\n\n{raw_text}"
             yield {"text": fallback_text}
             clean_raw = raw_text.split('.')[0].strip()[:200]
             cta = "Включить этот фильм, рассказать подробнее или поискать другой?"
-            yield {"voice": f"В локальной медиатеке найден {base_title}. {clean_raw}. {cta}"}
+            yield {"voice": f"В локальной медиатеке найден {clean_heading}. {clean_raw}. {cta}"}
 
     async def _handle_direct_multi_items(self, message: str, items: list[dict], kwargs: dict) -> AsyncIterator[dict]:
         """Прямой возврат структурированного списка найденных фильмов/сериалов из БД без вызова LLM."""
@@ -451,6 +597,8 @@ class RAGPlugin(BasePlugin):
                 web_text = ""
                 if engine == "gemini":
                     web_text = await web_plugin.gemini_searcher.search_and_extract(message)
+                elif engine == "gemini_cli":
+                    web_text = await web_plugin.gemini_cli_searcher.search_and_extract(message)
                 elif engine == "agy":
                     web_text = await web_plugin.agy_searcher.search_and_extract(message)
                 elif engine == "langchain":
@@ -581,6 +729,16 @@ class RAGPlugin(BasePlugin):
                     seen_titles.add(base_title.lower())
                     item['clean_title'] = base_title
                     unique_results.append(item)
+
+            # Проверка адресности запроса (поиск конкретного тайтла)
+            title_keywords = _extract_specific_title_keywords(message)
+            if title_keywords and unique_results:
+                matched_results = [item for item in unique_results if _is_item_title_match(item, title_keywords)]
+                if not matched_results:
+                    logger.info(f"[RAGPlugin] Адресный запрос '{message}' (ключи: {title_keywords}) не совпал с локальными результатами. Переход к веб-поиску/LLM.")
+                    unique_results = []
+                else:
+                    unique_results = matched_results
 
             is_play_command = any(kw in low_message for kw in _PLAY_KEYWORDS)
 

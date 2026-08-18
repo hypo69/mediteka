@@ -135,6 +135,15 @@ def index_user_query(
         logger.info(f"UserRAG [{user_id}]: запрос отфильтрован как мусорный: '{query}'")
         return False
 
+    # Фильтруем ответы, являющиеся сырым JSON, служебными логами или ошибками
+    resp_stripped = response.strip()
+    if resp_stripped.startswith('{') and ('"title"' in resp_stripped or '"error"' in resp_stripped or '"results"' in resp_stripped):
+        logger.info(f"UserRAG [{user_id}]: ответ отфильтрован как сырой JSON: '{resp_stripped[:60]}...'")
+        return False
+    if any(resp_stripped.startswith(pfx) for pfx in ('❌', 'Ошибка', 'Error', 'DEBUG', 'Traceback', '[DIRECT PLAY', '[DIRECT RAG')):
+        logger.info(f"UserRAG [{user_id}]: ответ отфильтрован как служебное/ошибочное сообщение")
+        return False
+
     try:
         rag = get_user_rag(user_id, api_key)
 
@@ -240,6 +249,36 @@ def clear_user_rag(user_id, api_key: str) -> bool:
         return False
 
 
+def clean_invalid_user_rag_entries(user_id, api_key: str = '') -> int:
+    """Удаляет из базы User RAG записи, содержащие сырой JSON или сообщения об ошибках."""
+    try:
+        rag = get_user_rag(user_id, api_key)
+        initial_count = len(rag.metadatas)
+        valid_metas = []
+        for m in rag.metadatas:
+            text = m.get('text', '')
+            meta_resp = m.get('meta', {}).get('response', '')
+            check_str = (meta_resp or text).strip()
+            if check_str.startswith('{') and ('"title"' in check_str or '"error"' in check_str):
+                continue
+            if 'Ответ модели: {' in text and '"title"' in text:
+                continue
+            if any(check_str.startswith(pfx) for pfx in ('❌', 'Ошибка', 'Error', 'DEBUG', 'Traceback')):
+                continue
+            valid_metas.append(m)
+
+        deleted_count = initial_count - len(valid_metas)
+        if deleted_count > 0:
+            rag.metadatas = valid_metas
+            rag._rebuild_index()
+            rag._save()
+            logger.info(f"UserRAG [{user_id}]: очищено {deleted_count} поврежденных записей.")
+        return deleted_count
+    except Exception as ex:
+        logger.error(f"Ошибка очистки поврежденных записей RAG пользователя {user_id}", ex, False)
+        return 0
+
+
 # =============================================================================
 # Internal helpers
 # =============================================================================
@@ -254,20 +293,12 @@ def _prune_if_needed(rag: GeminiRAG, user_id) -> None:
         return
 
     try:
-        import sqlite3
-        import json
-
-        with sqlite3.connect(rag.db_path) as conn:
-            rows = conn.execute("SELECT id, meta FROM rag_index").fetchall()
-
         parsed = []
-        for row_id, meta_str in rows:
-            try:
-                meta = json.loads(meta_str)
-                ts = float(meta.get("timestamp", 0))
-            except Exception:
-                ts = 0
-            parsed.append((row_id, ts))
+        for m in rag.metadatas:
+            doc_id = m.get('id')
+            meta = m.get('meta', {})
+            ts = float(meta.get("timestamp", 0))
+            parsed.append((doc_id, ts))
 
         parsed.sort(key=lambda x: x[1])
         to_delete = parsed[:max(1, count // 10)]

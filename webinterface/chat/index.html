@@ -241,42 +241,39 @@
 <div class="card mb-2 border-secondary shadow-sm" id="chat-debugger-toolbar" style="background: var(--bg-color-card, #1c2128); border-radius: 8px;">
   <div class="card-body p-2 d-flex flex-wrap align-items-center justify-content-between gap-2" style="font-size: 0.82rem;">
     <div class="d-flex flex-wrap align-items-center gap-2">
-      <span class="text-info fw-bold d-flex align-items-center gap-1">
-        <i class="bi bi-cpu-fill"></i> Модель:
-      </span>
-      
-      <!-- AI Provider Selector -->
-      <select class="form-select form-select-sm bg-dark text-white border-secondary" id="chat-provider-select" style="width: auto; min-width: 140px; font-size: 0.8rem;" title="Провайдер ИИ">
-        <option value="gemini">✨ Gemini</option>
-        <option value="agy">🚀 Antigravity</option>
-        <option value="foundry">⚙️ Foundry</option>
-        <option value="ollama">🦙 Ollama</option>
-      </select>
+      <!-- Section: Model (Internal Processing) -->
+      <div class="d-flex align-items-center gap-1">
+        <span class="text-info fw-bold d-flex align-items-center gap-1">
+          <i class="bi bi-cpu-fill"></i> Модель:
+        </span>
+        <select class="form-select form-select-sm bg-dark text-white border-secondary font-monospace" id="chat-model-select" style="width: auto; min-width: 230px; font-size: 0.8rem;" title="Иерархический выбор модели ИИ для внутренней генерации">
+          <option value="">Загрузка моделей...</option>
+        </select>
+        <button class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 fw-semibold" id="btn-chat-set-default-model" title="Установить выбранную модель ИИ как дефолтную для пользователя">
+          <i class="bi bi-star-fill"></i> Дефолтная
+        </button>
+      </div>
 
-      <!-- AI Model Selector -->
-      <select class="form-select form-select-sm bg-dark text-white border-secondary font-monospace" id="chat-model-select" style="width: auto; min-width: 190px; font-size: 0.8rem;" title="Модель ИИ для генерации ответов">
-        <option value="">Загрузка моделей...</option>
-      </select>
+      <span class="text-secondary opacity-50 d-none d-lg-inline">|</span>
 
-      <span class="text-secondary opacity-50 d-none d-md-inline">|</span>
-
-      <span class="text-info fw-bold d-flex align-items-center gap-1">
-        <i class="bi bi-globe2"></i> Поиск:
-      </span>
-
-      <!-- Search Provider Selector -->
-      <select class="form-select form-select-sm bg-dark text-white border-secondary font-monospace" id="chat-search-select" style="width: auto; min-width: 160px; font-size: 0.8rem;" title="Движок веб-поиска">
-        <option value="gemini_cli">💻 Gemini CLI</option>
-        <option value="gemini">♊ Gemini Grounding</option>
-        <option value="agy">🚀 Antigravity (AGY)</option>
-        <option value="playwright">🎭 Playwright MCP</option>
-        <option value="langchain">🦜 LangChain MCP</option>
-      </select>
-
-      <!-- Set as Default Button -->
-      <button class="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 fw-semibold" id="btn-chat-set-default" title="Установить выбранную модель и провайдер поиска по умолчанию для системы">
-        <i class="bi bi-star-fill"></i> Установить как дефолтную
-      </button>
+      <!-- Section: Web Search Provider & Model -->
+      <div class="d-flex align-items-center gap-1">
+        <span class="text-info fw-bold d-flex align-items-center gap-1">
+          <i class="bi bi-globe2"></i> Поиск:
+        </span>
+        <select class="form-select form-select-sm bg-dark text-white border-secondary font-monospace" id="chat-search-select" style="width: auto; min-width: 175px; font-size: 0.8rem;" title="Иерархический выбор провайдера и модели веб-поиска">
+          <optgroup label="🌐 Поисковые провайдеры">
+            <option value="gemini_cli">💻 Gemini CLI</option>
+            <option value="gemini">♊ Gemini Grounding</option>
+            <option value="agy">🚀 Antigravity (AGY)</option>
+            <option value="playwright">🎭 Playwright MCP</option>
+            <option value="langchain">🦜 LangChain MCP</option>
+          </optgroup>
+        </select>
+        <button class="btn btn-sm btn-outline-info d-flex align-items-center gap-1 fw-semibold" id="btn-chat-set-default-search" title="Установить выбранный провайдер и модель поиска по умолчанию в config.json">
+          <i class="bi bi-star-fill"></i> Дефолтный
+        </button>
+      </div>
     </div>
 
     <!-- Live Status Badges on the right -->

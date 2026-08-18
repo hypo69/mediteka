@@ -56,6 +56,7 @@ nav:
       - dev/media_organizer_workflow.md
       - dev/legacy_project_knowledge.md
       - skills.md
+  - API: api.md
   - Модули:
       - modules/agents.md
       - modules/ai.md
@@ -87,7 +88,10 @@ plugins:
       lang: ru
   - mkdocstrings:
       handlers:
-        python: {}
+        python:
+          setup_commands:
+            - "import sys"
+            - "sys.path.insert(0, 'src')"
 
 # Extra
 extra:

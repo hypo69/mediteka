@@ -385,36 +385,59 @@ async function initAdminTab() {
   // 1. Очищаем селект
   modelSelect.innerHTML = '';
   
-  let models = [];
+  let modelsGrouped = {};
   // 2. Загружаем доступные модели
   try {
     const modelsData = await window.api.fetch('/api/chat/models');
-    let modelsGrouped = modelsData.models || {};
+    modelsGrouped = modelsData.models || {};
     if (Array.isArray(modelsGrouped)) {
       modelsGrouped = { 'gemini': modelsGrouped };
     }
-    Object.values(modelsGrouped).forEach(arr => {
-      models = models.concat(arr);
-    });
   } catch (err) {
     console.error('Ошибка загрузки моделей:', err);
     showNotification('Ошибка загрузки моделей AI: ' + err.message, 'danger');
   }
   
-  // 3. Заполняем селект моделями
-  if (models.length === 0) {
+  // 3. Заполняем селект моделями с иерархией optgroup
+  const providerMeta = {
+    'gemini': { label: '✨ Google Gemini', order: 1 },
+    'agy': { label: '🚀 Google Antigravity (AGY)', order: 2 },
+    'foundry': { label: '⚙️ Microsoft Foundry', order: 3 },
+    'ollama': { label: '🦙 Ollama (Local)', order: 4 }
+  };
+
+  const providers = Object.keys(modelsGrouped).sort((a, b) => {
+    const oA = providerMeta[a]?.order ?? 99;
+    const oB = providerMeta[b]?.order ?? 99;
+    return oA - oB;
+  });
+
+  let totalModels = 0;
+  providers.forEach(p => {
+    const list = modelsGrouped[p] || [];
+    if (!Array.isArray(list) || list.length === 0) return;
+
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = providerMeta[p]?.label || `🤖 ${p.toUpperCase()}`;
+
+    list.forEach(m => {
+      totalModels++;
+      const option = document.createElement('option');
+      option.value = m;
+      option.textContent = m;
+      optgroup.appendChild(option);
+    });
+
+    modelSelect.appendChild(optgroup);
+  });
+
+  if (totalModels === 0) {
     const option = document.createElement('option');
     option.value = '';
     option.textContent = 'Нет доступных моделей';
     modelSelect.appendChild(option);
     saveBtn.disabled = true;
   } else {
-    models.forEach(modelName => {
-      const option = document.createElement('option');
-      option.value = modelName;
-      option.textContent = modelName;
-      modelSelect.appendChild(option);
-    });
     saveBtn.disabled = false;
   }
   

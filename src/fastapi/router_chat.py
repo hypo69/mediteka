@@ -175,6 +175,10 @@ def _clean_chat_history(history: list[dict]) -> list[dict]:
             return False
         if any(text.startswith(pfx) for pfx in _STATUS_PREFIXES):
             return False
+        if text.startswith('{') and ('"title"' in text or '"error"' in text or '"genres"' in text):
+            return False
+        if 'Ответ модели: {' in text and '"title"' in text:
+            return False
         return True
 
     raw_clean = [e for e in history if _is_clean(e)]

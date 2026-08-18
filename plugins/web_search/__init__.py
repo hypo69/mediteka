@@ -90,10 +90,18 @@ class WebSearchPlugin(BasePlugin):
             query = message
 
         ws_cfg = self._get_config()
-        engine = kwargs.get('search_engine') or ws_cfg.get('engine', 'playwright')
-        gemini_model = ws_cfg.get('gemini_model', 'gemini-2.5-flash')
-        gemini_cli_model = ws_cfg.get('gemini_cli_model', 'gemini-3.1-flash-lite')
-        agy_model = ws_cfg.get('agy_model', 'agy-flash')
+        raw_engine = kwargs.get('search_engine') or ws_cfg.get('engine', 'playwright')
+        search_model_override = kwargs.get('search_model')
+
+        if raw_engine and ':' in raw_engine and not raw_engine.startswith('ollama:') and not raw_engine.startswith('foundry:'):
+            engine, parsed_model = raw_engine.split(':', 1)
+            search_model_override = search_model_override or parsed_model
+        else:
+            engine = raw_engine
+
+        gemini_model = search_model_override if engine == 'gemini' and search_model_override else ws_cfg.get('gemini_model', 'gemini-2.5-flash')
+        gemini_cli_model = search_model_override if engine == 'gemini_cli' and search_model_override else ws_cfg.get('gemini_cli_model', 'gemini-3.1-flash-lite')
+        agy_model = search_model_override if engine == 'agy' and search_model_override else ws_cfg.get('agy_model', 'agy-flash')
         web_context = ""
 
         if engine == "langchain":

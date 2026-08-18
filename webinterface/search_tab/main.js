@@ -113,8 +113,13 @@ async function initSearchTab() {
       if (engineBadge) engineBadge.textContent = engine;
       notifySearch(`✅ Настройки веб-поиска сохранены (активен: ${engine})`, 'success');
 
+      let compoundSearch = engine;
+      if (engine === 'gemini') compoundSearch = `${engine}:${gemini_model}`;
+      if (engine === 'gemini_cli') compoundSearch = `${engine}:${gemini_cli_model}`;
+      if (engine === 'agy') compoundSearch = `${engine}:${agy_model}`;
+
       if (typeof window.updateChatBadges === 'function') {
-        window.updateChatBadges(undefined, engine);
+        window.updateChatBadges(undefined, compoundSearch);
       }
     } catch (e) {
       console.error('[SearchTab] Ошибка сохранения:', e);
