@@ -88,10 +88,7 @@ plugins:
       lang: ru
   - mkdocstrings:
       handlers:
-        python:
-          options:
-            search_paths:
-              - src
+        python: {}
 
 # Extra
 extra:
