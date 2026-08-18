@@ -67,8 +67,8 @@ body {
 }
 
 .chat-window {
-  height: calc(100vh - 180px); 
-  min-height: 350px;
+  height: calc(100vh - 280px); 
+  min-height: 180px;
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: 4px;
@@ -78,19 +78,37 @@ body {
 
 /* Fix overlap in admin panel chat tab */
 #tab-chat {
-  height: calc(100vh - 80px);
-  min-height: unset;
+  height: calc(100vh - 95px);
+  max-height: calc(100vh - 95px);
+  min-height: 0;
   padding-bottom: 0;
-  overflow-y: hidden;
+  overflow: hidden;
 }
 #tab-chat.active {
-  display: flex;
+  display: flex !important;
   flex-direction: column;
+  height: calc(100vh - 95px);
+  max-height: calc(100vh - 95px);
 }
 #tab-chat .chat-window {
   height: auto;
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: 140px;
+  max-height: calc(100vh - 270px);
+  overflow-y: auto;
+  margin-bottom: 6px !important;
+}
+#tab-chat .media-controls {
+  flex-shrink: 0;
+  margin-bottom: 6px !important;
+}
+#tab-chat #chat-debugger-toolbar {
+  flex-shrink: 0;
+  margin-bottom: 6px !important;
+}
+#tab-chat .input-group {
+  flex-shrink: 0;
+  margin-bottom: 2px !important;
 }
 .message { margin-bottom: 6px; padding: 6px 10px; border-radius: 4px; }
 .user-message { 
