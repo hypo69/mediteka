@@ -590,6 +590,263 @@ async def test_web_search(request: Request, data: WebSearchTestRequest):
 
 
 # ============================================================================
+# User Management Models and Endpoints
+# ============================================================================
+
+class AdminUserCreateRequest(BaseModel):
+    email: str
+    name: str
+    password: str = ''
+    role: str = 'user'
+    is_admin: int = 0
+    is_active: int = 1
+    is_email_verified: int = 1
+
+
+class AdminUserUpdateRequest(BaseModel):
+    name: str = ''
+    email: str = ''
+    role: str = ''
+    is_admin: int = 0
+    is_active: int = 1
+    is_email_verified: int = 1
+
+
+class AdminUserPasswordRequest(BaseModel):
+    password: str
+
+
+@router.get('/users')
+async def list_admin_users(
+    request: Request,
+    q: str = '',
+    role: str = '',
+    status: str = ''
+) -> Dict[str, Any]:
+    """Получение списка пользователей с фильтрацией, поиском и статистикой."""
+    _check_admin(request)
+    from src.user_manager import user_manager
+    all_users = user_manager.get_all_users(active_only=False)
+
+    total_count = len(all_users)
+    active_count = sum(1 for u in all_users if u.get('is_active', 0) == 1)
+    admin_count = sum(1 for u in all_users if u.get('is_admin', 0) == 1 or u.get('role') == 'admin')
+    tg_count = sum(1 for u in all_users if u.get('telegram_id'))
+
+    filtered = []
+    q_lower = q.lower().strip()
+
+    for u in all_users:
+        if q_lower:
+            name_match = q_lower in str(u.get('name', '')).lower()
+            email_match = q_lower in str(u.get('email', '')).lower()
+            tg_match = q_lower in str(u.get('telegram_username', '')).lower() or q_lower in str(u.get('telegram_id', ''))
+            if not (name_match or email_match or tg_match):
+                continue
+
+        if role and u.get('role') != role:
+            continue
+
+        if status == 'active' and u.get('is_active', 0) != 1:
+            continue
+        if status == 'inactive' and u.get('is_active', 0) == 1:
+            continue
+
+        sanitized = {k: v for k, v in u.items() if k != 'password_hash'}
+        sanitized['has_password'] = bool(u.get('password_hash'))
+        filtered.append(sanitized)
+
+    return {
+        'status': 'ok',
+        'users': filtered,
+        'stats': {
+            'total': total_count,
+            'active': active_count,
+            'admins': admin_count,
+            'telegram': tg_count,
+        }
+    }
+
+
+@router.post('/users')
+async def create_admin_user(request: Request, data: AdminUserCreateRequest) -> Dict[str, Any]:
+    """Создание нового пользователя администратором."""
+    _check_admin(request)
+    email = data.email.strip().lower()
+    name = data.name.strip()
+    if not email:
+        raise HTTPException(status_code=400, detail='Email обязателен')
+    if not name:
+        raise HTTPException(status_code=400, detail='Имя обязательно')
+
+    from src.user_manager import user_manager
+    if user_manager.user_exists(email):
+        raise HTTPException(status_code=400, detail=f'Пользователь с email {email} уже существует')
+
+    user_id = user_manager.create_user_admin(
+        email=email,
+        name=name,
+        password=data.password,
+        role=data.role,
+        is_admin=data.is_admin,
+        is_active=data.is_active,
+        is_email_verified=data.is_email_verified
+    )
+    if not user_id:
+        raise HTTPException(status_code=500, detail='Ошибка создания пользователя')
+
+    created = user_manager.get_user_by_id(user_id)
+    sanitized = {k: v for k, v in created.items() if k != 'password_hash'}
+    sanitized['has_password'] = bool(created.get('password_hash'))
+    return {'status': 'ok', 'user': sanitized}
+
+
+@router.get('/users/{user_id}')
+async def get_admin_user_details(user_id: int, request: Request) -> Dict[str, Any]:
+    """Получение детальной информации о пользователе и его настройках."""
+    _check_admin(request)
+    from src.user_manager import user_manager
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    settings = user_manager.get_user_settings(user_id)
+    permissions = user_manager.get_user_permissions(user_id)
+    sanitized = {k: v for k, v in user.items() if k != 'password_hash'}
+    sanitized['has_password'] = bool(user.get('password_hash'))
+
+    return {
+        'status': 'ok',
+        'user': sanitized,
+        'settings': settings,
+        'permissions': permissions
+    }
+
+
+@router.put('/users/{user_id}')
+async def update_admin_user(user_id: int, data: AdminUserUpdateRequest, request: Request) -> Dict[str, Any]:
+    """Обновление данных пользователя."""
+    _check_admin(request)
+    from src.user_manager import user_manager
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    updates: Dict[str, Any] = {}
+    if data.name:
+        updates['name'] = data.name.strip()
+    if data.email:
+        email_clean = data.email.strip().lower()
+        if email_clean != user.get('email'):
+            existing = user_manager.get_user_by_email(email_clean)
+            if existing and existing.get('id') != user_id:
+                raise HTTPException(status_code=400, detail='Этот email уже занят другим пользователем')
+            updates['email'] = email_clean
+    if data.role:
+        updates['role'] = data.role
+    updates['is_admin'] = data.is_admin
+    updates['is_active'] = data.is_active
+    updates['is_email_verified'] = data.is_email_verified
+
+    success = user_manager.update_user(user_id, **updates)
+    if not success:
+        raise HTTPException(status_code=500, detail='Ошибка обновления пользователя')
+
+    updated = user_manager.get_user_by_id(user_id)
+    sanitized = {k: v for k, v in updated.items() if k != 'password_hash'}
+    sanitized['has_password'] = bool(updated.get('password_hash'))
+    return {'status': 'ok', 'user': sanitized}
+
+
+@router.post('/users/{user_id}/password')
+async def set_admin_user_password(user_id: int, data: AdminUserPasswordRequest, request: Request) -> Dict[str, Any]:
+    """Установка / сброс пароля пользователя администратором."""
+    _check_admin(request)
+    new_password = data.password.strip()
+    if not new_password:
+        raise HTTPException(status_code=400, detail='Пароль не может быть пустым')
+
+    from src.user_manager import user_manager
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    success = user_manager.set_user_password(user_id, new_password)
+    if not success:
+        raise HTTPException(status_code=500, detail='Ошибка установки пароля')
+
+    return {'status': 'ok', 'message': 'Пароль успешно обновлён'}
+
+
+@router.post('/users/{user_id}/toggle-active')
+async def toggle_admin_user_active(user_id: int, request: Request) -> Dict[str, Any]:
+    """Переключение активности пользователя (блокировка / разблокировка)."""
+    _check_admin(request)
+    from src.user_manager import user_manager
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    if user_id == 1 and user.get('is_active', 1) == 1:
+        raise HTTPException(status_code=400, detail='Нельзя деактивировать главного администратора (ID 1)')
+
+    new_status = 0 if user.get('is_active', 1) == 1 else 1
+    success = user_manager.update_user(user_id, is_active=new_status)
+    if not success:
+        raise HTTPException(status_code=500, detail='Ошибка изменения статуса')
+
+    return {'status': 'ok', 'is_active': new_status}
+
+
+@router.post('/users/{user_id}/toggle-role')
+async def toggle_admin_user_role(user_id: int, request: Request) -> Dict[str, Any]:
+    """Переключение роли пользователя (пользователь <-> администратор)."""
+    _check_admin(request)
+    from src.user_manager import user_manager
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    is_currently_admin = bool(user.get('is_admin', 0) or user.get('role') == 'admin')
+
+    # Защита системного администратора ID 1 от снятия прав
+    if user_id == 1 and is_currently_admin:
+        raise HTTPException(status_code=400, detail='Нельзя снять права у главного администратора (ID 1)')
+
+    if is_currently_admin:
+        new_role = 'user'
+        new_is_admin = 0
+    else:
+        new_role = 'admin'
+        new_is_admin = 1
+
+    success = user_manager.update_user(user_id, role=new_role, is_admin=new_is_admin)
+    if not success:
+        raise HTTPException(status_code=500, detail='Ошибка изменения роли')
+
+    return {'status': 'ok', 'role': new_role, 'is_admin': new_is_admin}
+
+
+@router.delete('/users/{user_id}')
+async def delete_admin_user(user_id: int, request: Request) -> Dict[str, Any]:
+    """Удаление пользователя."""
+    _check_admin(request)
+    from src.user_manager import user_manager
+    user = user_manager.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail='Пользователь не найден')
+
+    if user_id == 1:
+        raise HTTPException(status_code=400, detail='Нельзя удалить главного администратора (ID 1)')
+
+    success = user_manager.delete_user(user_id)
+    if not success:
+        raise HTTPException(status_code=500, detail='Ошибка удаления пользователя')
+
+    return {'status': 'ok', 'message': f'Пользователь ID {user_id} удалён'}
+
+
+# ============================================================================
 # Initialization
 # ============================================================================
 

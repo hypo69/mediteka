@@ -459,12 +459,17 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
                 from src.fastapi.router_control import get_room_id
                 room_id = get_room_id(token, None)
 
+                if request.generation_config.get('model'):
+                    selected_model = request.generation_config['model']
+
                 clean_history = _clean_chat_history(request.history)
                 kwargs = {
                     'history': clean_history,
                     'room_id': room_id,
                     'model_name': selected_model,
                 }
+                if request.generation_config.get('search_engine'):
+                    kwargs['search_engine'] = request.generation_config['search_engine']
 
                 if selected_model:
                     active_model = get_chat_model(selected_model, None)
@@ -497,6 +502,8 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
                     plugin_kwargs = kwargs.copy()
                     plugin_kwargs['chat_mode'] = chat_mode
                     plugin_kwargs['dynamic_context'] = "\n\n".join(dynamic_context_parts) if dynamic_context_parts else ""
+                    if request.generation_config.get('search_engine'):
+                        plugin_kwargs['search_engine'] = request.generation_config['search_engine']
 
                     response = await plugin.handle(request.message, **plugin_kwargs)
 

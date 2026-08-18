@@ -32,20 +32,53 @@ window.api = {
   
   // User management API
   users: {
-    async list() {
-      return this.fetch('/api/admin/users');
+    async list(params = {}) {
+      const q = new URLSearchParams(params).toString();
+      return window.api.fetch(`/api/admin/users${q ? '?' + q : ''}`);
     },
     
-    async update(userId, data) {
-      return this.fetch(`/api/admin/users/${userId}`, {
-        method: 'PUT',
+    async get(userId) {
+      return window.api.fetch(`/api/admin/users/${userId}`);
+    },
+
+    async create(data) {
+      return window.api.fetch('/api/admin/users', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
     },
     
+    async update(userId, data) {
+      return window.api.fetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    },
+
+    async setPassword(userId, password) {
+      return window.api.fetch(`/api/admin/users/${userId}/password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+    },
+
+    async toggleActive(userId) {
+      return window.api.fetch(`/api/admin/users/${userId}/toggle-active`, {
+        method: 'POST'
+      });
+    },
+
+    async toggleRole(userId) {
+      return window.api.fetch(`/api/admin/users/${userId}/toggle-role`, {
+        method: 'POST'
+      });
+    },
+    
     async delete(userId) {
-      return this.fetch(`/api/admin/users/${userId}`, {
+      return window.api.fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE'
       });
     }
@@ -107,6 +140,7 @@ async function initInterface() {
     loadTabContent('torrents', `/html/torrents/index.html?v=${cb}`),
     loadTabContent('media', `/html/media/index.html?v=${cb}`),
     loadTabContent('admin', `/html/admin_tab/index.html?v=${cb}`, `/html/admin_tab/main.js?v=${cb}`),
+    loadTabContent('users', `/html/users_tab/index.html?v=${cb}`, `/html/users_tab/main.js?v=${cb}`),
     loadTabContent('instructions', `/html/instructions_tab/index.html?v=${cb}`, `/html/instructions_tab/main.js?v=${cb}`),
     loadTabContent('rag', `/html/rag_tab/index.html?v=${cb}`, `/html/rag_tab/main.js?v=${cb}`),
     loadTabContent('models', `/html/models_tab/index.html?v=${cb}`, `/html/models_tab/main.js?v=${cb}`),
@@ -128,6 +162,14 @@ async function initInterface() {
       const msgInput = document.getElementById('message-input');
       if (msgInput) {
         msgInput.focus();
+      }
+      if (window.initChatDebuggerToolbar) {
+        window.initChatDebuggerToolbar();
+      }
+    } else if (target === '#tab-users') {
+      console.log('[AdminInterface] Switching to users tab...');
+      if (window.initUsersTab) {
+        window.initUsersTab();
       }
     } else if (target === '#tab-instructions') {
       console.log('[AdminInterface] Switching to instructions tab...');

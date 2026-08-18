@@ -75,6 +75,9 @@ function initChatTab() {
     // Загрузка системной инструкции
     loadSystemInstruction();
 
+    // Инициализация тулбара моделей, провайдеров и поиска
+    initChatDebuggerToolbar();
+
     // Обновление бейджей модели и провайдера поиска
     if (typeof window.updateChatBadges === 'function') {
       window.updateChatBadges();
@@ -155,9 +158,190 @@ function initChatTab() {
   initCosmicPlayer();
 }
 
+let chatGroupedModels = {};
+
+async function initChatDebuggerToolbar() {
+  const providerSelect = document.getElementById('chat-provider-select');
+  const modelSelect = document.getElementById('chat-model-select');
+  const searchSelect = document.getElementById('chat-search-select');
+  const setDefaultBtn = document.getElementById('btn-chat-set-default');
+
+  if (!providerSelect || !modelSelect) return;
+
+  // 1. Загрузка списка доступных моделей
+  try {
+    const res = await fetch('/api/chat/models');
+    if (res.ok) {
+      const data = await res.json();
+      chatGroupedModels = data.models || {};
+      if (Array.isArray(chatGroupedModels)) {
+        chatGroupedModels = { 'gemini': chatGroupedModels };
+      }
+    }
+  } catch (e) {
+    console.error('[ChatDebugger] Ошибка загрузки моделей:', e);
+  }
+
+  // 2. Загрузка текущих настроек пользователя и поиска
+  let currentModel = window.activeModelName || '';
+  let currentSearch = window.activeSearchEngine || 'gemini_cli';
+
+  try {
+    const sRes = await fetch('/auth/settings');
+    if (sRes.ok) {
+      const settings = await sRes.json();
+      if (settings.model) currentModel = settings.model;
+      if (settings.search_engine) currentSearch = settings.search_engine;
+    }
+  } catch (e) {
+    console.error('[ChatDebugger] Ошибка загрузки настроек:', e);
+  }
+
+  // Функция определения провайдера по имени модели
+  function detectProvider(modelName) {
+    if (!modelName) return 'gemini';
+    if (modelName.startsWith('foundry:')) return 'foundry';
+    if (modelName.startsWith('ollama:')) return 'ollama';
+    if (modelName.startsWith('agy-') || (chatGroupedModels.agy && chatGroupedModels.agy.includes(modelName))) return 'agy';
+    return 'gemini';
+  }
+
+  // Функция заполнения списка моделей по выбранному провайдеру
+  function populateModels(provider, preselectModel = '') {
+    modelSelect.innerHTML = '';
+    const list = chatGroupedModels[provider] || [];
+    if (list.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'Нет доступных моделей';
+      modelSelect.appendChild(opt);
+    } else {
+      list.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        modelSelect.appendChild(opt);
+      });
+      if (preselectModel && list.includes(preselectModel)) {
+        modelSelect.value = preselectModel;
+      } else if (list.length > 0) {
+        modelSelect.value = list[0];
+      }
+    }
+  }
+
+  // Инициализация значений селекторов
+  const activeProvider = detectProvider(currentModel);
+  providerSelect.value = activeProvider;
+  populateModels(activeProvider, currentModel);
+
+  if (searchSelect && currentSearch) {
+    searchSelect.value = currentSearch;
+  }
+
+  // Синхронизация бейджей
+  if (typeof window.updateChatBadges === 'function') {
+    window.updateChatBadges(modelSelect.value, searchSelect ? searchSelect.value : currentSearch);
+  }
+
+  // Обработчик смены провайдера
+  providerSelect.onchange = () => {
+    const prov = providerSelect.value;
+    populateModels(prov);
+    if (typeof window.updateChatBadges === 'function') {
+      window.updateChatBadges(modelSelect.value, searchSelect ? searchSelect.value : undefined);
+    }
+  };
+
+  // Обработчик смены модели
+  modelSelect.onchange = () => {
+    if (typeof window.updateChatBadges === 'function') {
+      window.updateChatBadges(modelSelect.value, searchSelect ? searchSelect.value : undefined);
+    }
+  };
+
+  // Обработчик смены поискового движка
+  if (searchSelect) {
+    searchSelect.onchange = () => {
+      if (typeof window.updateChatBadges === 'function') {
+        window.updateChatBadges(modelSelect.value, searchSelect.value);
+      }
+    };
+  }
+
+  // Обработчик кнопки «Установить как дефолтную»
+  if (setDefaultBtn) {
+    setDefaultBtn.onclick = async () => {
+      const chosenModel = modelSelect.value;
+      const chosenSearch = searchSelect ? searchSelect.value : 'gemini_cli';
+
+      if (!chosenModel) {
+        alert('Выберите модель перед сохранением!');
+        return;
+      }
+
+      setDefaultBtn.disabled = true;
+      const origText = setDefaultBtn.innerHTML;
+      setDefaultBtn.innerHTML = '⏳ Сохранение...';
+
+      try {
+        // 1. Сохраняем модель в настройках пользователя
+        await fetch('/auth/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: chosenModel })
+        });
+
+        // 2. Сохраняем поисковый движок в конфигурации веб-поиска (если админ)
+        try {
+          if (window.api && window.api.fetch) {
+            await window.api.fetch('/api/admin/web-search/config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ engine: chosenSearch })
+            });
+          }
+        } catch (searchErr) {
+          console.warn('[ChatDebugger] Ошибка сохранения движка поиска:', searchErr);
+        }
+
+        // 3. Обновляем глобальные бейджи и селекторы
+        if (typeof window.updateChatBadges === 'function') {
+          window.updateChatBadges(chosenModel, chosenSearch);
+        }
+
+        const otherModelSelect = document.getElementById('admin-model-select');
+        if (otherModelSelect) otherModelSelect.value = chosenModel;
+        const modelsTabSelect = document.getElementById('models-tab-select');
+        if (modelsTabSelect) modelsTabSelect.value = chosenModel;
+        const searchTabEngine = document.getElementById('search-tab-engine-selector');
+        if (searchTabEngine) searchTabEngine.value = chosenSearch;
+
+        // Показываем подтверждение
+        setDefaultBtn.classList.remove('btn-outline-warning');
+        setDefaultBtn.classList.add('btn-success');
+        setDefaultBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Установлено!';
+        setTimeout(() => {
+          setDefaultBtn.classList.remove('btn-success');
+          setDefaultBtn.classList.add('btn-outline-warning');
+          setDefaultBtn.innerHTML = origText;
+          setDefaultBtn.disabled = false;
+        }, 2500);
+
+      } catch (err) {
+        console.error('[ChatDebugger] Ошибка сохранения дефолтных настроек:', err);
+        alert('Ошибка сохранения настроек: ' + err.message);
+        setDefaultBtn.disabled = false;
+        setDefaultBtn.innerHTML = origText;
+      }
+    };
+  }
+}
+
 // Export init function for main.js
 if (typeof window !== 'undefined') {
   window.initChatTab = initChatTab;
+  window.initChatDebuggerToolbar = initChatDebuggerToolbar;
 }
 
 async function saveFullHistoryToRag() {
@@ -579,6 +763,9 @@ async function sendMessage() {
     let started = false;
 
     try {
+      const selectedModel = document.getElementById('chat-model-select')?.value || undefined;
+      const selectedSearch = document.getElementById('chat-search-select')?.value || undefined;
+
       const replyObj = await window.chatService.sendChatMessage(msg, (chunk, status, voice) => {
         if (status) {
           textDiv.innerHTML = `<span style="color: #8b949e; font-style: italic;">⚙️ ${status}</span>`;
@@ -592,7 +779,12 @@ async function sendMessage() {
           textDiv.innerHTML = parseContentToHtml(fullReply);
         }
         win.scrollTop = win.scrollHeight;
-      }, chatHistory, { chat_mode: chatMode, debug_mode: true });
+      }, chatHistory, {
+        chat_mode: chatMode,
+        debug_mode: true,
+        model: selectedModel,
+        search_engine: selectedSearch
+      });
 
       // В DEBUG режиме не сохраняем запрос и ответ в историю диалога
 
@@ -641,6 +833,9 @@ async function sendMessage() {
   const isAdminChat = !!document.getElementById('tab-rag') || window.location.pathname.includes('/admin') || window.location.href.includes('/admin');
 
   try {
+    const selectedModel = document.getElementById('chat-model-select')?.value || undefined;
+    const selectedSearch = document.getElementById('chat-search-select')?.value || undefined;
+
     const replyObj = await window.chatService.sendChatMessage(msg, (chunk, status, voice, promptDump) => {
       if (status) {
         textDiv.innerHTML = `<span style="color: #8b949e; font-style: italic;">⚙️ ${status}</span>`;
@@ -661,7 +856,12 @@ async function sendMessage() {
         textDiv.innerHTML = parseContentToHtml(fullReply);
       }
       win.scrollTop = win.scrollHeight;
-    }, chatHistory, { chat_mode: chatMode, debug_mode: isDebugMode });
+    }, chatHistory, {
+      chat_mode: chatMode,
+      debug_mode: isDebugMode,
+      model: selectedModel,
+      search_engine: selectedSearch
+    });
 
     const reply = replyObj.text;
     const voiceReply = replyObj.voice || reply;

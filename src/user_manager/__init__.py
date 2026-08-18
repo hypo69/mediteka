@@ -332,13 +332,17 @@ class UserManager:
 
         Args:
             user_id (int): ID пользователя.
-            **kwargs: Поля для обновления (name, picture, role, is_active, is_admin).
+            **kwargs: Поля для обновления (name, picture, role, is_active, is_admin, email, is_email_verified, password_hash, telegram_id, telegram_username).
 
         Returns:
             bool: True при успехе, False при ошибке.
         """
-        allowed_fields = {'name', 'picture', 'role', 'is_active', 'is_admin', 'last_login'}
-        updates = {k: v for k, v in kwargs.items() if k in allowed_fields and v is not None}
+        allowed_fields = {
+            'name', 'picture', 'role', 'is_active', 'is_admin',
+            'last_login', 'email', 'is_email_verified', 'password_hash',
+            'telegram_id', 'telegram_username'
+        }
+        updates = {k: v for k, v in kwargs.items() if k in allowed_fields}
 
         if not updates:
             return False
@@ -357,6 +361,67 @@ class UserManager:
             except Exception as e:
                 logger.error(f'Ошибка обновления пользователя {user_id}:', e, False)
                 return False
+
+    def create_user_admin(
+        self,
+        email: str,
+        name: str,
+        password: str = '',
+        role: str = 'user',
+        is_admin: int = 0,
+        is_active: int = 1,
+        is_email_verified: int = 1
+    ) -> int:
+        """Создание пользователя администратором.
+
+        Args:
+            email (str): Email пользователя.
+            name (str): Имя пользователя.
+            password (str): Пароль (опционально).
+            role (str): Роль ('admin', 'user', 'guest').
+            is_admin (int): Флаг администратора (0 или 1).
+            is_active (int): Флаг активности (0 или 1).
+            is_email_verified (int): Флаг подтверждения email (0 или 1).
+
+        Returns:
+            int: ID созданного пользователя или 0 при ошибке.
+        """
+        email_clean = email.lower().strip()
+        pw_hash = self.hash_password(password) if password else ''
+        with self._get_connection() as conn:
+            try:
+                cursor = conn.execute(
+                    '''
+                    INSERT INTO users (email, name, password_hash, role, is_admin, is_active, is_email_verified)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ''',
+                    (email_clean, name, pw_hash, role, is_admin, is_active, is_email_verified)
+                )
+                conn.commit()
+                user_id = cursor.lastrowid or 0
+                logger.info(f'Создан новый пользователь: {email_clean} (ID: {user_id})')
+                return user_id
+            except sqlite3.IntegrityError:
+                logger.error(f'Пользователь с email {email_clean} уже существует')
+                return 0
+            except Exception as e:
+                logger.error(f'Ошибка создания пользователя {email_clean}:', e, False)
+                return 0
+
+    def set_user_password(self, user_id: int, password: str) -> bool:
+        """Установка нового пароля пользователю.
+
+        Args:
+            user_id (int): ID пользователя.
+            password (str): Новый пароль в открытом виде.
+
+        Returns:
+            bool: True при успехе, False при ошибке.
+        """
+        if not password:
+            return False
+        pw_hash = self.hash_password(password)
+        return self.update_user(user_id, password_hash=pw_hash)
 
     def get_user_by_id(self, user_id: int) -> Dict:
         """Получение пользователя по ID.

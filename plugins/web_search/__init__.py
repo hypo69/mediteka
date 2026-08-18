@@ -90,7 +90,7 @@ class WebSearchPlugin(BasePlugin):
             query = message
 
         ws_cfg = self._get_config()
-        engine = ws_cfg.get('engine', 'playwright')
+        engine = kwargs.get('search_engine') or ws_cfg.get('engine', 'playwright')
         gemini_model = ws_cfg.get('gemini_model', 'gemini-2.5-flash')
         gemini_cli_model = ws_cfg.get('gemini_cli_model', 'gemini-3.1-flash-lite')
         agy_model = ws_cfg.get('agy_model', 'agy-flash')

@@ -11,6 +11,7 @@
 Полная документация доступна на GitHub Pages:
 
 - 📖 **[Руководство пользователя](https://hypo69.github.io/mediteka/user/getting-started/)** — установка, использование плеера, голосовое управление, Telegram Mini App
+- 📄 **[Работа с документами](https://hypo69.github.io/mediteka/dev/document-workflow/)** — управление документацией, PDF, таблицами и изображениями
 - 💻 **[Руководство разработчика](https://hypo69.github.io/mediteka/dev/getting-started/)** — архитектура, разработка, деплойment
 - 🔌 **[API Reference](https://hypo69.github.io/mediteka/dev/api-reference/)** — все endpoints и плагины
 

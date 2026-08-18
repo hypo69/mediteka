@@ -82,6 +82,24 @@ class TestRouterAuth:
         
         assert result is None
 
+    @pytest.mark.asyncio
+    async def test_get_settings_search_engine(self):
+        """Тест получения настроек пользователя с актуальным search_engine."""
+        from src.fastapi.router_auth import get_settings, TokenData, create_jwt_token
+        from fastapi import Request
+
+        token_data = TokenData(email="test@example.com", name="Test User", id=1)
+        token = create_jwt_token(token_data)
+
+        mock_request = Mock(spec=Request)
+        mock_request.cookies = {"auth_token": token}
+
+        with patch("src.user_manager.user_manager.get_user_by_email", return_value={"id": 1, "email": "test@example.com"}):
+            with patch("src.user_manager.user_manager.get_user_settings", return_value={"user_id": 1, "theme": "dark", "model": "gemini-2.5-flash"}):
+                res = await get_settings(mock_request)
+                assert "search_engine" in res
+                assert res["search_engine"] in ["gemini_cli", "gemini", "agy", "langchain", "playwright"]
+
 
 class TestRouterChat:
     """Тесты router_chat.py."""
