@@ -1351,7 +1351,24 @@ function replaceFilmTagsWithLinks(text) {
   if (!text) return '';
   return text.replace(FILM_TAG_REGEX, (match, title) => {
     const cleanTitle = title.replace(/'/g, "\\'");
-    return `<span class="badge bg-primary film-inline-badge cursor-pointer text-white" onclick="playMovieDirect('${cleanTitle}')" style="cursor: pointer; font-size: 0.95em; padding: 0.35em 0.65em; margin: 0 2px; border: 1px solid rgba(255,255,255,0.25); color: #ffffff !important; transition: background-color 0.2s;"><i class="bi bi-play-fill"></i> ${title}</span>`;
+    const safeTitle = escapeHtml(title);
+    return `<span class="film-interactive-chip" title="Film: ${safeTitle}">` +
+      `<span class="film-chip-title" onclick="playMovieDirect('${cleanTitle}')">` +
+        `<i class="bi bi-film me-1"></i>${safeTitle}` +
+      `</span>` +
+      `<button type="button" class="film-chip-btn film-chip-play" onclick="playMovieDirect('${cleanTitle}')" title="Play in media player">` +
+        `<i class="bi bi-play-fill"></i>` +
+      `</button>` +
+      `<button type="button" class="film-chip-btn film-chip-youtube" onclick="window.openYouTubeForFilm('${cleanTitle}')" title="Watch trailer/video on YouTube">` +
+        `<i class="bi bi-youtube"></i>` +
+      `</button>` +
+      `<button type="button" class="film-chip-btn film-chip-online" onclick="window.openOnlineCinemaForFilm('${cleanTitle}')" title="Watch online (Yandex Video / Cinemas)">` +
+        `<i class="bi bi-globe"></i>` +
+      `</button>` +
+      `<button type="button" class="film-chip-btn film-chip-torrent" onclick="window.openTorrentsTab('${cleanTitle}')" title="Search torrent releases">` +
+        `<i class="bi bi-download"></i>` +
+      `</button>` +
+    `</span>`;
   });
 }
 
@@ -1359,7 +1376,7 @@ async function parseFilmTags(text, botMessageEl) {
   const matches = [...text.matchAll(FILM_TAG_REGEX)];
   if (matches.length === 0) return;
 
-  // Проверяем первый найденный фильм
+  // Check first matched title
   const filmTitle = matches[0][1].trim();
   const found = await findAndShowMedia(filmTitle);
   if (!found) {
@@ -1405,7 +1422,7 @@ function showFilmNotFoundCard(title, botMessageEl) {
   const targetParent = botMessageEl || document.getElementById('chat-window');
   if (!targetParent) return;
 
-  // Проверка на дублирование карточки для одного и того же фильма
+  // Check for duplicate card for the same title
   const existingCard = targetParent.querySelector(`[data-film-card="${title.toLowerCase()}"]`);
   if (existingCard) return;
 
@@ -1422,18 +1439,24 @@ function showFilmNotFoundCard(title, botMessageEl) {
           <span class="fs-5 text-warning">🔍</span>
           <div>
             <div class="fw-bold text-warning small">Фильм «${escapeHtml(title)}» не найден на локальных дисках</div>
-            <div class="text-muted" style="font-size: 0.75rem;">Используйте поиск в интернете или найдите раздачу на торрент-трекерах:</div>
+            <div class="text-muted" style="font-size: 0.75rem;">Смотрите онлайн, на YouTube или найдите раздачу на торрент-трекерах:</div>
           </div>
         </div>
         <div class="d-flex flex-wrap gap-2 mt-2">
-          <button class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 0.8rem;" onclick="window.searchWebForFilm('${cleanTitle}')">
-            🌐 Поиск в интернете
+          <button class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.8rem;" onclick="window.openYouTubeForFilm('${cleanTitle}')" title="Смотреть трейлер или видео">
+            <i class="bi bi-youtube me-1"></i> YouTube
           </button>
-          <button class="btn btn-sm btn-outline-warning py-1 px-2" style="font-size: 0.8rem;" onclick="window.searchTorrentForFilm('${cleanTitle}', '${safeId}')">
-            🧲 Искать торренты
+          <button class="btn btn-sm btn-outline-info py-1 px-2" style="font-size: 0.8rem;" onclick="window.openOnlineCinemaForFilm('${cleanTitle}')" title="Поиск онлайн видео">
+            <i class="bi bi-globe me-1"></i> Онлайн-кинотеатры
           </button>
-          <button class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;" onclick="window.openTorrentsTab('${cleanTitle}')">
-            📑 Вкладка торрентов
+          <button class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.8rem;" onclick="window.openKinopoiskForFilm('${cleanTitle}')" title="Открыть страницу на Кинопоиске">
+            <i class="bi bi-film me-1"></i> Кинопоиск
+          </button>
+          <button class="btn btn-sm btn-outline-warning py-1 px-2" style="font-size: 0.8rem;" onclick="window.searchTorrentForFilm('${cleanTitle}', '${safeId}')" title="Искать раздачи">
+            <i class="bi bi-magnet me-1"></i> Торренты
+          </button>
+          <button class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.8rem;" onclick="window.searchWebForFilm('${cleanTitle}')" title="Спросить у AI">
+            <i class="bi bi-search me-1"></i> Инфо в веб
           </button>
         </div>
         <div id="${safeId}" class="mt-2 d-none"></div>
@@ -1499,6 +1522,21 @@ window.searchTorrentForFilm = async (title, targetId) => {
   } catch (err) {
     container.innerHTML = `<div class="small text-danger">Ошибка поиска торрентов: ${escapeHtml(err.message)}</div>`;
   }
+};
+
+window.openYouTubeForFilm = (title) => {
+  const q = encodeURIComponent(`${title} фильм трейлер`);
+  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+};
+
+window.openOnlineCinemaForFilm = (title) => {
+  const q = encodeURIComponent(`${title} смотреть онлайн`);
+  window.open(`https://yandex.ru/video/search?text=${q}`, '_blank');
+};
+
+window.openKinopoiskForFilm = (title) => {
+  const q = encodeURIComponent(title);
+  window.open(`https://www.kinopoisk.ru/index.php?kp_query=${q}`, '_blank');
 };
 
 window.searchWebForFilm = (title) => {

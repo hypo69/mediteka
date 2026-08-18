@@ -352,6 +352,7 @@ class FoundryChatBase:
         attempts: int = 15,
         model_name: Optional[str] = None,
         generation_config: dict = {},
+        **kwargs,
     ):
         """
         Стриминговый интерфейс для чата (возвращает генератор с чанк-ответом).

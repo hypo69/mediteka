@@ -162,6 +162,7 @@ class OllamaChatBase:
         attempts: int = 15,
         model_name: Optional[str] = None,
         generation_config: dict = {},
+        **kwargs,
     ):
         response = await self.chat(
             q=q,

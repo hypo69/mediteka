@@ -301,7 +301,7 @@ class Logger(metaclass=SingletonMeta):
             message = f"{text_color}{bg_color}{message}{ex_str}{colorama.Style.RESET_ALL}"
         return message
 
-    def _ex_full_info(self, ex):
+    def _ex_full_info(self, ex) -> str:
         """ Returns full exception information along with the previous function, file, and line details."""
         frame_info = inspect.stack()[3]
         file_name = frame_info.filename
@@ -313,7 +313,7 @@ class Logger(metaclass=SingletonMeta):
             ex_str = f"{ex}"
         return f"\nFile: {file_name}, \n |\n  -Function: {function_name}, \n   |\n    --Line: {line_number}\n{ex_str}"
 
-    def log(self, level, message, ex=None, exc_info=False, color: Optional[Tuple[str, str]] = None):
+    def log(self, level: int, message: str, ex: Optional[Exception] = None, exc_info: bool = False, color: Optional[Tuple[str, str]] = None) -> None:
         """
         Логирует сообщение с заданным уровнем, опциональным цветом и информацией об исключении.
 
@@ -387,7 +387,7 @@ class Logger(metaclass=SingletonMeta):
         except Exception as e:
             pass
 
-    def info(self, message, ex=None, exc_info=False, text_color: str = "green", bg_color: str = ""):
+    def info(self, message: str, ex: Optional[Exception] = None, exc_info: bool = False, text_color: str = "green", bg_color: str = "") -> None:
         """
         Логирует сообщение уровня INFO.
 
@@ -404,7 +404,7 @@ class Logger(metaclass=SingletonMeta):
         color = (text_color, bg_color)
         self.log(logging.INFO, message, ex, exc_info, color)
 
-    def success(self, message, ex=None, exc_info=False, text_color: str = "yellow", bg_color: str = ""):
+    def success(self, message: str, ex: Optional[Exception] = None, exc_info: bool = False, text_color: str = "yellow", bg_color: str = "") -> None:
         """
         Логирует сообщение об успешной операции.
 
@@ -421,7 +421,7 @@ class Logger(metaclass=SingletonMeta):
         color = (text_color, bg_color)
         self.log(logging.INFO, message, ex, exc_info, color)
 
-    def warning(self, message, ex=None, exc_info=False, text_color: str = "black", bg_color: str = "yellow"):
+    def warning(self, message: str, ex: Optional[Exception] = None, exc_info: bool = False, text_color: str = "black", bg_color: str = "yellow") -> None:
         """
         Логирует сообщение уровня WARNING.
 
@@ -438,7 +438,7 @@ class Logger(metaclass=SingletonMeta):
         color = (text_color, bg_color)
         self.log(logging.WARNING, message, ex, exc_info, color)
 
-    def debug(self, message, ex=None, exc_info=True, text_color: str = "cyan", bg_color: str = ""):
+    def debug(self, message: str, ex: Optional[Exception] = None, exc_info: bool = True, text_color: str = "cyan", bg_color: str = "") -> None:
         """
         Логирует сообщение уровня DEBUG.
 
@@ -455,7 +455,7 @@ class Logger(metaclass=SingletonMeta):
         color = (text_color, bg_color)
         self.log(logging.DEBUG, message, ex, exc_info, color)
 
-    def error(self, message, ex=None, exc_info=True, text_color: str = "red", bg_color: str = ""):
+    def error(self, message: str, ex: Optional[Exception] = None, exc_info: bool = True, text_color: str = "red", bg_color: str = "") -> None:
         """
         Логирует сообщение уровня ERROR.
 
@@ -472,7 +472,7 @@ class Logger(metaclass=SingletonMeta):
         color = (text_color, bg_color)
         self.log(logging.ERROR, message, ex, exc_info, color)
 
-    def critical(self, message, ex=None, exc_info=True, text_color: str = "red", bg_color: str = "white"):
+    def critical(self, message: str, ex: Optional[Exception] = None, exc_info: bool = True, text_color: str = "red", bg_color: str = "white") -> None:
         """
         Логирует сообщение уровня CRITICAL.
 

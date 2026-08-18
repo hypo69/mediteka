@@ -966,6 +966,42 @@ async function sendMessage() {
   }
 }
 
+window.openYouTubeForFilm = (title) => {
+  const q = encodeURIComponent(`${title} фильм трейлер`);
+  window.open(`https://www.youtube.com/results?search_query=${q}`, '_blank');
+};
+
+window.openOnlineCinemaForFilm = (title) => {
+  const q = encodeURIComponent(`${title} смотреть онлайн`);
+  window.open(`https://yandex.ru/video/search?text=${q}`, '_blank');
+};
+
+window.openKinopoiskForFilm = (title) => {
+  const q = encodeURIComponent(title);
+  window.open(`https://www.kinopoisk.ru/index.php?kp_query=${q}`, '_blank');
+};
+
+function replaceFilmTagsWithLinks(text) {
+  if (!text) return '';
+  return text.replace(/<film>(.*?)<\/film>/gi, (match, title) => {
+    const cleanTitle = title.replace(/'/g, "\\'");
+    return `<span class="film-interactive-chip" title="Film: ${title}">` +
+      `<span class="film-chip-title" onclick="launchFilm('${cleanTitle}')">` +
+        `<i class="bi bi-film me-1"></i>${title}` +
+      `</span>` +
+      `<button type="button" class="film-chip-btn film-chip-play" onclick="launchFilm('${cleanTitle}')" title="Play in media player">` +
+        `<i class="bi bi-play-fill"></i>` +
+      `</button>` +
+      `<button type="button" class="film-chip-btn film-chip-youtube" onclick="window.openYouTubeForFilm('${cleanTitle}')" title="Watch trailer/video on YouTube">` +
+        `<i class="bi bi-youtube"></i>` +
+      `</button>` +
+      `<button type="button" class="film-chip-btn film-chip-online" onclick="window.openOnlineCinemaForFilm('${cleanTitle}')" title="Watch online (Yandex Video / Cinemas)">` +
+        `<i class="bi bi-globe"></i>` +
+      `</button>` +
+    `</span>`;
+  });
+}
+
 function parseContentToHtml(text) {
   if (!text) return '';
   let html = text;
@@ -979,7 +1015,7 @@ function parseContentToHtml(text) {
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\n/g, '<br>');
   }
-  return html;
+  return replaceFilmTagsWithLinks(html);
 }
 
 function addMessage(text, sender, isError = false) {

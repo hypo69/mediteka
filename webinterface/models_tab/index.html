@@ -8,37 +8,67 @@
     </div>
   </div>
 
-  <!-- Top Block: Active Model & System Instruction -->
+  <!-- Top Block: Active Model, Test Prompt & System Instruction -->
   <div class="row mb-4">
-    <!-- Active Model Card -->
-    <div class="col-md-5">
+    <!-- Active Model & Testing Card -->
+    <div class="col-lg-6 mb-4 mb-lg-0">
       <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(145deg, #1e1e1e, #2a2a2a); color: #fff;">
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title fw-bold text-info mb-3"><i class="bi bi-robot"></i> Активная модель</h6>
-          <div class="mb-3">
-            <label for="provider-tab-select" class="form-label small text-secondary">Провайдер ИИ:</label>
-            <select class="form-select form-select-sm bg-dark text-white border-secondary" id="provider-tab-select">
-              <option value="">Загрузка...</option>
-            </select>
+        <div class="card-body d-flex flex-column p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title fw-bold text-info mb-0"><i class="bi bi-robot"></i> Активная модель и проверка</h6>
+            <button class="btn btn-outline-secondary btn-sm rounded-pill py-0 px-2 text-white-50" id="btn-refresh-models-list" title="Обновить список доступных моделей">
+              <i class="bi bi-arrow-clockwise"></i> Обновить список
+            </button>
           </div>
-          <div class="mb-4">
-            <label for="models-tab-select" class="form-label small text-secondary">Модель по умолчанию:</label>
-            <select class="form-select form-select-sm bg-dark text-white border-secondary" id="models-tab-select">
-              <option value="">Загрузка...</option>
-            </select>
-            <div class="form-text text-secondary" style="font-size: 0.75rem;">Эта модель будет использоваться ассистентом по умолчанию.</div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-sm-5">
+              <label for="provider-tab-select" class="form-label small text-secondary mb-1">Провайдер ИИ:</label>
+              <select class="form-select form-select-sm bg-dark text-white border-secondary" id="provider-tab-select">
+                <option value="">Загрузка...</option>
+              </select>
+            </div>
+            <div class="col-sm-7">
+              <label for="models-tab-select" class="form-label small text-secondary mb-1">Модель:</label>
+              <select class="form-select form-select-sm bg-dark text-white border-secondary" id="models-tab-select">
+                <option value="">Загрузка...</option>
+              </select>
+            </div>
           </div>
+
+          <!-- Model Test Area: Prompt -> Response -->
+          <div class="p-3 rounded-3 mb-3" style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label for="model-test-prompt" class="form-label small text-info fw-bold mb-0">
+                <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Проверочный запрос (Запрос &rarr; Ответ)
+              </label>
+              <span class="text-secondary small" style="font-size: 0.72rem;">Тест выбранной модели</span>
+            </div>
+
+            <div class="input-group input-group-sm mb-2">
+              <input type="text" class="form-control bg-dark text-white border-secondary" id="model-test-prompt" value="Привет! Назови свою модель и провайдера, и подтверди готовность к работе." placeholder="Введите проверочное сообщение...">
+              <button class="btn btn-info fw-bold px-3" id="btn-model-test-send" type="button" title="Отправить тестовый запрос в выбранную модель">
+                <i class="bi bi-send-fill me-1"></i> Проверить
+              </button>
+            </div>
+
+            <div id="model-test-result" class="p-2 rounded small font-monospace" style="display: none; background: rgba(10, 10, 15, 0.7); border: 1px solid rgba(255, 255, 255, 0.15); max-height: 140px; overflow-y: auto;">
+              <!-- Dynamic output goes here -->
+            </div>
+          </div>
+
           <div class="mt-auto d-grid">
             <button class="btn btn-primary btn-sm rounded-pill fw-bold" id="btn-models-tab-save">
-              <i class="bi bi-check-circle"></i> Сохранить выбор
+              <i class="bi bi-check-circle"></i> Сохранить как модель по умолчанию
             </button>
+            <div class="form-text text-secondary text-center mt-1" style="font-size: 0.72rem;">Эта модель будет использоваться ассистентом по умолчанию во всех чатах.</div>
           </div>
         </div>
       </div>
     </div>
     
     <!-- System Instruction Card -->
-    <div class="col-md-7">
+    <div class="col-lg-6">
       <div class="card shadow-sm border-0 h-100">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3 pb-0">
           <span class="fw-bold"><i class="bi bi-terminal"></i> Системная инструкция</span>
@@ -56,7 +86,7 @@
           <textarea
             id="system-instruction-editor"
             class="form-control font-monospace border-0 bg-light flex-grow-1"
-            style="min-height: 180px; resize: none; font-size: 0.85rem;"
+            style="min-height: 220px; resize: none; font-size: 0.85rem;"
             placeholder="Введите системную инструкцию..."
             spellcheck="false"
           ></textarea>

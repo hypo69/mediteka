@@ -44,16 +44,18 @@ async def _run_gemini_cli_search(query: str, model: str = "gemini-3.1-flash-lite
         return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
 
 
-if mcp:
-    @mcp.tool()
-    async def gemini_cli_web_search(query: str, model: str = "gemini-3.1-flash-lite") -> str:
-        """Выполнить веб-поиск через локальный терминальный агент Google Gemini CLI.
+async def gemini_cli_web_search(query: str, model: str = "gemini-3.1-flash-lite") -> str:
+    """Выполнить веб-поиск через локальный терминальный агент Google Gemini CLI.
 
-        Args:
-            query: Поисковый запрос пользователя.
-            model: Идентификатор модели (по умолчанию 'gemini-3.1-flash-lite').
-        """
-        return await _run_gemini_cli_search(query=query, model=model)
+    Args:
+        query: Поисковый запрос пользователя.
+        model: Идентификатор модели (по умолчанию 'gemini-3.1-flash-lite').
+    """
+    return await _run_gemini_cli_search(query=query, model=model)
+
+
+if mcp:
+    mcp.tool()(gemini_cli_web_search)
 
 
 if __name__ == "__main__":

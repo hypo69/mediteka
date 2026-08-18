@@ -703,6 +703,7 @@ class GoogleGenerativeAI:
         system_instruction: str = '',
         attempts: int = 15,
         model_name: str = '',
+        **kwargs: Any,
     ) -> str:
         """Обработка сообщения в контексте чат-диалога.
 
@@ -713,6 +714,7 @@ class GoogleGenerativeAI:
             system_instruction (str): Переопределенная системная инструкция.
             attempts (int): Максимальное число повторных попыток.
             model_name (str): Явное переопределение модели для запроса.
+            **kwargs: Дополнительные неиспользуемые параметры.
 
         Returns:
             str: Ответ модели или диагностическое сообщение об ошибке.
@@ -788,6 +790,7 @@ class GoogleGenerativeAI:
         attempts: int = 15,
         model_name: str = '',
         generation_config: dict = {},
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         """Потоковая генерация ответа модели в виде асинхронного генератора.
 

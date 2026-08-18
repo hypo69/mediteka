@@ -140,6 +140,45 @@ class TestRouterChat:
             args, _ = mock_log.call_args
             assert "agy" in args[0].lower()
 
+    @pytest.mark.asyncio
+    async def test_chat_stream_excludes_search_engine_for_model(self):
+        """Тест проверяет, что search_engine из generation_config не попадает в chat_stream модели."""
+        from src.fastapi.router_chat import init_router, ChatRequest
+        from fastapi import Request
+
+        called_kwargs = {}
+
+        async def mock_stream(q, **kwargs):
+            called_kwargs.update(kwargs)
+            yield "Ответ"
+
+        mock_model = Mock()
+        mock_model.chat_stream = mock_stream
+
+        router = init_router(mock_model, mock_model, {})
+        chat_endpoint = next(r.endpoint for r in router.routes if r.path == '')
+
+        req = ChatRequest(
+            message="привет",
+            history=[],
+            generation_config={"search_engine": "gemini_cli", "model": "gemini-2.5-flash"}
+        )
+
+        mock_fastapi_req = Mock(spec=Request)
+        mock_fastapi_req.cookies = {}
+        mock_fastapi_req.client = Mock(host="127.0.0.1")
+
+        with patch('src.fastapi.router_chat._extract_user_auth', return_value=("user1", "", "gemini-2.5-flash", {})), \
+             patch('src.fastapi.router_chat.get_chat_model', return_value=mock_model):
+            resp = await chat_endpoint(request=req, fastapi_req=mock_fastapi_req)
+            # Читаем стриминг-генератор
+            chunks = []
+            async for chunk in resp.body_iterator:
+                chunks.append(chunk)
+
+        assert "search_engine" not in called_kwargs, "Параметр search_engine не должен передаваться в chat_stream модели"
+        assert len(chunks) > 0
+
 
 class TestRouterMedia:
     """Тесты router_media.py."""

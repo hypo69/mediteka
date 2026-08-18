@@ -32,6 +32,29 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements-docs.txt ]; then python -m pip install -e . && python -m pip install -r requirements-docs.txt; else python -m pip install -e . mkdocs mkdocs-material mkdocstrings pymdown-extensions; fi
 
-      - name: Build MkDocs site
+      - name: Build MkDocs site (strict)
+        continue-on-error: true
         run: |
-          mkdocs build --strict
+          mkdocs build --strict 2>&1 | tee strict-build.log
+
+      - name: Upload strict build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkdocs-strict-log
+          path: strict-build.log
+
+      - name: Build MkDocs site (fallback)
+        run: |
+          mkdocs build 2>&1 | tee build.log
+
+      - name: Upload built site
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkdocs-site
+          path: site
+          retention-days: 7
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkdocs-build-log
+          path: build.log

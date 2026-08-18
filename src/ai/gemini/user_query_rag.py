@@ -107,6 +107,20 @@ def is_garbage_query(query: str) -> bool:
     return False
 
 
+def _format_compact_summary(text: str, max_chars: int = 150) -> str:
+    """Формирует ультра-компактное резюме текста для минимизации расхода токенов."""
+    import re
+    clean = re.sub(r'<film>(.*?)</film>', r'«\1»', text, flags=re.IGNORECASE)
+    clean = re.sub(r'#+\s*', '', clean)
+    clean = re.sub(r'[*_`]+', '', clean)
+    clean = re.sub(r'[🎬📂👤📝💡✨💬📱❌🔍🌐🤖🛠️🎡📡⏳⬆️⬇️💾📥▶️⚡—–]+', ' ', clean)
+    clean = re.sub(r'(?:Жанр|Режиссёр|В главных ролях|В ролях|Сюжет|Почему стоит посмотреть|Основные сведения):\s*', '', clean)
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    if len(clean) > max_chars:
+        clean = clean[:max_chars].rsplit(' ', 1)[0] + '...'
+    return clean
+
+
 def index_user_query(
     user_id,
     api_key: str,
@@ -151,11 +165,10 @@ def index_user_query(
         _prune_if_needed(rag, user_id)
 
         doc_id = _make_doc_id(user_id, query)
-        # Храним только краткое резюме ответа (не более 400 символов),
-        # чтобы при последующем поиске в RAG в промпт не вставлялись
-        # огромные ответы модели и не раздувался контекст.
-        response_summary = response[:400].rsplit(' ', 1)[0] + '...' if len(response) > 400 else response
-        doc_text = f"Пользователь спросил: {query}\nОтвет модели: {response_summary}"
+        # Храним ультра-компактное резюме (до 150 символов), чтобы при последующем поиске
+        # в контекст модели вставлялось минимум токенов
+        response_summary = _format_compact_summary(response, max_chars=150)
+        doc_text = f"Пользователь спросил: {query.strip()}\nОтвет модели: {response_summary}"
 
         rag.add_documents([{
             "id": doc_id,
@@ -164,7 +177,7 @@ def index_user_query(
                 "user_id": str(user_id),
                 "timestamp": time.time(),
                 "q": query[:500],
-                "response": response[:2000],  # полный текст только в мета, не попадает в промпт
+                "response": response[:1000],  # полный текст в мета, не попадает в промпт
                 "is_manual": False
             },
         }])

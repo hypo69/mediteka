@@ -12,9 +12,40 @@ async function initModelsTab() {
   const saveBtnInstr = document.getElementById('btn-save-instruction');
   const reloadBtnInstr = document.getElementById('btn-reload-instruction');
 
+  const refreshModelsBtn = document.getElementById('btn-refresh-models-list');
+  const testModelBtn = document.getElementById('btn-model-test-send');
+  const testModelPrompt = document.getElementById('model-test-prompt');
+
   // 1. Bind event handlers immediately
   if (saveBtnInstr) saveBtnInstr.onclick = saveSystemInstruction;
   if (reloadBtnInstr) reloadBtnInstr.onclick = loadSystemInstruction;
+
+  if (refreshModelsBtn && modelSelect && saveBtn) {
+    refreshModelsBtn.onclick = async () => {
+      refreshModelsBtn.disabled = true;
+      const originalText = refreshModelsBtn.innerHTML;
+      refreshModelsBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Обновление...';
+      try {
+        await loadTabModels(modelSelect, saveBtn, true);
+      } finally {
+        refreshModelsBtn.disabled = false;
+        refreshModelsBtn.innerHTML = originalText;
+      }
+    };
+  }
+
+  if (testModelBtn) {
+    testModelBtn.onclick = executeModelTest;
+  }
+
+  if (testModelPrompt) {
+    testModelPrompt.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        executeModelTest();
+      }
+    };
+  }
 
   if (saveAgyBtn) {
     saveAgyBtn.onclick = async () => {
@@ -183,8 +214,106 @@ async function initModelsTab() {
   ]);
 }
 
+// Helper for escaping HTML strings
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Helper to execute model test request
+async function executeModelTest() {
+  const providerSelect = document.getElementById('provider-tab-select');
+  const modelSelect = document.getElementById('models-tab-select');
+  const promptInput = document.getElementById('model-test-prompt');
+  const testBtn = document.getElementById('btn-model-test-send');
+  const resultContainer = document.getElementById('model-test-result');
+
+  if (!testBtn || !resultContainer) return;
+
+  const provider = providerSelect ? providerSelect.value : '';
+  const model = modelSelect ? modelSelect.value : '';
+  const message = promptInput ? promptInput.value.trim() : '';
+
+  if (!model) {
+    showModelsNotification('Выберите модель для тестирования!', 'warning');
+    return;
+  }
+
+  if (!message) {
+    showModelsNotification('Введите текст проверочного запроса!', 'warning');
+    if (promptInput) promptInput.focus();
+    return;
+  }
+
+  testBtn.disabled = true;
+  const originalBtnHtml = testBtn.innerHTML;
+  testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Тест...';
+
+  resultContainer.style.display = 'block';
+  resultContainer.innerHTML = `
+    <div class="d-flex align-items-center text-info small">
+      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+      <span>Отправка запроса в <strong>${escapeHtml(model)}</strong> (${escapeHtml(provider)})...</span>
+    </div>
+  `;
+
+  try {
+    const res = await window.api.fetch('/api/chat/test-model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: provider,
+        model: model,
+        message: message
+      })
+    });
+
+    if (res && res.status === 'success') {
+      resultContainer.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom border-secondary">
+          <div>
+            <span class="badge bg-success me-2"><i class="bi bi-check-circle me-1"></i>200 OK</span>
+            <span class="text-secondary small font-monospace">⚡ ${res.duration_ms || 0} ms</span>
+          </div>
+          <span class="badge bg-dark border border-secondary text-info font-monospace">${escapeHtml(res.model || model)}</span>
+        </div>
+        <div class="text-white small mt-1 font-monospace" style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(res.response || 'Пустой ответ от модели')}</div>
+      `;
+    } else {
+      const errMsg = (res && res.message) ? res.message : 'Неизвестная ошибка при запросе к модели';
+      resultContainer.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom border-secondary">
+          <div>
+            <span class="badge bg-danger me-2"><i class="bi bi-x-circle me-1"></i>Ошибка</span>
+            <span class="text-secondary small font-monospace">⚡ ${res?.duration_ms || 0} ms</span>
+          </div>
+          <span class="badge bg-dark border border-secondary text-warning font-monospace">${escapeHtml(model)}</span>
+        </div>
+        <div class="text-danger small mt-1 font-monospace" style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(errMsg)}</div>
+      `;
+    }
+  } catch (err) {
+    console.error('Error during model test request:', err);
+    resultContainer.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center mb-1 pb-1 border-bottom border-secondary">
+        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Ошибка сети/API</span>
+        <span class="badge bg-dark border border-secondary text-warning font-monospace">${escapeHtml(model)}</span>
+      </div>
+      <div class="text-danger small mt-1 font-monospace" style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(err.message || 'Ошибка соединения')}</div>
+    `;
+  } finally {
+    testBtn.disabled = false;
+    testBtn.innerHTML = originalBtnHtml;
+  }
+}
+
 // Helper to load models list
-async function loadTabModels(modelSelect, saveBtn) {
+async function loadTabModels(modelSelect, saveBtn, forceRefresh = false) {
   const providerSelect = document.getElementById('provider-tab-select');
   if (providerSelect) providerSelect.innerHTML = '';
   modelSelect.innerHTML = '';
@@ -192,13 +321,17 @@ async function loadTabModels(modelSelect, saveBtn) {
   let modelsGrouped = {};
   
   try {
-    const modelsData = await window.api.fetch('/api/chat/models');
+    const url = forceRefresh ? '/api/chat/models?refresh=true' : '/api/chat/models';
+    const modelsData = await window.api.fetch(url);
     modelsGrouped = modelsData.models || {};
     if (Array.isArray(modelsGrouped)) {
       modelsGrouped = { 'gemini': modelsGrouped };
     }
+    if (forceRefresh) {
+      showModelsNotification('Список моделей успешно обновлен', 'success');
+    }
   } catch (err) {
-    console.error('Ошибка загрузки моделей:', err);
+    console.error('Error loading AI models:', err);
     showModelsNotification('Ошибка загрузки моделей AI: ' + err.message, 'danger');
   }
 
@@ -236,6 +369,7 @@ async function loadTabModels(modelSelect, saveBtn) {
         let cleanName = modelName;
         if (cleanName.startsWith('foundry:')) cleanName = cleanName.substring(8);
         else if (cleanName.startsWith('ollama:')) cleanName = cleanName.substring(7);
+        else if (cleanName.startsWith('gemini_cli:')) cleanName = cleanName.substring(11);
         else if (cleanName.startsWith('agy-')) cleanName = cleanName.substring(4);
         option.textContent = cleanName;
         modelSelect.appendChild(option);
@@ -276,7 +410,7 @@ async function loadTabModels(modelSelect, saveBtn) {
       modelSelect.value = settingsData.model;
     }
   } catch (err) {
-    console.error('Ошибка загрузки настроек AI пользователя:', err);
+    console.error('Error loading user AI settings:', err);
   }
 }
 
@@ -555,5 +689,5 @@ async function saveSystemInstruction() {
   }
 }
 
-// Экспорт для загрузчика вкладок
+// Export for tab loader
 window.initModelsTab = initModelsTab;

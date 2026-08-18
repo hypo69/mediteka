@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import os
+import time
 import asyncio
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -46,6 +47,13 @@ class SaveRagRequest(BaseModel):
     query: str
     chat_text: str
     voice_text: str
+
+
+class TestModelRequest(BaseModel):
+    model: str = ""
+    provider: str = ""
+    message: str = "Привет! Назови свою модель и провайдера, и подтверди готовность к работе."
+    system_instruction: str = ""
 
 
 def get_chat_model(selected_model_name: str, system_instruction: str = ""):
@@ -181,6 +189,26 @@ def _clean_chat_history(history: list[dict]) -> list[dict]:
             return False
         return True
 
+    def _compact_turn(entry: dict) -> dict:
+        parts = entry.get('parts', [])
+        text = ''
+        if isinstance(parts, list) and len(parts) > 0:
+            p = parts[0]
+            text = p if isinstance(p, str) else p.get('text', '') if isinstance(p, dict) else ''
+        elif isinstance(parts, str):
+            text = parts
+
+        if entry.get('role') in ('model', 'assistant') and len(text) > 200:
+            import re
+            compact = re.sub(r'<film>(.*?)</film>', r'«\1»', text, flags=re.IGNORECASE)
+            compact = re.sub(r'#+\s*', '', compact)
+            compact = re.sub(r'[*_`]+', '', compact)
+            compact = re.sub(r'\s+', ' ', compact).strip()
+            if len(compact) > 200:
+                compact = compact[:197].rsplit(' ', 1)[0] + '...'
+            return {'role': entry['role'], 'parts': [compact]}
+        return entry
+
     raw_clean = [e for e in history if _is_clean(e)]
     cleaned_entries: list[dict] = []
     i = 0
@@ -188,8 +216,8 @@ def _clean_chat_history(history: list[dict]) -> list[dict]:
         entry = raw_clean[i]
         if entry.get('role') == 'user':
             if i + 1 < len(raw_clean) and raw_clean[i + 1].get('role') in ('model', 'assistant'):
-                cleaned_entries.append(entry)
-                cleaned_entries.append(raw_clean[i + 1])
+                cleaned_entries.append(_compact_turn(entry))
+                cleaned_entries.append(_compact_turn(raw_clean[i + 1]))
                 i += 2
                 continue
         i += 1
@@ -262,33 +290,120 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
         narrator_model.gemini_model.save_history_chat = False
 
     @router.get('/models')
-    async def get_models() -> dict:
+    async def get_models(refresh: bool = False) -> dict:
         """Получение списка доступных моделей, сгруппированных по провайдеру."""
         from src.ai.model_manager import get_available_models
 
-        gemini_models = get_available_models('gemini')
+        gemini_models = get_available_models('gemini', force_refresh=refresh)
         
-        foundry_raw = get_available_models('foundry')
+        foundry_raw = get_available_models('foundry', force_refresh=refresh)
         foundry_models = [f"foundry:{m}" if not m.startswith('foundry:') else m for m in foundry_raw]
 
-        ollama_raw = get_available_models('ollama')
+        ollama_raw = get_available_models('ollama', force_refresh=refresh)
         ollama_models = [f"ollama:{m}" if not m.startswith('ollama:') else m for m in ollama_raw]
 
-        agy_models = get_available_models('agy')
+        agy_models = get_available_models('agy', force_refresh=refresh)
 
-        logger.info(f"Returning available gemini models: {gemini_models}")
+        gemini_cli_raw = get_available_models('gemini_cli', force_refresh=refresh)
+        gemini_cli_models = [f"gemini_cli:{m}" if not m.startswith('gemini_cli:') else m for m in gemini_cli_raw]
+
+        logger.info(f"Returning available gemini models (refresh={refresh}): {gemini_models}")
         logger.info(f"Returning available foundry models: {foundry_models}")
         logger.info(f"Returning available ollama models: {ollama_models}")
         logger.info(f"Returning available agy models: {agy_models}")
+        logger.info(f"Returning available gemini_cli models: {gemini_cli_models}")
         
         return {
             'models': {
                 'gemini': gemini_models,
                 'foundry': foundry_models,
                 'ollama': ollama_models,
-                'agy': agy_models
+                'agy': agy_models,
+                'gemini_cli': gemini_cli_models
             }
         }
+
+    @router.post('/test-model')
+    async def test_model(req: TestModelRequest) -> dict:
+        """Проверочный запрос к указанной AI-модели для валидации связи (Запрос -> Ответ).
+
+        Args:
+            req (TestModelRequest): Параметры проверочного запроса, включая имя модели,
+                                    провайдера и тестовое сообщение.
+
+        Returns:
+            dict: Результат выполнения запроса со статусом, ответом модели и временем выполнения.
+
+        Examples:
+            >>> req = TestModelRequest(model="gemini-3.7-flash", message="Ping")
+            >>> res = await test_model(req)
+            >>> res['status'] == 'success'
+            True
+        """
+        start_time = time.perf_counter()
+        target_model = req.model.strip()
+        provider = req.provider.strip().lower()
+
+        # Автоматическое добавление префикса провайдера при необходимости
+        if provider == 'foundry' and target_model and not target_model.startswith('foundry:'):
+            target_model = f"foundry:{target_model}"
+        elif provider == 'ollama' and target_model and not target_model.startswith('ollama:'):
+            target_model = f"ollama:{target_model}"
+        elif provider == 'agy' and target_model and not target_model.startswith('agy-'):
+            target_model = f"agy-{target_model}"
+        elif provider in ('gemini_cli', 'gemini-cli') and target_model and not target_model.startswith('gemini_cli:'):
+            target_model = f"gemini_cli:{target_model}"
+
+        if not target_model:
+            return {
+                'status': 'error',
+                'message': 'Имя модели не указано',
+                'model': '',
+                'provider': provider,
+                'duration_ms': 0.0
+            }
+
+        test_msg = req.message.strip()
+        if not test_msg:
+            test_msg = "Привет! Назови свою модель и провайдера, и подтверди готовность к работе."
+
+        try:
+            model_instance = get_chat_model(target_model, system_instruction=req.system_instruction)
+            response_text = ""
+
+            if hasattr(model_instance, 'ask'):
+                response_text = await model_instance.ask(test_msg)
+            elif hasattr(model_instance, 'chat'):
+                response_text = await model_instance.chat(test_msg)
+            elif hasattr(model_instance, 'chat_stream'):
+                chunks = []
+                async for chunk in model_instance.chat_stream(test_msg):
+                    if chunk:
+                        clean_chunk = chunk.replace("[CHAT]", "").replace("[VOICE]", "")
+                        if clean_chunk:
+                            chunks.append(clean_chunk)
+                response_text = "".join(chunks)
+            else:
+                raise RuntimeError(f"Модель {target_model} не поддерживает методы генерации текста")
+
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 1)
+            return {
+                'status': 'success',
+                'response': response_text,
+                'model': target_model,
+                'provider': provider,
+                'duration_ms': duration_ms
+            }
+        except Exception as exc:
+            logger.error(f"[ChatRouter] Ошибка проверочного запроса к модели {target_model}: {exc}", exc_info=True)
+            duration_ms = round((time.perf_counter() - start_time) * 1000, 1)
+            return {
+                'status': 'error',
+                'message': str(exc),
+                'model': target_model,
+                'provider': provider,
+                'duration_ms': duration_ms
+            }
 
     @router.post('/save-rag')
     async def save_to_rag(request: SaveRagRequest, fastapi_req: Request):
@@ -533,6 +648,7 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
                                 yield f"data: {json.dumps({'status': 'Генерация голоса диктора...'})}\n\n"
                                 chat_kwargs_2 = kwargs.copy()
                                 chat_kwargs_2.pop('room_id', '')
+                                chat_kwargs_2.pop('search_engine', None)
                                 chat_kwargs_2['history'] = []
                                 gen_cfg_2 = request.generation_config.copy()
                                 gen_cfg_2['response_type'] = 'voice'
@@ -575,6 +691,7 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
                 
                 chat_kwargs_1 = kwargs.copy()
                 chat_kwargs_1.pop('room_id', '')
+                chat_kwargs_1.pop('search_engine', None)
                 gen_cfg_1 = request.generation_config.copy()
                 gen_cfg_1['response_type'] = 'chat'
                 chat_kwargs_1['generation_config'] = gen_cfg_1
@@ -595,6 +712,7 @@ def init_router(chat_model, narrator_model, plugins: dict) -> APIRouter:
                     
                     chat_kwargs_2 = kwargs.copy()
                     chat_kwargs_2.pop('room_id', '')
+                    chat_kwargs_2.pop('search_engine', None)
                     chat_kwargs_2['history'] = []  # Narrator работает без истории
                     
                     gen_cfg_2 = request.generation_config.copy()

@@ -465,6 +465,92 @@ body {
   color: #ffffff !important;
 }
 
+/* Interactive Film Chip */
+.film-interactive-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+  color: #ffffff !important;
+  font-size: 0.9em;
+  font-weight: 500;
+  padding: 2px 4px 2px 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin: 2px 3px;
+  vertical-align: middle;
+  transition: all 0.2s ease-in-out;
+}
+
+.film-interactive-chip:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+.film-chip-title {
+  cursor: pointer;
+  color: #ffffff !important;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.film-chip-title:hover {
+  text-decoration: underline;
+}
+
+.film-chip-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.film-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.15);
+}
+
+.film-chip-play:hover {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.film-chip-youtube:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.film-chip-online:hover {
+  background: #06b6d4;
+  color: #ffffff;
+}
+
+.film-chip-torrent:hover {
+  background: #f59e0b;
+  color: #111827;
+}
+
+[data-theme="dark"] .film-interactive-chip {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+[data-theme="dark"] .film-interactive-chip:hover {
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+}
+
 .badge.bg-warning,
 .badge.badge-warning {
   color: #1a1a1a !important;
