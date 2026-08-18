@@ -413,3 +413,4 @@ rag/documents.json
 # Базы данных уже исключаются правилами *.db и *.sqlite*.
 src/plugins/media_organizer/data/*.faiss
 src/plugins/media_organizer/data/generated_plots_cache.json
+src/ai/gemini/secrets.json
