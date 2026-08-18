@@ -106,6 +106,9 @@ async function initModelsTab() {
         if (otherModelSelect) {
           otherModelSelect.value = selectedModel;
         }
+        if (typeof window.updateChatBadges === 'function') {
+          window.updateChatBadges(selectedModel);
+        }
       } catch (err) {
         console.error('Ошибка сохранения модели:', err);
         showModelsNotification('Ошибка сохранения: ' + err.message, 'danger');

@@ -403,11 +403,15 @@ async function initAdminTab() {
       
       // Обновляем бейджи модели в реальном времени на странице
       window.activeModelName = selectedModel;
-      const badges = document.querySelectorAll('#chat-model-badge, #chat-popup-model-badge');
-      badges.forEach(badge => {
-        badge.textContent = selectedModel;
-        badge.style.display = 'inline-block';
-      });
+      if (typeof window.updateChatBadges === 'function') {
+        window.updateChatBadges(selectedModel);
+      } else {
+        const badges = document.querySelectorAll('#chat-model-badge, #chat-popup-model-badge');
+        badges.forEach(badge => {
+          badge.textContent = selectedModel;
+          badge.style.display = 'inline-block';
+        });
+      }
     } catch (err) {
       console.error('Ошибка сохранения модели:', err);
       showNotification('Ошибка сохранения: ' + err.message, 'danger');

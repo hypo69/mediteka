@@ -89,6 +89,23 @@ _PLAY_KEYWORDS = (
 )
 
 
+def _format_count_word(count: int) -> str:
+    """Формирует текстовое числительное для количества вариантов."""
+    _words = {
+        1: "один вариант",
+        2: "два варианта",
+        3: "три варианта",
+        4: "четыре варианта",
+        5: "пять вариантов",
+        6: "шесть вариантов",
+        7: "семь вариантов",
+        8: "восемь вариантов",
+        9: "девять вариантов",
+        10: "десять вариантов",
+    }
+    return _words.get(count, f"{count} вариантов")
+
+
 class RAGPlugin(BasePlugin):
     """Плагин семантического поиска и воспроизведения медиаконтента."""
 
@@ -169,6 +186,7 @@ class RAGPlugin(BasePlugin):
             }))
 
         status_msg = "🚀 Запускаю воспроизведение на плеере..." if has_player else "📱 Вы можете запустить воспроизведение локально или открыть стрим."
+        voice_status = "Запускаю воспроизведение на плеере." if has_player else "Включить воспроизведение, рассказать подробнее или выбрать другой фильм?"
 
         response_text = (
             f"🎡 **Карусель выбрала случайный фильм!**\n\n"
@@ -182,7 +200,7 @@ class RAGPlugin(BasePlugin):
 
         yield {"prompt_dump": f"[Карусель]: {title_ru or title}"}
         yield {"text": response_text}
-        yield {"voice": f"Я выбрала фильм {title_ru or title}. {status_msg}"}
+        yield {"voice": f"Карусель выбрала фильм {title_ru or title}. {voice_status}"}
 
     async def _handle_direct_play(self, best_item: dict, kwargs: dict) -> AsyncIterator[dict]:
         """Прямой запуск фильма на плеере без обращения к LLM."""
@@ -252,9 +270,39 @@ class RAGPlugin(BasePlugin):
                 yield {"status": f"⚡ Карточка медиа ({display_title})..."}
                 yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nКарточка: {display_title}"}
                 yield {"text": card_json}
-                voice_text = card_data.get('plot') or card_data.get('why_watch') or f"Найдено в медиатеке: {display_title}."
-                if len(voice_text) > 300:
-                    voice_text = voice_text[:297] + "..."
+
+                genres_list = card_data.get('genres') or []
+                primary_genre = genres_list[0].strip().lower() if genres_list else ""
+                cast_list = card_data.get('cast') or []
+                actors_part = ""
+                if cast_list:
+                    if len(cast_list) >= 2:
+                        actors_part = f"в главных ролях {cast_list[0]} и {cast_list[1]}"
+                    else:
+                        actors_part = f"в главной роли {cast_list[0]}"
+
+                plot_desc = card_data.get('why_watch') or card_data.get('plot') or ""
+                first_sent = ""
+                if plot_desc:
+                    first_sent = plot_desc.split('.')[0].strip()
+                    if len(first_sent) > 150:
+                        first_sent = first_sent[:147] + "..."
+
+                desc_parts = [f"Найден фильм {display_title}"]
+                if primary_genre:
+                    desc_parts.append(primary_genre)
+                if actors_part:
+                    desc_parts.append(actors_part)
+
+                summary = " — ".join(desc_parts[:2])
+                if len(desc_parts) > 2:
+                    summary += f", {desc_parts[2]}"
+
+                if first_sent:
+                    summary += f". {first_sent}"
+
+                cta = "Включить этот фильм, рассказать о нём подробнее или поискать другой?"
+                voice_text = f"{summary}. {cta}"
                 yield {"voice": voice_text}
                 return
         except Exception as ex:
@@ -265,7 +313,9 @@ class RAGPlugin(BasePlugin):
             yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nДокумент: {base_title}"}
             fallback_text = f"🎬 **<film>{base_title}</film>**\n\n{raw_text}"
             yield {"text": fallback_text}
-            yield {"voice": raw_text[:300]}
+            clean_raw = raw_text.split('.')[0].strip()[:200]
+            cta = "Включить этот фильм, рассказать подробнее или поискать другой?"
+            yield {"voice": f"В локальной медиатеке найден {base_title}. {clean_raw}. {cta}"}
 
     async def _handle_direct_multi_items(self, message: str, items: list[dict], kwargs: dict) -> AsyncIterator[dict]:
         """Прямой возврат структурированного списка найденных фильмов/сериалов из БД без вызова LLM."""
@@ -276,9 +326,10 @@ class RAGPlugin(BasePlugin):
         yield {"status": f"⚡ Формирование списка из локальной медиатеки ({len(items)} тайтлов)..."}
 
         formatted_items = []
-        titles_for_voice = []
+        voice_item_summaries = []
+        seen_display_titles = set()
 
-        for idx, item in enumerate(items[:5], 1):
+        for item in items:
             base_title = item.get('clean_title', item.get('title', ''))
             m_type = item.get('media_type') or item.get('type', 'series')
             disk_name = item.get('disk_name', '')
@@ -291,11 +342,17 @@ class RAGPlugin(BasePlugin):
                 logger.warning(f"[RAGPlugin] Не удалось получить карточку для {base_title}: {ex}")
 
             display_title = card_data.get('title_ru') or card_data.get('title') or base_title
+            norm_title = display_title.strip().lower()
+            if norm_title in seen_display_titles:
+                continue
+            seen_display_titles.add(norm_title)
+
             orig_title = card_data.get('title_orig', '')
             year = card_data.get('year') or item.get('year', '')
 
             genres_list = card_data.get('genres') or []
             genres_str = ", ".join(genres_list) if genres_list else (card_data.get('main_category') or item.get('category', ''))
+            primary_genre = genres_list[0].strip().lower() if genres_list else ""
 
             cast_list = card_data.get('cast') or []
             cast_str = ", ".join(cast_list[:4]) if cast_list else ""
@@ -304,30 +361,61 @@ class RAGPlugin(BasePlugin):
             if len(plot) > 250:
                 plot = plot[:247] + "..."
 
-            item_header = f"{idx}. 🎬 **<film>{display_title}</film>**"
-            meta_chips = []
-            if orig_title and orig_title.strip().lower() != display_title.strip().lower():
-                meta_chips.append(f"*{orig_title}*")
-            if year:
-                meta_chips.append(f"{year} г.")
-            if genres_str:
-                meta_chips.append(f"📂 {genres_str}")
-            if meta_chips:
-                item_header += f" ({', '.join(meta_chips)})"
+            idx = len(formatted_items) + 1
+            if idx <= 5:
+                item_header = f"{idx}. 🎬 **<film>{display_title}</film>**"
+                meta_chips = []
+                if orig_title and orig_title.strip().lower() != display_title.strip().lower():
+                    meta_chips.append(f"*{orig_title}*")
+                if year:
+                    meta_chips.append(f"{year} г.")
+                if genres_str:
+                    meta_chips.append(f"📂 {genres_str}")
+                if meta_chips:
+                    item_header += f" ({', '.join(meta_chips)})"
 
-            item_body = []
-            if cast_str:
-                item_body.append(f"   👤 **В ролях:** {cast_str}")
-            if plot:
-                item_body.append(f"   📝 {plot}")
+                item_body = []
+                if cast_str:
+                    item_body.append(f"   👤 **В ролях:** {cast_str}")
+                if plot:
+                    item_body.append(f"   📝 {plot}")
 
-            formatted_items.append(item_header + ("\n" + "\n".join(item_body) if item_body else ""))
-            titles_for_voice.append(display_title)
+                formatted_items.append(item_header + ("\n" + "\n".join(item_body) if item_body else ""))
+
+            if len(voice_item_summaries) < 3:
+                actors_part = ""
+                if cast_list:
+                    if len(cast_list) >= 2:
+                        actors_part = f"в главных ролях {cast_list[0]} и {cast_list[1]}"
+                    else:
+                        actors_part = f"в главной роли {cast_list[0]}"
+
+                if primary_genre and actors_part:
+                    voice_summary = f"{display_title} — {primary_genre}, {actors_part}."
+                elif actors_part:
+                    voice_summary = f"{display_title}, {actors_part}."
+                elif primary_genre:
+                    voice_summary = f"{display_title} — {primary_genre}."
+                else:
+                    plot_snippet = card_data.get('why_watch') or card_data.get('plot') or ""
+                    if plot_snippet:
+                        first_sent = plot_snippet.split('.')[0].strip()
+                        if len(first_sent) > 80:
+                            first_sent = first_sent[:77] + "..."
+                        voice_summary = f"{display_title} — {first_sent}."
+                    else:
+                        voice_summary = f"{display_title}."
+                voice_item_summaries.append(voice_summary)
 
         full_text = f"🎬 **Я {found_word} в локальной медиатеке:**\n\n" + "\n\n".join(formatted_items)
-        voice_text = f"Я {found_word} {len(items)} тайтлов в медиатеке: {', '.join(titles_for_voice[:3])}."
 
-        yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nНайдено {len(items)} тайтлов по запросу «{message}»."}
+        count_str = _format_count_word(len(formatted_items))
+        intro = f"Я {found_word} в локальной медиатеке {count_str}."
+        items_speech = " ".join(voice_item_summaries)
+        cta = "Какой фильм включить, рассказать подробнее или поискать другой вариант?"
+        voice_text = f"{intro} {items_speech} {cta}".strip()
+
+        yield {"prompt_dump": f"[DIRECT RAG — без вызова LLM]\nНайдено {len(formatted_items)} тайтлов по запросу «{message}»."}
         yield {"text": full_text}
         yield {"voice": voice_text}
 
@@ -383,11 +471,11 @@ class RAGPlugin(BasePlugin):
         system_prompt = (
             "Ты — AI Assistant домашней медиатеки kino.davidka.net.\n"
             "1. Если фильм/сериал найден в локальной медиатеке, расскажи о нём на основе найденных данных и ОБЯЗАТЕЛЬНО укажи, что он есть в медиатеке.\n"
-            "2. Если пользователь запрашивает подборку, категорию, жанр или рекомендации (например, 'боевики', 'комедии', 'что посмотреть'), представь список найденных фильмов/сериалов из локальной медиатеки с кратким описанием каждого и обязательно оберни каждое название в тег <film>Название</film>.\n"
+            "2. Если пользователь запрашивает подборку, категорию, жанр или рекомендации (например, 'боевики', 'комедии', 'что посмотреть'), представь список найденных фильмов/сериалов из локальной медиатеке с кратким описанием каждого и обязательно оберни каждое название в тег <film>Название</film>.\n"
             "3. Для сериалов ВСЕГДА представляй информацию на уровне ВСЕГО СЕРИАЛА (концепция, общий сюжет, количество сезонов, ключевые персонажи/актеры). Не своди ответ к отдельному сезону или эпизоду, даже если совпадение найдено по событиям конкретного сезона, за исключением случаев, когда пользователь сам явно спросил про конкретный сезон или серию.\n"
             "4. Если фильм/сериал отсутствует на локальных дисках, подробно расскажи о запрашиваемом тайтле на основе своих знаний или данных из интернета, "
             "и ОБЯЗАТЕЛЬНО оберни название фильма/сериала в тег <film>Название</film>, чтобы интерфейс предложил пользователю варианты загрузки или поиска.\n"
-            "5. Отвечай ТОЛЬКО по сути вопроса пользователя на русском языке.\n\n"
+            "5. Отвечай ТОЛЬКО по сути вопроса пользователя на русском языке. В конце ответа со списком, рекомендацией или описанием фильма ВСЕГДА предлагай продолжить диалог: какой включить, рассказать подробнее о конкретном фильме или поискать другие варианты.\n\n"
             "Если пользователь просит включить/запустить/воспроизвести фильм или сериал:\n"
             "1) Если есть инструмент play_media(title) — используй его НЕМЕДЛЕННО.\n"
             "2) Если инструмента нет, ОБЯЗАТЕЛЬНО оберни название в тег <film>Название</film>.\n"

@@ -5,6 +5,7 @@
 - **🎭 Playwright MCP**: Браузерный поиск через headless Chromium.
 - **🦜 LangChain MCP**: Автономный ReAct-агент медиа-поиска.
 - **♊ Google Gemini Grounding**: Поиск через `google-genai` SDK с ротацией ключей.
+- **💻 Google Gemini CLI**: Поиск через локальный терминальный агент Gemini CLI (`gemini-3.1-flash-lite`).
 - **🚀 Antigravity (AGY)**: Агентный веб-поиск Google Antigravity.
 
 ## Файлы:

@@ -19,26 +19,18 @@ from __future__ import annotations
 import json
 import asyncio
 from pathlib import Path
-from mcp.server.fastmcp import FastMCP
-
-from src.logger import logger
+from src.logger.logger import logger
 from plugins.web_search.gemini_searcher import GeminiWebSearcher, GeminiKeyPool
 
-# Инициализация FastMCP сервера
-mcp = FastMCP("Gemini-Search-Server")
+try:
+    from mcp.server.fastmcp import FastMCP
+    mcp = FastMCP("Gemini-Search-Server")
+except ImportError:
+    FastMCP = None
+    mcp = None
 
 
-@mcp.tool()
-async def gemini_web_search(query: str, model: str = "gemini-2.5-flash") -> str:
-    """Выполнить веб-поиск в Google через Gemini Search Grounding.
-
-    Использует официальный SDK Google GenAI со встроенным поисковым
-    инструментом Google Search и автоматической ротацией API-ключей при ошибках 429.
-
-    Args:
-        query: Поисковый запрос пользователя.
-        model: Название модели (по умолчанию 'gemini-2.5-flash').
-    """
+async def _run_gemini_search(query: str, model: str = "gemini-2.5-flash") -> str:
     try:
         searcher = GeminiWebSearcher()
         result_markdown = await searcher.search_and_extract(query=query, model=model)
@@ -48,9 +40,7 @@ async def gemini_web_search(query: str, model: str = "gemini-2.5-flash") -> str:
         return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
 
 
-@mcp.tool()
-def gemini_key_pool_status() -> str:
-    """Получить статус пула API-ключей Gemini и активного ключа."""
+def _run_key_pool_status() -> str:
     try:
         pool = GeminiKeyPool()
         return json.dumps({
@@ -63,5 +53,21 @@ def gemini_key_pool_status() -> str:
         return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
 
 
+async def gemini_web_search(query: str, model: str = "gemini-2.5-flash") -> str:
+    """Выполнить веб-поиск в Google через Gemini Search Grounding."""
+    return await _run_gemini_search(query=query, model=model)
+
+
+def gemini_key_pool_status() -> str:
+    """Получить статус пула API-ключей Gemini и активного ключа."""
+    return _run_key_pool_status()
+
+
+if mcp:
+    mcp.tool()(gemini_web_search)
+    mcp.tool()(gemini_key_pool_status)
+
+
 if __name__ == "__main__":
-    mcp.run()
+    if mcp:
+        mcp.run()

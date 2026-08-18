@@ -48,9 +48,10 @@
     "mode": "rag+model"
   },
   "web_search": {
-    "engine": "agy",
+    "engine": "gemini_cli",
     "gemini_model": "gemini-2.5-flash",
-    "agy_model": "agy-gemma-4-26b-a4b-it",
+    "gemini_cli_model": "gemini-3.1-flash-lite",
+    "agy_model": "agy-flash",
     "fallback_on_rag_not_found": true
   },
   "langchain": {
@@ -109,6 +110,22 @@
           "web_search"
         ],
         "system_prompt": "Ты поисковый агент Mediteka. Ищи актуальные проверенные факты в интернете, цитируй источники и формируй четкие структурированные ответы."
+      },
+      {
+        "id": "web_search_gemini_cli",
+        "name": "Gemini CLI Searcher",
+        "description": "Поиск в интернете через локальный терминальный агент Google Gemini CLI",
+        "is_system": true,
+        "enabled": true,
+        "provider": "gemini_cli",
+        "model": "gemini-3.1-flash-lite",
+        "temperature": 0.2,
+        "max_steps": 5,
+        "timeout_seconds": 30,
+        "tools": [
+          "web_search"
+        ],
+        "system_prompt": "Ты поисковый ассистент Google Gemini CLI. Используй веб-поиск для поиска свежей информации и выдавай результат в формате Markdown."
       },
       {
         "id": "web_search_agy",

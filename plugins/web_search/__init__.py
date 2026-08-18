@@ -17,6 +17,7 @@ class WebSearchPlugin(BasePlugin):
         super().__init__(ai_model)
         self._playwright_searcher = ""
         self._gemini_searcher = ""
+        self._gemini_cli_searcher = ""
         self._agy_searcher = ""
 
     @property
@@ -38,6 +39,16 @@ class WebSearchPlugin(BasePlugin):
             except Exception as e:
                 logger.error(f"[WebSearchPlugin] Ошибка импорта GeminiWebSearcher: {e}")
         return self._gemini_searcher
+
+    @property
+    def gemini_cli_searcher(self):
+        if not self._gemini_cli_searcher:
+            try:
+                from .gemini_cli_searcher import GeminiCliWebSearcher
+                self._gemini_cli_searcher = GeminiCliWebSearcher()
+            except Exception as e:
+                logger.error(f"[WebSearchPlugin] Ошибка импорта GeminiCliWebSearcher: {e}")
+        return self._gemini_cli_searcher
 
     @property
     def agy_searcher(self):
@@ -81,6 +92,7 @@ class WebSearchPlugin(BasePlugin):
         ws_cfg = self._get_config()
         engine = ws_cfg.get('engine', 'playwright')
         gemini_model = ws_cfg.get('gemini_model', 'gemini-2.5-flash')
+        gemini_cli_model = ws_cfg.get('gemini_cli_model', 'gemini-3.1-flash-lite')
         agy_model = ws_cfg.get('agy_model', 'agy-flash')
         web_context = ""
 
@@ -102,6 +114,13 @@ class WebSearchPlugin(BasePlugin):
             except Exception as ex:
                 logger.error(f"[WebSearchPlugin] Ошибка поиска через Gemini: {ex}")
                 web_context = f"Ошибка поиска через Gemini: {ex}"
+        elif engine == "gemini_cli":
+            yield {"status": "💻 Поиск в интернете через Google Gemini CLI..."}
+            try:
+                web_context = await self.gemini_cli_searcher.search_and_extract(query, model=gemini_cli_model)
+            except Exception as ex:
+                logger.error(f"[WebSearchPlugin] Ошибка поиска через Gemini CLI: {ex}")
+                web_context = f"Ошибка поиска через Gemini CLI: {ex}"
         elif engine == "agy":
             yield {"status": "🚀 Поиск в интернете через Antigravity (AGY)..."}
             try:

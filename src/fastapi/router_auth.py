@@ -575,6 +575,7 @@ class SettingsUpdateRequest(BaseModel):
     model: Optional[str] = None
     tts_system: Optional[str] = None
     tts_voice: Optional[str] = None
+    search_engine: Optional[str] = None
 
 
 # ===========================================
@@ -744,6 +745,20 @@ async def get_settings(request: Request) -> dict:
         raise HTTPException(status_code=404, detail='Пользователь не найден')
         
     settings = user_manager.get_user_settings(db_user['id'])
+    
+    # Добавляем актуальный поисковый движок из config.json
+    try:
+        cfg_path = __root__ / 'config.json'
+        if cfg_path.exists():
+            with open(cfg_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                settings['search_engine'] = cfg.get('web_search', {}).get('engine', 'gemini_cli')
+        else:
+            settings['search_engine'] = 'gemini_cli'
+    except Exception as e:
+        logger.warning(f'Не удалось прочитать search_engine из config.json: {e}')
+        settings['search_engine'] = 'gemini_cli'
+
     return settings
 
 

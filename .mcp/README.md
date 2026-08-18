@@ -10,6 +10,7 @@
 |---|---|---|---|
 | **LangChain Media Agent** | [`langchain_mcp_server.py`](file:///c:/mediteka/.mcp/langchain_mcp_server.py) | Автономный поиск медиа (ReAct-агент, Playwright-трекеры, TMDb, стриминг) | `media_agent_search`, `media_search_torrents`, `media_get_metadata`, `media_get_streaming_sources`, `media_build_player_url`, `media_add_torrent_download` |
 | **Gemini Search Grounding** | [`gemini_search_mcp_server.py`](file:///c:/mediteka/.mcp/gemini_search_mcp_server.py) | Прямой поиск Google с Grounding и автоматической ротацией пула API-ключей | `gemini_web_search`, `gemini_key_pool_status` |
+| **Gemini CLI Search** | [`gemini_cli_search_mcp_server.py`](file:///c:/mediteka/.mcp/gemini_cli_search_mcp_server.py) | Поиск через локальный терминальный агент Google Gemini CLI | `gemini_cli_web_search` |
 | **Antigravity Search** | [`agy_search_mcp_server.py`](file:///c:/mediteka/.mcp/agy_search_mcp_server.py) | Агентный веб-поиск через встроенные инструменты Google Antigravity | `agy_web_search` |
 | **FastAPI Client** | [`fastapi_mcp_server.py`](file:///c:/mediteka/.mcp/fastapi_mcp_server.py) | Интеграция с локальным FastAPI бэкендом | `fastapi_chat`, `fastapi_media_list`, `fastapi_qbittorrent_info` |
 | **Unicorn Manager** | [`unicorn_mcp_server.py`](file:///c:/mediteka/.mcp/unicorn_mcp_server.py) | Управление процессами Uvicorn / Unicorn | `unicorn_start`, `unicorn_stop`, `unicorn_status` |

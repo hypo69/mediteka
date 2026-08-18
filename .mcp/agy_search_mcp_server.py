@@ -17,27 +17,18 @@ from __future__ import annotations
 
 import json
 import asyncio
-from pathlib import Path
-from mcp.server.fastmcp import FastMCP
-
-from src.logger import logger
+from src.logger.logger import logger
 from plugins.web_search.agy_searcher import AgyWebSearcher
 
-# Инициализация FastMCP сервера
-mcp = FastMCP("Antigravity-Search-Server")
+try:
+    from mcp.server.fastmcp import FastMCP
+    mcp = FastMCP("Antigravity-Search-Server")
+except ImportError:
+    FastMCP = None
+    mcp = None
 
 
-@mcp.tool()
-async def agy_web_search(query: str, model: str = "agy-flash") -> str:
-    """Выполнить веб-поиск через агентный поиск Google Antigravity.
-
-    Использует возможности Antigravity SDK с инструментами BuiltinTools.SEARCH_WEB
-    и READ_URL_CONTENT для извлечения актуальной информации из сети.
-
-    Args:
-        query: Поисковый запрос пользователя.
-        model: Имя модели Antigravity (по умолчанию 'agy-flash').
-    """
+async def _run_agy_search(query: str, model: str = "agy-flash") -> str:
     try:
         searcher = AgyWebSearcher(model_id=model)
         result = await searcher.search_and_extract(query=query)
@@ -47,5 +38,15 @@ async def agy_web_search(query: str, model: str = "agy-flash") -> str:
         return json.dumps({"status": "error", "message": str(e)}, ensure_ascii=False)
 
 
+async def agy_web_search(query: str, model: str = "agy-flash") -> str:
+    """Выполнить веб-поиск через агентный поиск Google Antigravity."""
+    return await _run_agy_search(query=query, model=model)
+
+
+if mcp:
+    mcp.tool()(agy_web_search)
+
+
 if __name__ == "__main__":
-    mcp.run()
+    if mcp:
+        mcp.run()

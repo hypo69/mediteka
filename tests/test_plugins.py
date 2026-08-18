@@ -107,9 +107,143 @@ class TestRAGPlugin:
         plugin = RAGPlugin(mock_model)
         
         # Проверка dev запросов с правильными ключевыми словами
-        # Проверяем по списку ключевых слов в _is_dev_query
         assert plugin._is_dev_query("обнови RAG") == True
-        # "перестрой индекс" может не быть в списке dev слов, проверяем что метод работает
+
+    def test_format_count_word(self):
+        """Тест формирования числительных для вариантов."""
+        from plugins.rag import _format_count_word
+        
+        assert _format_count_word(1) == "один вариант"
+        assert _format_count_word(2) == "два варианта"
+        assert _format_count_word(5) == "пять вариантов"
+        assert _format_count_word(10) == "десять вариантов"
+        assert _format_count_word(12) == "12 вариантов"
+
+    @pytest.mark.asyncio
+    async def test_handle_direct_multi_items_voice_text(self):
+        """Тест формирования текста диктора для нескольких тайтлов с предложением продолжить диалог."""
+        import json
+        from plugins.rag import RAGPlugin
+
+        mock_model = MagicMock()
+        plugin = RAGPlugin(mock_model)
+
+        sample_items = [
+            {
+                'clean_title': 'The Foreigner',
+                'title': 'The Foreigner',
+                'media_type': 'movie',
+                'disk_name': 'D:',
+                'year': 2017
+            },
+            {
+                'clean_title': 'The Terminal List',
+                'title': 'The Terminal List: Season 1',
+                'media_type': 'series',
+                'disk_name': 'E:',
+                'year': 2022
+            },
+            {
+                # Дубликат по display_title (должен отфильтроваться)
+                'clean_title': 'Список смертников',
+                'title': 'Список смертников',
+                'media_type': 'series',
+                'disk_name': 'F:',
+                'year': 2022
+            },
+            {
+                'clean_title': 'Tin Soldier',
+                'title': 'Tin Soldier',
+                'media_type': 'movie',
+                'disk_name': 'D:',
+                'year': 2025
+            }
+        ]
+
+        def fake_get_media_card(disk_name, base_title, m_type):
+            if 'Foreigner' in base_title:
+                return json.dumps({
+                    'title_ru': 'Иностранец',
+                    'genres': ['Боевик', 'Триллер'],
+                    'cast': ['Джеки Чан', 'Пирс Броснан'],
+                    'why_watch': 'Динамичный боевик с напряжённым сюжетом.'
+                }, ensure_ascii=False)
+            elif 'Terminal' in base_title or 'Список' in base_title:
+                return json.dumps({
+                    'title_ru': 'Список смертников',
+                    'genres': ['Боевик', 'Триллер', 'Драма'],
+                    'cast': ['Крис Прэтт', 'Констанс Ву'],
+                    'why_watch': 'Остросюжетный сериал про спецназ.'
+                }, ensure_ascii=False)
+            else:
+                return json.dumps({
+                    'title_ru': 'Игры возмездия',
+                    'genres': ['Боевик'],
+                    'cast': ['Джейми Фокс', 'Роберт Де Ниро'],
+                    'why_watch': 'Криминальный боевик.'
+                }, ensure_ascii=False)
+
+        with patch('plugins.rag.get_media_card', side_effect=fake_get_media_card):
+            chunks = []
+            async for chunk in plugin._handle_direct_multi_items("Найди боевик", sample_items, {}):
+                chunks.append(chunk)
+
+            voice_chunks = [c['voice'] for c in chunks if 'voice' in c]
+            text_chunks = [c['text'] for c in chunks if 'text' in c]
+
+            assert len(voice_chunks) == 1
+            voice_text = voice_chunks[0]
+            
+            # Проверяем дедупликацию в тексте чата (Список смертников только один раз)
+            full_text = text_chunks[0]
+            assert full_text.count("Список смертников") == 1
+            assert "Иностранец" in full_text
+            assert "Игры возмездия" in full_text
+
+            # Проверяем структуру текста диктора:
+            # 1. Вводная фраза
+            assert "Я нашла в локальной медиатеке три варианта." in voice_text
+            # 2. Содержит минимальную информацию о тайтлах (название, жанр, актёры)
+            assert "Иностранец — боевик, в главных ролях Джеки Чан и Пирс Броснан." in voice_text
+            assert "Список смертников — боевик, в главных ролях Крис Прэтт и Констанс Ву." in voice_text
+            assert "Игры возмездия — боевик, в главных ролях Джейми Фокс и Роберт Де Ниро." in voice_text
+            # 3. Предложение к продолжению диалога (3 опции)
+            assert "Какой фильм включить, рассказать подробнее или поискать другой вариант?" in voice_text
+
+    @pytest.mark.asyncio
+    async def test_handle_direct_rag_voice_text(self):
+        """Тест формирования текста диктора для одиночной карточки медиа."""
+        import json
+        from plugins.rag import RAGPlugin
+
+        mock_model = MagicMock()
+        plugin = RAGPlugin(mock_model)
+
+        sample_item = {
+            'clean_title': 'The Foreigner',
+            'title': 'The Foreigner',
+            'media_type': 'movie',
+            'disk_name': 'D:'
+        }
+
+        fake_card = json.dumps({
+            'title_ru': 'Иностранец',
+            'genres': ['Боевик', 'Триллер'],
+            'cast': ['Джеки Чан', 'Пирс Броснан'],
+            'why_watch': 'Динамичный боевик о мести безутешного отца.'
+        }, ensure_ascii=False)
+
+        with patch('plugins.rag.get_media_card', return_value=fake_card):
+            chunks = []
+            async for chunk in plugin._handle_direct_rag(sample_item):
+                chunks.append(chunk)
+
+            voice_chunks = [c['voice'] for c in chunks if 'voice' in c]
+            assert len(voice_chunks) == 1
+            voice_text = voice_chunks[0]
+
+            assert "Найден фильм Иностранец — боевик, в главных ролях Джеки Чан и Пирс Броснан." in voice_text
+            assert "Включить этот фильм, рассказать о нём подробнее или поискать другой?" in voice_text
 
 
 class TestTelegramBotPlugin:

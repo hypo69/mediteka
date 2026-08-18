@@ -75,6 +75,11 @@ function initChatTab() {
     // Загрузка системной инструкции
     loadSystemInstruction();
 
+    // Обновление бейджей модели и провайдера поиска
+    if (typeof window.updateChatBadges === 'function') {
+      window.updateChatBadges();
+    }
+
     // Обработчик скачивания торрентов
     chatWindow.addEventListener('click', async (e) => {
       const btn = e.target.closest('.download-torrent-btn');

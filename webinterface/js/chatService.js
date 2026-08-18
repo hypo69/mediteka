@@ -346,29 +346,68 @@ window.chatService = {
   }
 };
 
-// Автоматически загружаем настройки и обновляем бейджи модели при загрузке страницы
+// Форматирование отображаемого названия поискового движка
+function formatSearchEngine(engine) {
+  if (!engine) return '';
+  const map = {
+    'gemini_cli': '🔍 gemini_cli',
+    'gemini': '🔍 gemini',
+    'agy': '🔍 agy',
+    'langchain': '🔍 langchain',
+    'playwright': '🔍 playwright'
+  };
+  return map[engine] || `🔍 ${engine}`;
+}
+
+window.formatSearchEngine = formatSearchEngine;
+
+window.updateChatBadges = function(modelName, searchEngine) {
+  if (modelName !== undefined && modelName !== null) {
+    window.activeModelName = modelName;
+  }
+  if (searchEngine !== undefined && searchEngine !== null) {
+    window.activeSearchEngine = searchEngine;
+  }
+
+  const curModel = window.activeModelName || '';
+  const curSearch = window.activeSearchEngine || '';
+
+  if (curModel) {
+    const modelBadges = document.querySelectorAll('#chat-model-badge, #chat-popup-model-badge');
+    modelBadges.forEach(badge => {
+      badge.textContent = curModel;
+      badge.title = `Выбранная модель ИИ: ${curModel}`;
+      badge.style.display = 'inline-block';
+    });
+  }
+
+  if (curSearch) {
+    const searchBadges = document.querySelectorAll('#chat-search-badge, #chat-popup-search-badge');
+    searchBadges.forEach(badge => {
+      badge.textContent = formatSearchEngine(curSearch);
+      badge.title = `Провайдер веб-поиска: ${curSearch}`;
+      badge.style.display = 'inline-block';
+    });
+  }
+};
+
+// Автоматически загружаем настройки и обновляем бейджи модели и поиска при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     const response = await fetch('/auth/settings');
     if (response.ok) {
       const settings = await response.json();
       const modelName = settings.model || '';
+      const searchEngine = settings.search_engine || '';
       window.activeModelName = modelName;
+      window.activeSearchEngine = searchEngine;
       
-      const updateBadges = () => {
-        const badges = document.querySelectorAll('#chat-model-badge, #chat-popup-model-badge');
-        badges.forEach(badge => {
-          badge.textContent = modelName;
-          badge.style.display = 'inline-block';
-        });
-      };
-      
-      updateBadges();
+      window.updateChatBadges(modelName, searchEngine);
       // На случай если DOM элементы добавились/отрендерились позже
-      setTimeout(updateBadges, 500);
-      setTimeout(updateBadges, 1500);
+      setTimeout(() => window.updateChatBadges(), 500);
+      setTimeout(() => window.updateChatBadges(), 1500);
     }
   } catch (e) {
-    console.error('Failed to load active model badge:', e);
+    console.error('Failed to load active model / search badge:', e);
   }
 });

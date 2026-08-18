@@ -458,6 +458,7 @@ async def set_rag_config(request: Request, data: RagConfigRequest):
 class WebSearchConfigRequest(BaseModel):
     engine: str
     gemini_model: str = "gemini-2.5-flash"
+    gemini_cli_model: str = "gemini-3.1-flash-lite"
     agy_model: str = "agy-flash"
 
 @router.get('/web-search/config')
@@ -467,6 +468,7 @@ async def get_web_search_config(request: Request):
     config_path = __root__ / 'config.json'
     engine = "playwright"
     gemini_model = "gemini-2.5-flash"
+    gemini_cli_model = "gemini-3.1-flash-lite"
     agy_model = "agy-flash"
     if config_path.exists():
         try:
@@ -475,18 +477,20 @@ async def get_web_search_config(request: Request):
                 ws = cfg.get("web_search", {})
                 engine = ws.get("engine", "playwright")
                 gemini_model = ws.get("gemini_model", "gemini-2.5-flash")
+                gemini_cli_model = ws.get("gemini_cli_model", "gemini-3.1-flash-lite")
                 agy_model = ws.get("agy_model", "agy-flash")
         except Exception as e:
             logger.error("Ошибка чтения config.json для web_search", e)
     return {
         "engine": engine,
         "gemini_model": gemini_model,
+        "gemini_cli_model": gemini_cli_model,
         "agy_model": agy_model
     }
 
 @router.post('/web-search/config')
 async def set_web_search_config(request: Request, data: WebSearchConfigRequest):
-    """Установка сервера веб-поиска (playwright / langchain / gemini / agy)."""
+    """Установка сервера веб-поиска (playwright / langchain / gemini / gemini_cli / agy)."""
     _check_admin(request)
     config_path = __root__ / 'config.json'
     try:
@@ -501,6 +505,7 @@ async def set_web_search_config(request: Request, data: WebSearchConfigRequest):
             
         cfg["web_search"]["engine"] = data.engine
         cfg["web_search"]["gemini_model"] = data.gemini_model
+        cfg["web_search"]["gemini_cli_model"] = data.gemini_cli_model
         cfg["web_search"]["agy_model"] = data.agy_model
         
         with open(config_path, 'w', encoding='utf-8') as f:
@@ -510,6 +515,7 @@ async def set_web_search_config(request: Request, data: WebSearchConfigRequest):
             "status": "ok",
             "engine": data.engine,
             "gemini_model": data.gemini_model,
+            "gemini_cli_model": data.gemini_cli_model,
             "agy_model": data.agy_model
         }
     except Exception as e:
@@ -531,6 +537,7 @@ async def test_web_search(request: Request, data: WebSearchTestRequest):
 
     engine = data.engine
     gemini_model = "gemini-2.5-flash"
+    gemini_cli_model = "gemini-3.1-flash-lite"
     agy_model = "agy-flash"
     config_path = __root__ / 'config.json'
     if config_path.exists():
@@ -541,6 +548,7 @@ async def test_web_search(request: Request, data: WebSearchTestRequest):
                 if not engine:
                     engine = ws.get("engine", "playwright")
                 gemini_model = ws.get("gemini_model", "gemini-2.5-flash")
+                gemini_cli_model = ws.get("gemini_cli_model", "gemini-3.1-flash-lite")
                 agy_model = ws.get("agy_model", "agy-flash")
         except Exception as e:
             logger.error("Ошибка чтения config.json для web_search", e)
@@ -553,6 +561,11 @@ async def test_web_search(request: Request, data: WebSearchTestRequest):
             from plugins.web_search.gemini_searcher import GeminiWebSearcher
             searcher = GeminiWebSearcher()
             res = await searcher.search_and_extract(query, model=gemini_model)
+            return {"status": "ok", "engine": engine, "result": res}
+        elif engine == "gemini_cli":
+            from plugins.web_search.gemini_cli_searcher import GeminiCliWebSearcher
+            searcher = GeminiCliWebSearcher()
+            res = await searcher.search_and_extract(query, model=gemini_cli_model)
             return {"status": "ok", "engine": engine, "result": res}
         elif engine == "agy":
             from plugins.web_search.agy_searcher import AgyWebSearcher

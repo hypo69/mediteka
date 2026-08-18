@@ -5,6 +5,7 @@ async function initSearchTab() {
   const btnSaveEngine = document.getElementById('btn-save-search-tab-engine');
   const btnSaveParams = document.getElementById('btn-save-search-params');
   const geminiModelSelect = document.getElementById('search-gemini-model');
+  const geminiCliModelSelect = document.getElementById('search-gemini-cli-model');
   const agyModelSelect = document.getElementById('search-agy-model');
   const engineBadge = document.getElementById('test-search-engine-badge');
   const btnRunTest = document.getElementById('btn-run-test-search');
@@ -13,12 +14,13 @@ async function initSearchTab() {
 
   if (!engineSelect) return;
 
-  // --- 1. Load Dynamic Models via SDK ---
+  // --- 1. Load Dynamic Models via SDK / Tools ---
   async function loadModels() {
     try {
       const modelsData = await window.api.fetch('/api/chat/models');
       const modelsGrouped = modelsData.models || {};
       const geminiList = modelsGrouped.gemini || [];
+      const geminiCliList = modelsGrouped.gemini_cli || ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro'];
       const agyList = modelsGrouped.agy || [];
 
       if (geminiModelSelect && geminiList.length > 0) {
@@ -32,6 +34,22 @@ async function initSearchTab() {
         });
         if (curVal && geminiList.includes(curVal)) {
           geminiModelSelect.value = curVal;
+        }
+      }
+
+      if (geminiCliModelSelect && geminiCliList.length > 0) {
+        const curVal = geminiCliModelSelect.value;
+        geminiCliModelSelect.innerHTML = '';
+        geminiCliList.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m;
+          opt.textContent = m;
+          geminiCliModelSelect.appendChild(opt);
+        });
+        if (curVal && geminiCliList.includes(curVal)) {
+          geminiCliModelSelect.value = curVal;
+        } else if (geminiCliList.includes('gemini-3.1-flash-lite')) {
+          geminiCliModelSelect.value = 'gemini-3.1-flash-lite';
         }
       }
 
@@ -49,7 +67,7 @@ async function initSearchTab() {
         }
       }
     } catch (err) {
-      console.error('[SearchTab] Ошибка загрузки динамических моделей SDK:', err);
+      console.error('[SearchTab] Ошибка загрузки динамических моделей SDK/CLI:', err);
     }
   }
 
@@ -66,6 +84,9 @@ async function initSearchTab() {
         if (data.gemini_model && geminiModelSelect) {
           geminiModelSelect.value = data.gemini_model;
         }
+        if (data.gemini_cli_model && geminiCliModelSelect) {
+          geminiCliModelSelect.value = data.gemini_cli_model;
+        }
         if (data.agy_model && agyModelSelect) {
           agyModelSelect.value = data.agy_model;
         }
@@ -80,16 +101,21 @@ async function initSearchTab() {
   async function saveConfig() {
     const engine = engineSelect ? engineSelect.value : 'playwright';
     const gemini_model = geminiModelSelect ? geminiModelSelect.value : 'gemini-flash-lite-latest';
+    const gemini_cli_model = geminiCliModelSelect ? geminiCliModelSelect.value : 'gemini-3.1-flash-lite';
     const agy_model = agyModelSelect ? agyModelSelect.value : 'agy-flash';
 
     try {
       await window.api.fetch('/api/admin/web-search/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ engine, gemini_model, agy_model })
+        body: JSON.stringify({ engine, gemini_model, gemini_cli_model, agy_model })
       });
       if (engineBadge) engineBadge.textContent = engine;
       notifySearch(`✅ Настройки веб-поиска сохранены (активен: ${engine})`, 'success');
+
+      if (typeof window.updateChatBadges === 'function') {
+        window.updateChatBadges(undefined, engine);
+      }
     } catch (e) {
       console.error('[SearchTab] Ошибка сохранения:', e);
       notifySearch('❌ Ошибка сохранения настроек: ' + e.message, 'danger');

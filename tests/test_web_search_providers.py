@@ -179,6 +179,9 @@ class TestWebSearchPluginEngines:
         assert any("Antigravity (AGY)" in s for s in statuses)
 
 
+_gemini_cli_mcp = _load_mcp_module("gemini_cli_search_mcp_server.py")
+gemini_cli_web_search = _gemini_cli_mcp.gemini_cli_web_search
+
 class TestMcpServers:
     """Тесты инструментов FastMCP серверов."""
 
@@ -189,6 +192,14 @@ class TestMcpServers:
             mock_search.return_value = "MCP Gemini search result"
             res = await gemini_web_search("тестовый запрос")
             assert res == "MCP Gemini search result"
+
+    @pytest.mark.asyncio
+    async def test_gemini_cli_mcp_tool(self):
+        """Тест gemini_cli_web_search инструмента."""
+        with patch("plugins.web_search.gemini_cli_searcher.GeminiCliWebSearcher.search_and_extract", new_callable=AsyncMock) as mock_search:
+            mock_search.return_value = "MCP Gemini CLI search result"
+            res = await gemini_cli_web_search("тестовый запрос")
+            assert res == "MCP Gemini CLI search result"
 
     @pytest.mark.asyncio
     async def test_agy_mcp_tool(self):
