@@ -236,7 +236,6 @@ C:\WINDOWS\TEMP
 *.db
 *.sqlite*
 storage/
-data/
 statistic/
 materials/
 
@@ -286,6 +285,7 @@ password.txt
 *secret*
 *password*
 ___*.*
+
 src/secrets/gemini_keys.json
 src/secrets/gemini_key_state.json
 
@@ -318,35 +318,6 @@ profiles/
 !.env.example
 !.gitignore
 !README*.md
-# Исключаем базы данных плагина media_organizer
-!plugins/media_organizer/data/
-
-# -----------------------------------------------------------------------------
-# Repository-specific overrides to ensure secrets and sensitive configs are not
-# tracked. These rules were added (without removing any existing rules) to hide
-# files that are currently present in the repository and may contain API keys
-# or other secrets. They are intentionally specific to avoid accidentally
-# ignoring benign JSON/config used by the project.
-# -----------------------------------------------------------------------------
-# Secrets directories
-secrets/
-secrets/*
-src/secrets/
-
-# Sensitive JSON/config files (explicitly ignore configs that may
-# contain credentials or tokens).
-src/ai/gemini/config.json
-src/ai/gemini/request.json
-plugins/qbittorrent/config.json
-plugins/qbittorrent/category_cache.json
-
-# Generic sensitive patterns (be conservative so we don't hide non-secret
-# project config files). These target common secret names.
-*credentials*.json
-*_credentials.json
-*secret*.json
-*secrets*.json
-*password*.txt
 
 # =============================================================================
 # 🎬 MEDIA FILES
@@ -424,8 +395,6 @@ plugins/qbittorrent/category_cache.json
 *.weba
 *.wma
 *.wv
-*.xm
-
 
 # Keep sample media
 !docs/media/
@@ -436,4 +405,11 @@ plugins/qbittorrent/category_cache.json
 # 🤖 RAG — генерируемые файлы индекса (не коммитить)
 # =============================================================================
 rag/rules.index
-rag/documents.json
+rag/documents.json
+
+# =============================================================================
+# 🎬 MEDIA ORGANIZER — генерируемые данные
+# =============================================================================
+# Базы данных уже исключаются правилами *.db и *.sqlite*.
+src/plugins/media_organizer/data/*.faiss
+src/plugins/media_organizer/data/generated_plots_cache.json
