@@ -197,7 +197,20 @@ def _parse_github_owner_repo(remote_url: str) -> tuple[str, str] | None:
 
 
 def get_remote_latest_version() -> str | None:
-    """Query GitHub Releases API for latest release tag_name. Returns version string or None on failure."""
+    """Query GitHub API for the latest version.
+
+    Flow:
+    - Try /releases/latest and use tag_name/name if available.
+    - Fallback to /tags and pick the highest semantic version-like tag.
+    Authenticated requests are used when GITHUB_TOKEN or GH_TOKEN env var is present.
+    """
+    def _headers() -> dict:
+        headers = {'User-Agent': 'mediteka-version-check'}
+        token = os.getenv('GITHUB_TOKEN') or os.getenv('GH_TOKEN') or os.getenv('GITHUB_API_TOKEN')
+        if token:
+            headers['Authorization'] = f'token {token}'
+        return headers
+
     try:
         remote = _get_git_origin_remote()
         if not remote:
@@ -206,12 +219,37 @@ def get_remote_latest_version() -> str | None:
         if not parsed:
             return None
         owner, repo = parsed
-        url = f'https://api.github.com/repos/{owner}/{repo}/releases/latest'
-        req = urllib.request.Request(url, headers={'User-Agent': 'mediteka-version-check'})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.load(resp)
-            tag = data.get('tag_name') or data.get('name')
-            return tag
+
+        # Try releases/latest first
+        try:
+            url = f'https://api.github.com/repos/{owner}/{repo}/releases/latest'
+            req = urllib.request.Request(url, headers=_headers())
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.load(resp)
+                tag = data.get('tag_name') or data.get('name')
+                if tag:
+                    return tag
+        except Exception:
+            # fallthrough to tags
+            pass
+
+        # Fallback: get tags and pick the highest semver-like tag
+        try:
+            url = f'https://api.github.com/repos/{owner}/{repo}/tags'
+            req = urllib.request.Request(url, headers=_headers())
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.load(resp)
+                tags = [t.get('name') for t in data if t.get('name')]
+                if not tags:
+                    return None
+                # pick tag with highest parsed numeric version
+                best = None
+                for t in tags:
+                    if best is None or _compare_versions(best, t) < 0:
+                        best = t
+                return best
+        except Exception:
+            return None
     except Exception:
         return None
 
@@ -240,8 +278,11 @@ def prompt_and_perform_update(branch: str = 'main') -> None:
     This function is conservative and skips the check in non-interactive environments.
     """
     try:
-        if not _is_interactive():
-            logger.debug('Non-interactive shell: skipping version check')
+        auto_update_env = os.getenv('AUTO_UPDATE') or os.getenv('MEDITEKA_AUTO_UPDATE')
+        auto_update = str(auto_update_env or '').lower() in ('1', 'true', 'yes')
+
+        if not _is_interactive() and not auto_update:
+            logger.debug('Non-interactive shell and AUTO_UPDATE not enabled: skipping version check')
             return
 
         local_v = get_local_version()
@@ -255,22 +296,30 @@ def prompt_and_perform_update(branch: str = 'main') -> None:
             logger.info(f'Local version {local_v} is up-to-date (remote {remote_v})')
             return
 
-        print(f"A newer version is available: {remote_v} (local: {local_v}).")
-        resp = input('Do you want to update the code from origin and restart? [y/N]: ').strip().lower()
-        if resp not in ('y', 'yes'):
-            logger.info('User declined update')
+        logger.info(f'A newer version is available: {remote_v} (local: {local_v}).')
+
+        do_update = auto_update
+        if not do_update:
+            # interactive prompt
+            try:
+                resp = input('Do you want to update the code from origin and restart? [y/N]: ').strip().lower()
+                do_update = resp in ('y', 'yes')
+            except Exception:
+                do_update = False
+
+        if not do_update:
+            logger.info('User declined update or update not approved')
             return
 
-        # run git pull --ff-only origin <branch>
+        # run git fetch + merge --ff-only origin/<branch>
         try:
             logger.info(f'Pulling latest changes from origin/{branch}...')
-            out = subprocess.check_output(['git', 'fetch', 'origin', branch], cwd=str(__root__), stderr=subprocess.STDOUT)
-            out2 = subprocess.check_output(['git', 'merge', '--ff-only', f'origin/{branch}'], cwd=str(__root__), stderr=subprocess.STDOUT)
+            subprocess.check_call(['git', 'fetch', 'origin', branch], cwd=str(__root__))
+            subprocess.check_call(['git', 'merge', '--ff-only', f'origin/{branch}'], cwd=str(__root__))
             logger.info('Update pulled successfully. You should restart the process to apply changes.')
             print('Update pulled successfully. Please restart the application to apply changes.')
         except subprocess.CalledProcessError as e:
-            out = e.output.decode(errors='ignore') if getattr(e, 'output', None) else str(e)
-            logger.error(f'Failed to update repository: {out}')
+            logger.error(f'Failed to update repository: {e}')
             print('Failed to update repository. See logs for details.')
     except Exception as e:
         logger.error(f'Error during version check/update: {e}')
