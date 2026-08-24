@@ -55,6 +55,11 @@ from src.logger import logger
 from src.utils.file import read_text_file
 from src.utils.jjson import j_loads_ns
 from plugins import load_plugins
+import subprocess
+import json
+import urllib.request
+import configparser
+import re
 
 load_dotenv(__root__ / '.env')
 from src.config import server_cfg, ai_cfg, tts_cfg, logging_cfg
@@ -142,6 +147,133 @@ app.mount('/webinterface', StaticFiles(directory=webinterface_dir), name='webint
 app.mount('/html', StaticFiles(directory=webinterface_dir), name='html')
 simple_assistant_dir = __root__ / 'SANDBOX' / 'AI Assistant' / 'Simple Assistant'
 app.mount('/simple-assistant', StaticFiles(directory=simple_assistant_dir, html=True), name='simple-assistant')
+
+
+def _parse_version(v: str) -> list[int]:
+    """Parse a simple semantic version string into a list of ints for comparison.
+    Non-numeric parts are ignored. Examples: 'v1.2.3' -> [1,2,3]
+    """
+    if not v:
+        return [0, 0, 0]
+    parts = re.findall(r"(\d+)", v)
+    return [int(p) for p in parts]
+
+
+def get_local_version() -> str:
+    """Try to read version from setup.cfg [metadata] section. Fallback to 0.0.0."""
+    cfg = configparser.ConfigParser()
+    try:
+        setup_cfg = Path(__root__) / 'setup.cfg'
+        if setup_cfg.exists():
+            cfg.read(setup_cfg)
+            if cfg.has_section('metadata') and cfg.has_option('metadata', 'version'):
+                return cfg.get('metadata', 'version').strip()
+    except Exception:
+        pass
+    return '0.0.0'
+
+
+def _get_git_origin_remote() -> str | None:
+    """Return origin remote URL or None."""
+    try:
+        out = subprocess.check_output(['git', 'config', '--get', 'remote.origin.url'], cwd=str(__root__), stderr=subprocess.DEVNULL)
+        url = out.decode().strip()
+        return url
+    except Exception:
+        return None
+
+
+def _parse_github_owner_repo(remote_url: str) -> tuple[str, str] | None:
+    """Parse GitHub owner and repo from remote URL.
+    Supports HTTPS and SSH forms.
+    """
+    if not remote_url:
+        return None
+    # https://github.com/owner/repo.git
+    m = re.search(r'github.com[:/](?P<owner>[^/]+)/(?P<repo>[^/.]+)', remote_url)
+    if m:
+        return m.group('owner'), m.group('repo')
+    return None
+
+
+def get_remote_latest_version() -> str | None:
+    """Query GitHub Releases API for latest release tag_name. Returns version string or None on failure."""
+    try:
+        remote = _get_git_origin_remote()
+        if not remote:
+            return None
+        parsed = _parse_github_owner_repo(remote)
+        if not parsed:
+            return None
+        owner, repo = parsed
+        url = f'https://api.github.com/repos/{owner}/{repo}/releases/latest'
+        req = urllib.request.Request(url, headers={'User-Agent': 'mediteka-version-check'})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.load(resp)
+            tag = data.get('tag_name') or data.get('name')
+            return tag
+    except Exception:
+        return None
+
+
+def _is_interactive() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
+def _compare_versions(a: str, b: str) -> int:
+    """Compare two version strings. Return -1 if a<b, 0 if equal, 1 if a>b."""
+    pa = _parse_version(a)
+    pb = _parse_version(b)
+    # normalize length
+    L = max(len(pa), len(pb))
+    pa += [0] * (L - len(pa))
+    pb += [0] * (L - len(pb))
+    if pa < pb:
+        return -1
+    if pa > pb:
+        return 1
+    return 0
+
+
+def prompt_and_perform_update(branch: str = 'main') -> None:
+    """If a newer remote version exists, prompt the user and, on consent, run git pull --ff-only.
+    This function is conservative and skips the check in non-interactive environments.
+    """
+    try:
+        if not _is_interactive():
+            logger.debug('Non-interactive shell: skipping version check')
+            return
+
+        local_v = get_local_version()
+        remote_v = get_remote_latest_version()
+        if not remote_v:
+            logger.debug('Could not determine remote version')
+            return
+
+        cmp = _compare_versions(local_v, remote_v)
+        if cmp >= 0:
+            logger.info(f'Local version {local_v} is up-to-date (remote {remote_v})')
+            return
+
+        print(f"A newer version is available: {remote_v} (local: {local_v}).")
+        resp = input('Do you want to update the code from origin and restart? [y/N]: ').strip().lower()
+        if resp not in ('y', 'yes'):
+            logger.info('User declined update')
+            return
+
+        # run git pull --ff-only origin <branch>
+        try:
+            logger.info(f'Pulling latest changes from origin/{branch}...')
+            out = subprocess.check_output(['git', 'fetch', 'origin', branch], cwd=str(__root__), stderr=subprocess.STDOUT)
+            out2 = subprocess.check_output(['git', 'merge', '--ff-only', f'origin/{branch}'], cwd=str(__root__), stderr=subprocess.STDOUT)
+            logger.info('Update pulled successfully. You should restart the process to apply changes.')
+            print('Update pulled successfully. Please restart the application to apply changes.')
+        except subprocess.CalledProcessError as e:
+            out = e.output.decode(errors='ignore') if getattr(e, 'output', None) else str(e)
+            logger.error(f'Failed to update repository: {out}')
+            print('Failed to update repository. See logs for details.')
+    except Exception as e:
+        logger.error(f'Error during version check/update: {e}')
 
 
 _api_key_names: list[str] = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
@@ -740,6 +872,12 @@ async def save_agy_config(data: AgyConfigRequest):
 
 
 if __name__ == '__main__':
+    try:
+        # Check for remote updates and offer to pull when running interactively.
+        prompt_and_perform_update(branch=str(os.getenv('GIT_BRANCH', 'main')))
+    except Exception:
+        # Non-fatal if version check fails
+        pass
     # Для разработки: однопроцессный запуск без --workers
     # В продакшене используйте Run-Unicorn.ps1, который запускает:
     #   uvicorn main:app --workers N  (без Telegram-бота)
