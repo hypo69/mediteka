@@ -92,14 +92,14 @@ def _format_source_context(sources: dict) -> str:
 
 
 class MovieSearchSourcesPlugin(BasePlugin):
-    """Плагин для ответов о поиске фильмов с перечислением обращаемых источников.
-
-    При запросе пользователя о фильмах (где посмотреть, API, плееры и т.д.)
-    последовательно информирует о каждом опрашиваемом источнике через
-    статусные сообщения, затем генерирует финальный ответ через AI.
-    """
+    """Плагин для ответов о поиске фильмов с перечислением обращаемых источников."""
 
     name = 'movie_search_sources'
+    title = 'Каталог источников поиска'
+    description = 'Управление базами метаданных, агрегаторами стриминга, трекерами и плеерами'
+    icon = '📑'
+    version = '2.0.0'
+    category = 'search'
 
     def __init__(self, ai_model) -> None:
         super().__init__(ai_model)
@@ -109,6 +109,42 @@ class MovieSearchSourcesPlugin(BasePlugin):
                 f'[movie_search_sources] Загружен source.json: '
                 f'{sum(len(v) for v in self._sources.values() if isinstance(v, list))} источников'
             )
+
+    def get_manifest(self) -> dict:
+        total_sources = sum(len(v) for v in self._sources.values() if isinstance(v, list)) if self._sources else 0
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [
+                {
+                    'id': 'total_sources_info',
+                    'label': 'Всего источников в каталоге',
+                    'type': 'readonly',
+                    'default': f'{total_sources} активных провайдеров',
+                    'description': 'Количество сконфигурированных источников поиска и парсинга'
+                }
+            ],
+            'actions': [
+                {
+                    'id': 'reload_sources',
+                    'label': '🔄 Перезагрузить каталог',
+                    'description': 'Перечитать файл sources.json с диска',
+                    'color': 'primary'
+                }
+            ]
+        }
+
+    async def action_reload_sources(self, params: dict) -> dict:
+        """Перезагрузка источников."""
+        self._sources = _load_sources()
+        count = sum(len(v) for v in self._sources.values() if isinstance(v, list)) if self._sources else 0
+        return {'success': True, 'result': f'Загружено категорий: {len(self._sources or {})}, источников: {count}', 'message': 'Каталог источников обновлен'}
 
     def _is_search_query(self, message: str) -> bool:
         """Проверяет, относится ли запрос к поиску фильмов/плееров/источников."""

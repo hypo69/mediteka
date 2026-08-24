@@ -69,18 +69,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('HELP system initialized');
   
   console.log('Loading tabs...');
+  const v = '20260824_plugin_manager';
   await Promise.all([
-    loadTabContent('chat', '/html/chat/index.html'),
-    loadTabContent('torrents', '/html/torrents/index.html'),
-    loadTabContent('media', '/html/media/index.html'),
-    loadTabContent('movie-search', '/html/movie-search/index.html'),
-    loadTabContent('admin', '/html/admin/index.html'),
-    loadTabContent('help', '/html/help/index.html'),
+    loadTabContent('chat', `/html/chat/index.html?v=${v}`),
+    loadTabContent('torrents', `/html/torrents/index.html?v=${v}`),
+    loadTabContent('media', `/html/media/index.html?v=${v}`),
+    loadTabContent('movie-search', `/html/movie-search/index.html?v=${v}`),
+    loadTabContent('plugins', `/html/plugins_tab/index.html?v=${v}`, `/html/plugins_tab/main.js?v=${v}`),
+    loadTabContent('admin', `/html/admin/index.html?v=${v}`),
+    loadTabContent('help', `/html/help/index.html?v=${v}`),
   ]);
   console.log('All tabs loaded');
   
   // Apply translations after all tabs are loaded
   applyTranslations();
+  
+  // Синхронизация видимости вкладок плагинов
+  try {
+    const pluginsResp = await fetch('/api/admin/plugins');
+    if (pluginsResp.ok) {
+      const pluginsData = await pluginsResp.json();
+      if (window.syncPluginTabsVisibility && pluginsData && pluginsData.plugins) {
+        window.syncPluginTabsVisibility(pluginsData.plugins);
+      }
+    }
+  } catch (err) {
+    console.error('Ошибка синхронизации видимости плагинов:', err);
+  }
   
   // Инициализация первой вкладки
   const chatTab = document.querySelector('[data-bs-target="#tab-chat"]');
@@ -92,7 +107,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Загрузка контента вкладки
-async function loadTabContent(tabName, url) {
+async function loadTabContent(tabName, url, scriptUrl = null) {
   try {
     console.log(`Loading tab ${tabName} from ${url}...`);
     const response = await fetch(url);
@@ -105,7 +120,7 @@ async function loadTabContent(tabName, url) {
     
     // Загрузка JS файла вкладки
     const script = document.createElement('script');
-    script.src = `/html/${tabName}/main.js?v=20260811`;
+    script.src = scriptUrl || `/html/${tabName}/main.js?v=20260824_plugin_manager`;
     if (tabName === 'admin') {
       script.type = 'module';
     }

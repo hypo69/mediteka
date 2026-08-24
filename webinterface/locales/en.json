@@ -1,15 +1,21 @@
 {
   "tabs": {
-    "chat": "Chat",
-    "torrents": "Torrents",
-    "media": "Media Library",
-    "movieSearch": "Movie Search",
-    "admin": "Admin",
-    "users": "Users",
-    "models": "Models & APIs",
-    "tts": "TTS Settings",
-    "logs": "Logs",
-    "help": "Reference"
+    "chat": "💬 Chat",
+    "torrents": "🧲 Torrents",
+    "media": "🎬 Media Library",
+    "movieSearch": "🔍 Movie Search",
+    "plugins": "🔌 Plugins",
+    "admin": "⚙️ Admin",
+    "users": "👥 Users",
+    "rag": "🧠 RAG",
+    "models": "🤖 Models & APIs",
+    "agents": "🧩 AI Agents",
+    "search": "🌐 Web Search",
+    "tts": "🗣️ TTS Settings",
+    "sources": "📑 Sources",
+    "logs": "📋 Logs",
+    "help": "📚 Reference",
+    "instructions": "📝 System Instructions"
   },
   "movieSearch": {
     "title": "🔍 Search Movies on Trackers",

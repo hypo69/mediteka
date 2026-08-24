@@ -12,6 +12,11 @@ from src.logger import logger
 class WebSearchPlugin(BasePlugin):
     """Плагин для прямого веб-поиска по запросу пользователя с выбором движка."""
     name = "web_search"
+    title = "Интеллектуальный веб-поиск"
+    description = "Поиск информации в интернете через Gemini Grounding, Playwright, Gemini CLI, Antigravity (AGY) и LangChain"
+    icon = "🌐"
+    version = "2.0.0"
+    category = "search"
 
     def __init__(self, ai_model):
         super().__init__(ai_model)
@@ -19,6 +24,94 @@ class WebSearchPlugin(BasePlugin):
         self._gemini_searcher = ""
         self._gemini_cli_searcher = ""
         self._agy_searcher = ""
+
+    def get_manifest(self) -> dict:
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self._get_config(),
+            'fields': [
+                {
+                    'id': 'engine',
+                    'label': 'Поисковый движок',
+                    'type': 'select',
+                    'default': 'gemini_cli',
+                    'options': [
+                        {'value': 'gemini_cli', 'label': 'Gemini CLI (локальный терминал)'},
+                        {'value': 'playwright', 'label': 'Playwright Browser MCP'},
+                        {'value': 'gemini', 'label': 'Google Gemini Grounding'},
+                        {'value': 'agy', 'label': 'Antigravity (AGY) Search'},
+                        {'value': 'langchain', 'label': 'LangChain MCP Agent'}
+                    ],
+                    'description': 'Основной механизм выполнения поисковых запросов в сети'
+                },
+                {
+                    'id': 'gemini_model',
+                    'label': 'Модель Google Gemini',
+                    'type': 'string',
+                    'default': 'gemini-2.5-flash',
+                    'description': 'Модель для Google Gemini Grounding'
+                },
+                {
+                    'id': 'gemini_cli_model',
+                    'label': 'Модель Gemini CLI',
+                    'type': 'string',
+                    'default': 'gemini-3.1-flash-lite',
+                    'description': 'Модель для терминального клиента Gemini CLI'
+                },
+                {
+                    'id': 'agy_model',
+                    'label': 'Модель Antigravity (AGY)',
+                    'type': 'string',
+                    'default': 'agy-flash',
+                    'description': 'Модель для агента Antigravity'
+                },
+                {
+                    'id': 'fallback_on_rag_not_found',
+                    'label': 'Автопоиск при отсутствии в RAG',
+                    'type': 'boolean',
+                    'default': True,
+                    'description': 'Автоматически обращаться к веб-поиску, если тайтл не найден в локальной медиатеке'
+                }
+            ],
+            'actions': [
+                {
+                    'id': 'test_search',
+                    'label': '🔍 Тест поиска',
+                    'description': 'Выполнить тестовый веб-поиск по контрольному запросу',
+                    'color': 'primary'
+                }
+            ]
+        }
+
+    async def action_test_search(self, params: dict) -> dict:
+        """Тестовый поиск через активный движок."""
+        query = str(params.get('query') or 'Последние космические открытия 2026')
+        engine = str(params.get('engine') or self._get_engine())
+        try:
+            if engine == 'gemini':
+                res = await self.gemini_searcher.search_and_extract(query)
+            elif engine == 'gemini_cli':
+                res = await self.gemini_cli_searcher.search_and_extract(query)
+            elif engine == 'agy':
+                res = await self.agy_searcher.search_and_extract(query)
+            elif engine == 'langchain':
+                from src.ai.langchain_agent import MediaSearchAgent
+                from header import __root__
+                agent = MediaSearchAgent(config_path=__root__ / "config.json")
+                search_res = await agent.search(query)
+                res = json.dumps(search_res, ensure_ascii=False, indent=2)
+            else:
+                res = await self.playwright_searcher.search_and_extract(query)
+            return {'success': True, 'result': res[:1000] + ('...' if len(res) > 1000 else ''), 'message': f'Поиск через {engine} успешен'}
+        except Exception as ex:
+            logger.error(f"[WebSearchPlugin] Тестовый поиск завершился ошибкой: {ex}")
+            return {'success': False, 'message': f'Ошибка теста поиска: {ex}'}
 
     @property
     def playwright_searcher(self):

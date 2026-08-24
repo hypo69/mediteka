@@ -66,11 +66,43 @@ class YtDlpPlugin(BasePlugin):
     """Плагин скачивания видео и аудио через yt-dlp."""
 
     name = "yt_dlp"
+    title = "Загрузчик видео и аудио yt-dlp"
+    description = "Поиск, получение информации и скачивание видео/аудио из YouTube и медиа-платформ"
+    icon = "📥"
+    version = "2.0.0"
+    category = "tools"
 
     def __init__(self, ai_model) -> None:
         super().__init__(ai_model)
         cfg = _load_cfg()
         self.client = YtDlpClient(cfg)
+
+    def get_manifest(self) -> dict:
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [
+                {
+                    'id': 'format',
+                    'label': 'Качество видео по умолчанию',
+                    'type': 'select',
+                    'default': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                    'options': [
+                        {'value': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best', 'label': 'Наилучшее качество (MP4)'},
+                        {'value': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]', 'label': 'Full HD 1080p'},
+                        {'value': 'bestvideo[height<=720]+bestaudio/best[height<=720]', 'label': 'HD 720p'}
+                    ],
+                    'description': 'Селектор форматов и качества для скачивания'
+                }
+            ],
+            'actions': []
+        }
 
     # ------------------------------------------------------------------
     # Routing

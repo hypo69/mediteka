@@ -6,6 +6,25 @@ from header import __root__
 
 class UserManagerTool(BasePlugin):
     name: str = 'user_manager'
+    title: str = 'Инструмент управления пользователями'
+    description: str = 'Чат-команды аудита активности и информации об учетных записях'
+    icon: str = '👥'
+    version: str = '1.0.0'
+    category: str = 'system'
+
+    def get_manifest(self) -> dict:
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [],
+            'actions': []
+        }
 
     def __init__(self, ai_model) -> None:
         super().__init__(ai_model)

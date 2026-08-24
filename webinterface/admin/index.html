@@ -36,11 +36,14 @@
     <li class="nav-item">
       <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-chat" data-i18n="tabs.chat">💬 Чат</button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-torrents" data-i18n="tabs.torrents">🧲 Торренты</button>
+    <li class="nav-item" data-plugin-tab="qbittorrent">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-torrents" data-plugin="qbittorrent" data-i18n="tabs.torrents">🧲 Торренты</button>
     </li>
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-media" data-i18n="tabs.media">🎬 Медиатека</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-plugins" data-i18n="tabs.plugins">🔌 Плагины</button>
     </li>
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-admin" data-i18n="tabs.admin">⚙️ Управление</button>
@@ -48,23 +51,23 @@
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-users" data-i18n="tabs.users">👥 Пользователи</button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rag">🧠 RAG</button>
+    <li class="nav-item" data-plugin-tab="rag">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rag" data-plugin="rag" data-i18n="tabs.rag">🧠 RAG</button>
     </li>
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-models" data-i18n="tabs.models">🤖 Модели и API</button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-agents">🧩 Агенты ИИ</button>
+    <li class="nav-item" data-plugin-tab="langchain_media">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-agents" data-plugin="langchain_media" data-i18n="tabs.agents">🧩 Агенты ИИ</button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-search">🌐 Веб-поиск</button>
+    <li class="nav-item" data-plugin-tab="web_search">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-search" data-plugin="web_search" data-i18n="tabs.search">🌐 Веб-поиск</button>
     </li>
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tts" data-i18n="tabs.tts">🗣️ Настройка TTS</button>
     </li>
-    <li class="nav-item">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sources">📑 Источники</button>
+    <li class="nav-item" data-plugin-tab="movie_search_sources">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-sources" data-plugin="movie_search_sources" data-i18n="tabs.sources">📑 Источники</button>
     </li>
     <li class="nav-item">
       <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-logs" data-i18n="tabs.logs">📋 Логи</button>
@@ -113,6 +116,9 @@
 
     <!-- Media Tab -->
     <div id="tab-media" class="tab-pane fade"></div>
+
+    <!-- Plugins Tab -->
+    <div id="tab-plugins" class="tab-pane fade"></div>
 
     <!-- Admin Tab -->
     <div id="tab-admin" class="tab-pane fade"></div>

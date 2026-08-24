@@ -5,13 +5,14 @@
 **mediteka** — полноценная AI-платформа для управления медиатекой с расширяемой архитектурой плагинов, поддержкой FastAPI и множеством интерфейсов.
 
 **Основные функции:**
-1. 🤖 **AI-ассистент** — интегрированные Google Gemini и Microsoft AI Foundry
+1. 🤖 **AI-ассистент** — интегрированные Google Gemini, Microsoft AI Foundry, AGY SDK и Ollama
 2. 🎬 **Умный медиаплеер** — синхронизированный плеер с WebSocket управлением
 3. 📡 **Дистанционное управление** — голосовой пульт ДУ с TTS/STT
 4. 📱 **Telegram Mini App** — удалённый доступ из Telegram
 5. 🧠 **RAG-поиск** — семантический поиск по медиатеке с функцией Function Calling
-6. 🧩 **Плагинная архитектура** — 10 модульных плагинов для разных задач
+6. 🧩 **Плагинная архитектура** — 11 модульных плагинов для разных задач
 7. 📁 **Полный цикл медиа** — от поиска торрентов до автоматической организации
+8. 🤖 **Управление агентами** — система настройки и тестирования AI агентов
 
 ---
 
@@ -38,14 +39,14 @@
 │    │                      │                      │                       │
 │┌───▼────┐           ┌────▼──────┐          ┌───▼────┐                  │
 ││  AI    │           │  Media    │          │ Torrent│                  │
-││Gemini/ │           │ Organizer │          │QBittorrent│              │
-││Foundry │           └───────────┘          └──────────┘                  │
-│└────────┘                  │                      │                       │
-│    │              ┌──────▼───────┐               │                       │
-│    │              │  RAG Index   │               │                       │
-│    │              │  (SQLite +   │               │                       │
-│    │              │   Embeddings)│               │                       │
-│    │              └──────────────┘               │                       │
+││Unified │           │ Organizer │          │QBittorrent│              │
+││Chat    │           └───────────┘          └──────────┘                  │
+││Model   │                  │                      │                       │
+│└────────┘          ┌──────▼───────┐               │                       │
+│    │               │  RAG Index   │               │                       │
+│    │               │  (SQLite +   │               │                       │
+│    │               │   Embeddings)│               │                       │
+│    │               └──────────────┘               │                       │
 │    │                      │                      │                       │
 │    │              ┌──────▼───────┐               │                       │
 │    │              │  Media DB    │               │                       │
@@ -61,7 +62,7 @@
 ## Ключевые компоненты 2026
 
 ### 1. FastAPI Backend (`src/fastapi/`)
-Обновленная маршрутизация с 9 роутерами:
+Обновленная маршрутизация с 10 роутерами:
 
 | Модуль | Описание | Эндпоинты |
 |--------|----------|-----------|
@@ -74,17 +75,20 @@
 | `router_logs.py` | Логирование | `/api/logs/`, `/api/logs/analyze` |
 | `router_keys.py` | Управление ключами | `/api/keys/`, `/api/keys/status` |
 | `router_admin.py` | Админ-панель | `/admin`, `/api/admin/` |
+| `router_agents.py` | Управление агентами | `/api/agents/` (новый) |
 
 ### 2. AI Модель (`src/ai/`)
-Архитектура: Google Gemini + Microsoft AI Foundry + AGY + Ollama
+Архитектура: UnifiedChatModel с поддержкой 4 провайдеров
 
 | Модуль | Описание | Префикс |
 |--------|----------|---------|
 | `unified_chat.py` | `UnifiedChatModel` — единый интерфейс | Роутинг по префиксу |
-| `foundry_chat.py` | Клиент Foundry | `foundry:` |
+| `foundry_chat.py` | Клиент Microsoft AI Foundry | `foundry:` |
 | `gemini/generative_ai.py` | GoogleGenerativeAI | `gemini-*` (по умолчанию) |
 | `agy_chat.py` | AGY SDK (Gemini через прокси) | `agy-*` |
 | `ollama_chat.py` | Ollama локальные модели | `ollama:` |
+| `model_manager.py` | Менеджер моделей и конфигураций | - |
+| `langchain_agent.py` | LangChain интеграция | - |
 
 **Правила выбора модели:**
 - `foundry:qwen3-one` → Microsoft AI Foundry
@@ -93,7 +97,7 @@
 - `ollama:llama3.1` → Ollama локально
 
 ### 3. Плагины 2026 (`plugins/`)
-**Теперь 10 полных плагинов** (а не 5 как раньше):
+**11 полных плагинов**:
 
 | Плагин | Триггеры | Назначение | Особенности |
 |--------|----------|-----------|-------------|
@@ -106,7 +110,9 @@
 | `qbittorrent` | "добавь торрент", "категории" | Управление qBittorrent | Категории, теги, поиск |
 | `telegram_bot` | — (отдельный процесс) | Telegram Mini App | Удалённое управление |
 | `user_manager_tool` | `!list_users`, `!user_activity` | Управление пользователями | SQLite users.db |
-| `yt_dlp` | "скачай", "youtube", "mp3" | Скачивание видео/аудио | Поддержка yt-dlp (новый) |
+| `yt_dlp` | "скачай", "youtube", "mp3" | Скачивание видео/аудио | Поддержка yt-dlp |
+| `langchain_media` | "лангчейн", "агент" | LangChain медиа-инструменты | Интеграция с LangChain |
+
 
 **Загрузка плагинов:**
 ```python
@@ -119,6 +125,7 @@ def load_plugins(ai_model) -> dict[str, BasePlugin]
 ```python
 class BasePlugin(ABC):
     name: str = 'base'
+    enabled: bool = True
     
     async def handle(self, message: str, **kwargs) -> str:
         # Потоковый вывод через yield {"status": "...", "text": "..."}
@@ -130,27 +137,32 @@ class BasePlugin(ABC):
 
 ### Таблицы `media.db`:
 
-1. **Основная таблица `media`:**
+1. **Основная таблица `media`:** (актуальная структура)
 ```sql
 id, disk_name, path, title, title_ru, title_orig, year, 
 main_category, country, genres, directors, cast, 
 num_of_seasons, num_episodes_per_season, status, rating, 
 awards, plot, atmosphere, why_watch, mood, final_verdict, 
 can_stop_at, quote, facts, similar, parent_id, 
-episode_scan_skipped, media_type, number
+episode_scan_skipped, media_type, number, torrent_id, media_size
 ```
 
-2. **Таблица `media_vector`:**
+2. **Таблица `media_vector`:** (RAG-поиск)
 ```sql
 id, media_id, embedding
 ```
 
-3. **Таблица `search_history`:**
+3. **Таблица `search_history`:** (история поиска)
 ```sql
 id, query, timestamp, results_count
 ```
 
-**10 Категорий по умолчанию:**
+4. **Таблица `users`:** (управление пользователями)
+```sql
+id, username, email, created_at, last_login, preferences
+```
+
+**11 Категорий по умолчанию:**
 1. 🎬 Боевики
 2. 😱 Триллеры  
 3. 🚀 Приключения
@@ -161,6 +173,7 @@ id, query, timestamp, results_count
 8. 🕵️ Шпионы
 9. 🎭 Мюзиклы
 10. 📹 Документальные
+11. 💰 Деньги / Корпорации / Deep State
 
 ---
 
@@ -180,7 +193,7 @@ embedding = await ai_model.embed(query)
 # 2. Поиск в FAISS индексе  
 results = search_faiss_index(embedding)
 
-# 3. Function Calling в Gemini
+# 3. Function Calling в UnifiedChatModel
 tools = get_media_tools()  # search_media, get_media_card, get_random_media
 response = await ai_model.chat(query, tools=tools)
 
@@ -196,12 +209,13 @@ yield {"text": "Найдены результаты..."}
 | Компонент | Технология | Версия |
 |-----------|-----------|--------|
 | Backend | Python 3.10+, FastAPI, Uvicorn | Python 3.10+ |
-| AI | Google Gemini 2.0, Microsoft AI Foundry | Gemini 2.0-flash |
+| AI | UnifiedChatModel (Gemini + Foundry + AGY + Ollama) | Мультипровайдер |
 | Database | SQLite, FAISS | SQLite 3.45+ |
 | Frontend | HTML5, CSS3, Vanilla JS | Modern Web APIs |
 | Медиа | qBittorrent API, yt-dlp, TMDB API | QBittorrent 4.6+ |
 | Поиск | Playwright, DuckDuckGo, Rutracker | Playwright 1.45+ |
 | Голос | Silero TTS, Web Speech API | Silero v4 |
+| LangChain | LangChain интеграция | LangChain 0.1+ |
 | Деплой | PowerShell scripts, SSL/TLS | Windows |
 
 ---
@@ -219,7 +233,7 @@ mediteka/
 │   │   ├── chat/               # Инструкция чата
 │   │   └── media_organizer/    # Инструкция медиатеки
 │   └── plans/                  # Дорожная карта
-├── plugins/                    # 10 ПЛАГИНОВ
+├── plugins/                    # 11 плагинов
 │   ├── media_organizer/       # Управление медиатекой (+RAG)
 │   ├── rag/                   # RAG-поиск (Function Calling)
 │   ├── media_layer/           # Простой медиа-слой
@@ -229,14 +243,19 @@ mediteka/
 │   ├── qbittorrent/           # Управление qBittorrent
 │   ├── telegram_bot/          # Telegram Mini App
 │   ├── user_manager_tool/     # Управление пользователями
-│   └── yt_dlp/                # Скачивание видео/аудио ← НОВЫЙ!
+│   ├── yt_dlp/                # Скачивание видео/аудио
+│   ├── langchain_media/       # LangChain медиа-инструменты
+
 ├── src/
-│   ├── ai/                    # AI модели (Gemini + Foundry)
+│   ├── ai/                    # AI модели (UnifiedChatModel)
 │   │   ├── unified_chat.py    # UnifiedChatModel
 │   │   ├── foundry_chat.py    # Microsoft AI Foundry
 │   │   ├── gemini/            # Google Gemini
+│   │   ├── agy_chat.py        # AGY SDK
+│   │   ├── ollama_chat.py     # Ollama
+│   │   ├── model_manager.py   # Менеджер моделей
 │   │   └── dev_rag.py         # RAG для разработки
-│   ├── fastapi/               # 9 роутеров FastAPI
+│   ├── fastapi/               # 10 роутеров FastAPI
 │   ├── logger/                # Система логирования
 │   ├── user_manager/          # Управление пользователями
 │   ├── tts/                   # Text-to-Speech (Silero)
@@ -249,7 +268,7 @@ mediteka/
 │   ├── tv/                    # Телевизионный интерфейс
 │   └── user_tts/              # Тестирование TTS
 ├── main.py                    # Точка входа (FastAPI)
-├── requirements.txt           # Зависимости (с yt-dlp)
+├── requirements.txt           # Зависимости
 ├── .env                       # Переменные окружения
 ├── pytest.ini                 # Конфигурация тестов
 ├── conftest.py                # Фикстуры pytest
@@ -263,10 +282,24 @@ mediteka/
 | Файл | Описание | Критичность |
 |------|----------|-------------|
 | `.env` | Переменные окружения (API ключи) | Критично |
-| `src/fastapi/config.json` | Настройки сервера (host:0.0.0.0, port:3000) | Критично |
+| `config.json` | Настройки сервера и плагинов | Критично |
+| `src/fastapi/config.json` | Настройки FastAPI | Важно |
 | `plugins/media_organizer/config.json` | Настройки медиатеки | Важно |
 | `plugins/qbittorrent/config.json` | Настройки qBittorrent | Важно |
-| `plugins/yt_dlp/config.json` | Настройки yt-dlp (новый) | Дополнительно |
+| `src/ai/model_manager.py` | Конфигурация AI моделей | Критично |
+
+**Новые переменные окружения (.env):**
+```env
+# AI Модели
+GEMINI_API_KEY_NAMES=your_api_keys
+FOUNDRY_API_KEY=your_foundry_key
+FOUNDRY_BASE_URL=http://localhost:3000
+AGY_API_KEY=your_agy_key
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Плагины
+DISABLED_PLUGINS=plugin1,plugin2
+```
 
 ---
 
@@ -279,82 +312,78 @@ mediteka/
    → Процесс: RAG-поиск → Function Calling → AI-рекомендация
    ```
 
-2. **Скачивание видео:**
+2. **Скачивание видео через yt-dlp:**
    ```
    "скачай https://youtube.com/watch?v=..."
    → Плагин: yt_dlp
    → Процесс: YtDlpClient → прогресс-бар → HTML-карточка результата
    ```
 
-3. **Поиск торрента:**
+3. **Поиск торрента через Playwright:**
    ```
    "найди торрент фильма Начало"
    → Плагин: torrent_playwright
    → Процесс: Playwright поиск → AI-фильтрация → HTML-список
    ```
 
-4. **Веб-поиск:**
+4. **LangChain медиа-анализ:**
    ```
-   "погугли актёров из фильма Криминальное чтиво"
-   → Плагин: web_search
-   → Процесс: Playwright → AI-анализ → структурированный ответ
-   ```
-
-5. **Управление торрентами:**
-   ```
-   "категории торрентов"
-   → Плагин: qbittorrent
-   → Процесс: QBittorrentClient → назначение категорий
+   "анализируй медиатеку с помощью LangChain"
+   → Плагин: langchain_media
+   → Процесс: LangChain агенты → анализ структуры → рекомендации
    ```
 
-6. **Поиск источника:**
+5. **Управление агентами:**
    ```
-   "где посмотреть фильм Интерстеллар"
-   → Плагин: movie_search_sources
-   → Процесс: Каталог streaming-сервисов → рекомендации
+   "настрой агента для обработки медиа"
+   → API: /api/agents/
+   → Процесс: создание конфигурации → тестирование → развертывание
    ```
 
 ---
 
 ## Новые возможности 2026
 
-### 1. **Streaming-архитектура**
-- SSE (Server-Sent Events) для статусов
-- WebSocket для управления плеером
-- Асинхронный прогресс загрузок
+### 1. **UnifiedChatModel архитектура**
+- Единый интерфейс для 4 AI провайдеров
+- Автоматическое переключение между Gemini, Foundry, AGY, Ollama
+- Централизованное управление конфигурацией
 
-### 2. **Расширенная AI-интеграция**
-- Единый интерфейс UnifiedChatModel
-- Авто-переключение между Gemini и Foundry
-- Поддержка Function Calling во всех плагинах
+### 2. **Расширенная система плагинов**
+- 11 плагинов вместо 10
+- Динамическая загрузка и управление
+- Интеграция с LangChain
+- Плагин для управления плагинами
 
-### 3. **Новый плагин yt_dlp**
-- Скачивание видео с YouTube и других платформ
-- Конвертация в аудио (mp3)
-- Поиск по YouTube через ytsearch
-- Прогресс-бар и HTML-карточки
+### 3. **Управление агентами**
+- REST API для создания и настройки агентов
+- Тестирование и валидация конфигураций
+- Интеграция с существующей архитектурой
 
-### 4. **Улучшенный RAG**
-- FAISS для векторного поиска
-- Function Calling для медиа-поиска
-- "Карусель" случайных фильмов
-- Веб-интеграция через Playwright
+### 4. **Улучшенный RAG с Function Calling**
+- Интеграция с UnifiedChatModel
+- Поддержка потокового вывода
+- Автоматическое обновление индексов
 
-### 5. **Голосовой интерфейс**
-- Silero TTS для русского языка
-- Web Speech API для распознавания речи
-- Озвучка AI-ответов на пульте ДУ
+### 5. **Полная конфигурация AI моделей**
+- Поддержка Foundry, AGY, Ollama
+- Централизованное управление ключами
+- Настройки через веб-интерфейс
+
+### 6. **Расширенная база данных**
+- Дополнительные поля для торрентов
+- Управление пользователями
+- История поиска и аналитика
 
 ---
 
 ## Примечания для AI (важные изменения)
 
-1. **Плагины загружаются динамически** через `plugins/__init__.py`
-2. **Отключение плагинов**: переменная `DISABLED_PLUGINS` в `.env`
-3. **Unified AI**: Используйте `UnifiedChatModel` из `src/ai/unified_chat.py`
-4. **Потоковый вывод**: Все плагины поддерживают `yield {"status": "...", "text": "..."}`
-5. **RAG-маршрут**: Медиа-запросы всегда идут через `rag` плагин
-6. **Новый yt-dlp**: Добавлен как зависимость в `requirements.txt`
+1. **UnifiedChatModel** — основной интерфейс для всех AI операций
+2. **10 роутеров FastAPI** — добавлен `router_agents.py`
+3. **11 плагинов** — добавлены `langchain_media` и улучшена система управления
+4. **Конфигурация через веб-интерфейс** — настройки Foundry, Ollama, AGY
+5. **Автоматическое обновление документации** — через инструменты в `tools/ai/`
 
 ---
 
@@ -362,38 +391,40 @@ mediteka/
 
 | Аспект | Было (2024) | Стало (2026) |
 |--------|------------|-------------|
-| Плагины | 5 | 10 |
-| AI Модели | Только Gemini | Gemini + Foundry |
-| Поиск | Простой RAG | RAG + Function Calling |
-| Веб-поиск | Отсутствовал | Playwright + AI анализ |
-| Скачивание видео | Нет | yt-dlp плагин |
-| Интерфейсы | 4 | 6 (добавлены tv, user_tts) |
-| Архитектура | Синхронная | Асинхронная + Streaming |
-| База данных | media.db | media.db + media_vector |
+| Роутеры | 9 | 10 (+agents) |
+| Плагины | 10 | 11 |
+| AI Модели | Gemini + Foundry | UnifiedChatModel (4 провайдера) |
+| Конфигурация | Статическая | Веб-интерфейс + API |
+| Управление | Ручное | Агенты + автоматизация |
+| База данных | media.db | media.db + users + история |
 
 ---
 
 ## Быстрый старт 2026
 
-```bash
-# Установка зависимостей (теперь с yt-dlp)
+```powershell
+# Установка зависимостей
 pip install -r requirements.txt
 
 # Настройка окружения
 cp .env.example .env
-# Отредактируйте .env: GEMINI_API_KEY_NAMES, TELEGRAM_BOT_TOKEN и др.
+# Отредактируйте .env: GEMINI_API_KEY_NAMES, FOUNDRY_API_KEY, AGY_API_KEY
 
 # Запуск сервера
 python main.py
+
+# Или через PowerShell лончер
+.\run.ps1
 
 # Доступные интерфейсы:
 # http://localhost:3000/user      - плеер+чат
 # http://localhost:3000/rc        - пульт ДУ
 # http://localhost:3000/tgmini    - Telegram Mini App
 # http://localhost:3000/admin     - админка (пароль: onela)
+# http://localhost:3000/api/docs  - OpenAPI документация
 ```
 
 ---
 
 **Последнее обновление: август 2026**  
-*Актуализировано после добавления yt_dlp плагина и расширения архитектуры до 10 плагинов.*
+*Актуализировано после расширения архитектуры до 11 плагинов, добавления UnifiedChatModel и системы управлен��я агентами.*

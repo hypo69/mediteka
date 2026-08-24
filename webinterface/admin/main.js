@@ -139,6 +139,7 @@ async function initInterface() {
     loadTabContent('chat', `/html/chat/index.html?v=${cb}`),
     loadTabContent('torrents', `/html/torrents/index.html?v=${cb}`),
     loadTabContent('media', `/html/media/index.html?v=${cb}`),
+    loadTabContent('plugins', `/html/plugins_tab/index.html?v=${cb}`, `/html/plugins_tab/main.js?v=${cb}`),
     loadTabContent('admin', `/html/admin_tab/index.html?v=${cb}`, `/html/admin_tab/main.js?v=${cb}`),
     loadTabContent('users', `/html/users_tab/index.html?v=${cb}`, `/html/users_tab/main.js?v=${cb}`),
     loadTabContent('instructions', `/html/instructions_tab/index.html?v=${cb}`, `/html/instructions_tab/main.js?v=${cb}`),
@@ -154,6 +155,16 @@ async function initInterface() {
   
   // Apply translations
   applyTranslations();
+  
+  // Синхронизация видимости вкладок плагинов
+  try {
+    const pluginsData = await window.api.fetch('/api/admin/plugins');
+    if (window.syncPluginTabsVisibility && pluginsData && pluginsData.plugins) {
+      window.syncPluginTabsVisibility(pluginsData.plugins);
+    }
+  } catch (err) {
+    console.error('Ошибка синхронизации видимости плагинов:', err);
+  }
   
   // Фокусировать поле ввода при переключении на вкладку чата
   document.addEventListener('shown.bs.tab', (e) => {

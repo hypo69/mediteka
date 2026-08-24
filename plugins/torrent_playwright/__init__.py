@@ -2,15 +2,51 @@ import re
 import json
 import asyncio
 from plugins.plugin import BasePlugin
-from .playwright_searcher import PlaywrightTorrentSearcher
 from src.logger import logger
 
 class TorrentPlaywrightPlugin(BasePlugin):
     name = "torrent_playwright"
+    title = "Парсер торрентов Playwright"
+    description = "Парсинг и извлечение раздач с трекеров Rutracker и NNMClub через браузерный движок Playwright"
+    icon = "🎭"
+    version = "1.5.0"
+    category = "media"
 
     def __init__(self, ai_model):
         super().__init__(ai_model)
-        self.searcher = PlaywrightTorrentSearcher(ai_model)
+        self._searcher = False
+
+    @property
+    def searcher(self):
+        if not self._searcher:
+            try:
+                from .playwright_searcher import PlaywrightTorrentSearcher
+                self._searcher = PlaywrightTorrentSearcher(self.ai)
+            except Exception as e:
+                logger.warning(f"[TorrentPlaywrightPlugin] Ошибка инициализации PlaywrightTorrentSearcher: {e}")
+        return self._searcher
+
+    def get_manifest(self) -> dict:
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [
+                {
+                    'id': 'headless',
+                    'label': 'Headless режим',
+                    'type': 'boolean',
+                    'default': True,
+                    'description': 'Запускать Chromium в фоновом режиме без графического окна'
+                }
+            ],
+            'actions': []
+        }
 
     def can_handle(self, message: str) -> bool:
         msg = message.lower()

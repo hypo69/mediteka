@@ -22,11 +22,39 @@ _BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 class TelegramBotPlugin(BasePlugin):
     name = "telegram_bot"
+    title = "Telegram Бот"
+    description = "Интеграция с Telegram: распознавание голосовых сообщений, синтез речи, чат и пульт управления"
+    icon = "✈️"
+    version = "2.0.0"
+    category = "system"
 
     def __init__(self, ai_model):
         super().__init__(ai_model)
         self._app: Application | None = None
         self._plugins: dict = {}
+
+    def get_manifest(self) -> dict:
+        has_token = bool(_BOT_TOKEN)
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [
+                {
+                    'id': 'bot_token_status',
+                    'label': 'Статус Telegram токена',
+                    'type': 'readonly',
+                    'default': 'Установлен в .env' if has_token else 'Токен не задан (TELEGRAM_BOT_TOKEN)',
+                    'description': 'Конфигурация токена бота в файле окружения .env'
+                }
+            ],
+            'actions': []
+        }
 
     def set_plugins(self, plugins: dict) -> None:
         """Передача всех загруженных плагинов для роутинга сообщений."""

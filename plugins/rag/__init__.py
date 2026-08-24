@@ -259,6 +259,70 @@ class RAGPlugin(BasePlugin):
     """Плагин семантического поиска и воспроизведения медиаконтента."""
 
     name: str = "rag"
+    title: str = "RAG Семантический поиск"
+    description: str = "Семантический векторный поиск по локальной медиатеке, прямой Direct-RAG запуск и интеграция с базой знаний"
+    icon: str = "🧠"
+    version: str = "2.1.0"
+    category: str = "ai"
+
+    def get_manifest(self) -> dict:
+        cfg = self.get_config()
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': cfg,
+            'fields': [
+                {
+                    'id': 'mode',
+                    'label': 'Режим работы RAG',
+                    'type': 'select',
+                    'default': cfg.get('mode', 'rag+model'),
+                    'options': [
+                        {'value': 'rag+model', 'label': 'RAG + Модель (гибридный)'},
+                        {'value': 'rag', 'label': 'Direct RAG (только локальная БД)'},
+                        {'value': 'model', 'label': 'Direct Model (только ИИ без RAG)'}
+                    ],
+                    'description': 'Стратегия обработки пользовательских запросов'
+                }
+            ],
+            'actions': [
+                {
+                    'id': 'rebuild_index',
+                    'label': '🔄 Перестроить индекс',
+                    'description': 'Пересоздание эмбеддингов локальной медиатеки',
+                    'color': 'primary'
+                },
+                {
+                    'id': 'status',
+                    'label': '📊 Проверить статус',
+                    'description': 'Получить статус готовности и размер RAG-индекса',
+                    'color': 'info'
+                }
+            ]
+        }
+
+    async def action_rebuild_index(self, params: dict) -> dict:
+        """Перестройка RAG-индекса."""
+        try:
+            from plugins.media_organizer.core.media_rag_functions import rebuild_rag_index
+            res = rebuild_rag_index()
+            return {'success': True, 'result': res, 'message': 'Перестройка RAG-индекса запущена'}
+        except Exception as ex:
+            return {'success': False, 'message': f'Ошибка перестройки RAG: {ex}'}
+
+    async def action_status(self, params: dict) -> dict:
+        """Проверка статуса RAG."""
+        try:
+            from plugins.media_organizer.core.media_rag_functions import get_rag_status
+            res = get_rag_status()
+            return {'success': True, 'result': res, 'message': 'Статус RAG получен'}
+        except Exception as ex:
+            return {'success': False, 'message': f'Ошибка получения статуса: {ex}'}
 
     def _is_media_query(self, message: str) -> bool:
         """Проверяет, относится ли запрос к медиатеке."""

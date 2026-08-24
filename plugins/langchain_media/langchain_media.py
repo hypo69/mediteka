@@ -16,7 +16,6 @@
 from typing import AsyncIterator
 from pathlib import Path
 from plugins.plugin import BasePlugin
-from src.ai.langchain_agent import MediaSearchAgent
 from src.logger import logger
 
 
@@ -24,19 +23,64 @@ class LangChainMediaPlugin(BasePlugin):
     """Плагин для поиска фильмов и сериалов через LangChain агента."""
 
     name = 'langchain_media'
+    title = 'Автономный LangChain Агент'
+    description = 'ReAct мультиагентный поиск фильмов, сериалов, торрент-раздач и стриминга'
+    icon = '🦜'
+    version = '1.2.0'
+    category = 'ai'
+
     SEARCH_KEYWORDS = (
         'найди фильм', 'найди сериал', 'где посмотреть', 'скачать фильм',
         'скачать сериал', 'поиск фильм', 'поиск сериал', 'langchain поиск',
         'agent поиск', 'агент поиск', 'мультфильм', 'аниме', 'найди торрент',
     )
 
+    def get_manifest(self) -> dict:
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [
+                {
+                    'id': 'max_steps',
+                    'label': 'Макс. число шагов агента',
+                    'type': 'number',
+                    'default': 15,
+                    'description': 'Ограничение итераций размышления ReAct-агента'
+                },
+                {
+                    'id': 'search_timeout_seconds',
+                    'label': 'Таймаут поиска (сек)',
+                    'type': 'number',
+                    'default': 60,
+                    'description': 'Максимальное время выполнения одного поиска'
+                }
+            ],
+            'actions': []
+        }
+
     def __init__(self, ai_model):
         """Инициализация плагина."""
         super().__init__(ai_model)
-        self.agent = MediaSearchAgent(
-            config_path=Path('config.json'),
-            ai_model=ai_model,
-        )
+        self._agent = False
+
+    @property
+    def agent(self):
+        if not self._agent:
+            try:
+                from src.ai.langchain_agent import MediaSearchAgent
+                self._agent = MediaSearchAgent(
+                    config_path=Path('config.json'),
+                    ai_model=self.ai,
+                )
+            except Exception as e:
+                logger.warning(f"[LangChainMediaPlugin] Ошибка инициализации MediaSearchAgent: {e}")
+        return self._agent
 
     def can_handle(self, message: str) -> bool:
         """Проверяет, содержит ли сообщение ключевые слова для поиска."""

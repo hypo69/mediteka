@@ -657,11 +657,103 @@ def relocate_missing(client: QBittorrentClient, search_dirs: list[str]) -> str:
 
 class QBittorrentPlugin(BasePlugin):
     name = "qbittorrent"
+    title = "Управление qBittorrent"
+    description = "Интеграция с клиентом qBittorrent: мониторинг загрузок, автокатегоризация, проверка целостности и релокация"
+    icon = "🧲"
+    version = "2.0.0"
+    category = "media"
 
     def __init__(self, ai_model):
         super().__init__(ai_model)
         self.client: QBittorrentClient | None = None
         self.search_dirs: list[str] = []
+
+    def get_manifest(self) -> dict:
+        cfg = self.get_config()
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': cfg,
+            'fields': [
+                {
+                    'id': 'host',
+                    'label': 'Хост qBittorrent',
+                    'type': 'string',
+                    'default': cfg.get('host', '127.0.0.1'),
+                    'description': 'IP адрес или хост Web UI qBittorrent'
+                },
+                {
+                    'id': 'port',
+                    'label': 'Порт Web UI',
+                    'type': 'number',
+                    'default': cfg.get('port', 8080),
+                    'description': 'Порт Web интерфейса qBittorrent'
+                },
+                {
+                    'id': 'username',
+                    'label': 'Имя пользователя',
+                    'type': 'string',
+                    'default': cfg.get('username', 'admin'),
+                    'description': 'Логин для доступа к Web UI'
+                }
+            ],
+            'actions': [
+                {
+                    'id': 'test_connection',
+                    'label': '🔌 Проверить связь',
+                    'description': 'Проверка подключения к qBittorrent Web UI',
+                    'color': 'primary'
+                },
+                {
+                    'id': 'check_integrity',
+                    'label': '🛡️ Проверка целостности',
+                    'description': 'Проверка статусов и целостности торрентов',
+                    'color': 'warning'
+                },
+                {
+                    'id': 'assign_categories',
+                    'label': '🏷️ Автокатегоризация',
+                    'description': 'Назначить категории на основе локальной базы медиа',
+                    'color': 'success'
+                }
+            ]
+        }
+
+    async def action_test_connection(self, params: dict) -> dict:
+        """Проверка соединения с qBittorrent."""
+        try:
+            client = self._get_client()
+            torrents = client.torrents()
+            return {
+                'success': True,
+                'message': f'Подключение успешно установлено. Всего активных торрентов: {len(torrents)}',
+                'result': f'Подключено к {client.base}, найдено торрентов: {len(torrents)}'
+            }
+        except Exception as ex:
+            return {'success': False, 'message': f'Ошибка подключения к qBittorrent: {ex}'}
+
+    async def action_check_integrity(self, params: dict) -> dict:
+        """Проверка целостности торрентов."""
+        try:
+            client = self._get_client()
+            res = check_integrity(client)
+            return {'success': True, 'result': res, 'message': 'Проверка целостности завершена'}
+        except Exception as ex:
+            return {'success': False, 'message': f'Ошибка проверки целостности: {ex}'}
+
+    async def action_assign_categories(self, params: dict) -> dict:
+        """Автокатегоризация торрентов."""
+        try:
+            from plugins.media_organizer.core.assign_torrents_ids import assign_categories_from_db
+            res = assign_categories_from_db()
+            return {'success': True, 'result': res, 'message': 'Категории успешно назначены'}
+        except Exception as ex:
+            return {'success': False, 'message': f'Ошибка назначения категорий: {ex}'}
 
     def _get_client(self) -> QBittorrentClient:
         if self.client is None:

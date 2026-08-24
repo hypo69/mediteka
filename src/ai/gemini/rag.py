@@ -18,7 +18,14 @@ import json
 from pathlib import Path
 from typing import List, Dict
 import numpy as np
-import faiss
+
+try:
+    import faiss
+    _FAISS_AVAILABLE = True
+except ImportError:
+    _FAISS_AVAILABLE = False
+    faiss = False
+
 from google import genai
 from google.genai import types
 
@@ -69,6 +76,10 @@ class GeminiRAG:
         else:
             self.metadatas = []
 
+        if not _FAISS_AVAILABLE:
+            self.index = False
+            return
+
         if self.index_file.exists() and self.metadatas:
             try:
                 self.index = faiss.read_index(str(self.index_file))
@@ -80,6 +91,10 @@ class GeminiRAG:
 
     def _rebuild_index(self) -> None:
         """Перестроение индекса из metadatas с валидацией векторов."""
+        if not _FAISS_AVAILABLE:
+            self.index = False
+            return
+
         self.index = faiss.IndexFlatL2(self.dimension)
         if not self.metadatas:
             return
@@ -104,7 +119,8 @@ class GeminiRAG:
     def _save(self) -> None:
         """Сохранение индекса и метаданных."""
         try:
-            faiss.write_index(self.index, str(self.index_file))
+            if _FAISS_AVAILABLE and self.index:
+                faiss.write_index(self.index, str(self.index_file))
             with open(self.meta_file, 'w', encoding='utf-8') as f:
                 json.dump(self.metadatas, f, ensure_ascii=False, indent=2)
         except Exception as e:
@@ -193,11 +209,11 @@ class GeminiRAG:
     def clear(self) -> None:
         """Полная очистка индекса."""
         self.metadatas = []
-        self.index = faiss.IndexFlatL2(self.dimension)
+        self.index = faiss.IndexFlatL2(self.dimension) if _FAISS_AVAILABLE else False
         self._save()
 
     def search(self, query: str, top_k: int = 5, threshold: float = 0.0) -> List[dict]:
-        """Семантический поиск ближайших документов по cosine similarity с использованием FAISS L2."""
+        """Семантический поиск ближайших документов по cosine similarity."""
         valid_metadatas = [
             m for m in self.metadatas
             if isinstance(m, dict) and 'vector' in m and isinstance(m['vector'], (list, np.ndarray)) and len(m['vector']) == self.dimension
@@ -216,11 +232,27 @@ class GeminiRAG:
         doc_vectors = np.array([m['vector'] for m in valid_metadatas], dtype=np.float32)
         doc_norms = np.linalg.norm(doc_vectors, axis=1, keepdims=True) + 1e-10
         doc_vectors_normalized = doc_vectors / doc_norms
+        actual_k = min(top_k, len(valid_metadatas))
+
+        if not _FAISS_AVAILABLE:
+            similarities = np.dot(doc_vectors_normalized, query_norm)
+            top_indices = np.argsort(similarities)[::-1][:actual_k]
+            results: List[dict] = []
+            for idx in top_indices:
+                sim = float(similarities[idx])
+                if sim >= threshold:
+                    meta = valid_metadatas[idx]
+                    results.append({
+                        'id': meta['id'],
+                        'text': meta['text'],
+                        'meta': meta.get('meta', {}),
+                        'score': round(sim, 4)
+                    })
+            return results
 
         temp_index = faiss.IndexFlatL2(self.dimension)
         temp_index.add(doc_vectors_normalized)
 
-        actual_k = min(top_k, len(valid_metadatas))
         distances, indices = temp_index.search(query_norm.reshape(1, -1), actual_k)
 
         results: List[dict] = []

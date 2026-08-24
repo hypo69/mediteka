@@ -378,33 +378,108 @@ async def update_sources_raw(request: Request, data: RawSourcesUpdate) -> Dict[s
 
 
 # ============================================================================
-# Plugin Endpoints
+# Plugin Manager Endpoints
 # ============================================================================
 
 class PluginStateUpdate(BaseModel):
     enabled: bool
 
+class PluginConfigUpdate(BaseModel):
+    config: Dict[str, Any]
+
+class PluginActionRequest(BaseModel):
+    params: Dict[str, Any] = {}
+
+
+@router.get('/plugins')
+async def get_all_plugins(request: Request) -> Dict[str, Any]:
+    """Возвращает реестр всех плагинов с манифестами и текущими настройками."""
+    _check_admin(request)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    from plugins import get_all_plugins_registry
+    registry = get_all_plugins_registry(plugins_dict)
+    return {'plugins': registry, 'count': len(registry)}
+
+
+@router.get('/plugins/{plugin_name}')
+async def get_plugin_details(plugin_name: str, request: Request) -> Dict[str, Any]:
+    """Возвращает манифест и настройки конкретного плагина."""
+    _check_admin(request)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    plugin = plugins_dict.get(plugin_name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail=f"Плагин '{plugin_name}' не найден")
+    manifest = plugin.get_manifest()
+    return {'plugin': manifest}
+
+
+@router.post('/plugins/{plugin_name}/toggle')
+async def toggle_plugin(plugin_name: str, data: PluginStateUpdate, request: Request) -> Dict[str, Any]:
+    """Включение / отключение плагина с сохранением состояния в config.json."""
+    _check_admin(request)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    plugin = plugins_dict.get(plugin_name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail=f"Плагин '{plugin_name}' не найден")
+
+    plugin.enabled = data.enabled
+    plugin.update_config({'enabled': data.enabled})
+    logger.info(f"Плагин '{plugin_name}' переключён в состояние enabled={data.enabled}")
+    return {'name': plugin_name, 'enabled': plugin.enabled, 'message': f"Плагин '{plugin_name}' {'включён' if data.enabled else 'отключён'}"}
+
+
+@router.post('/plugins/{plugin_name}/config')
+async def save_plugin_config(plugin_name: str, data: PluginConfigUpdate, request: Request) -> Dict[str, Any]:
+    """Сохранение параметров конфигурации плагина в config.json."""
+    _check_admin(request)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    plugin = plugins_dict.get(plugin_name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail=f"Плагин '{plugin_name}' не найден")
+
+    updated = plugin.update_config(data.config)
+    logger.info(f"Конфигурация плагина '{plugin_name}' успешно обновлена")
+    return {'name': plugin_name, 'config': updated, 'message': 'Настройки успешно сохранены'}
+
+
+@router.post('/plugins/{plugin_name}/action/{action_name}')
+async def call_plugin_action(plugin_name: str, action_name: str, data: PluginActionRequest, request: Request) -> Dict[str, Any]:
+    """Вызов пользовательского действия (Action) у плагина."""
+    _check_admin(request)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    plugin = plugins_dict.get(plugin_name)
+    if not plugin:
+        raise HTTPException(status_code=404, detail=f"Плагин '{plugin_name}' не найден")
+
+    res = await plugin.execute_action(action_name, data.params)
+    return res
+
 
 @router.get('/plugin/{plugin_name}/status')
 async def get_plugin_status(plugin_name: str, request: Request):
-    """Получение статуса плагина."""
+    """Получение статуса плагина (обратная совместимость)."""
     _check_admin(request)
-    plugin = request.app.state.plugins.get(plugin_name)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    plugin = plugins_dict.get(plugin_name)
     if not plugin:
         raise HTTPException(status_code=404, detail='Плагин не найден')
     enabled = getattr(plugin, 'enabled', True)
     return {'name': plugin_name, 'enabled': enabled}
 
+
 @router.post('/plugin/{plugin_name}/status')
 async def update_plugin_status(plugin_name: str, data: PluginStateUpdate, request: Request):
-    """Обновление статуса плагина."""
+    """Обновление статуса плагина (обратная совместимость)."""
     _check_admin(request)
-    plugin = request.app.state.plugins.get(plugin_name)
+    plugins_dict = getattr(request.app.state, 'plugins', {})
+    plugin = plugins_dict.get(plugin_name)
     if not plugin:
         raise HTTPException(status_code=404, detail='Плагин не найден')
     plugin.enabled = data.enabled
+    plugin.update_config({'enabled': data.enabled})
     logger.info(f'Plugin {plugin_name} enabled state changed to {data.enabled}')
     return {'name': plugin_name, 'enabled': plugin.enabled}
+
 
 
 # ============================================================================

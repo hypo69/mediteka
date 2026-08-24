@@ -33,6 +33,25 @@ def _build_instruction(db: MediaDatabase) -> str:
 
 class MediaLayerPlugin(BasePlugin):
     name = "media_layer"
+    title = "Слой медиа-контекста"
+    description = "Инъекция локальной структуры медиатеки в системный промпт модели ИИ"
+    icon = "🎞️"
+    version = "1.0.0"
+    category = "media"
+
+    def get_manifest(self) -> dict:
+        return {
+            'name': self.name,
+            'title': self.title,
+            'description': self.description,
+            'icon': self.icon,
+            'version': self.version,
+            'category': self.category,
+            'enabled': self.enabled,
+            'config': self.get_config(),
+            'fields': [],
+            'actions': []
+        }
 
     def __init__(self, ai_model):
         super().__init__(ai_model)
