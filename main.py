@@ -249,7 +249,30 @@ def get_remote_latest_version() -> str | None:
                         best = t
                 return best
         except Exception:
-            return None
+            # Try using git ls-remote --tags origin as a last-resort fallback
+            try:
+                out = subprocess.check_output(['git', 'ls-remote', '--tags', 'origin'], cwd=str(__root__), stderr=subprocess.DEVNULL)
+                lines = out.decode().splitlines()
+                tags = []
+                for line in lines:
+                    parts = line.split('\t')
+                    if len(parts) < 2:
+                        continue
+                    ref = parts[1]
+                    if ref.startswith('refs/tags/'):
+                        tag = ref[len('refs/tags/'):]
+                        # annotated tags may have ^{} suffix: refs/tags/v1.0.0^{}
+                        tag = tag.replace('^{}', '')
+                        tags.append(tag)
+                if not tags:
+                    return None
+                best = None
+                for t in tags:
+                    if best is None or _compare_versions(best, t) < 0:
+                        best = t
+                return best
+            except Exception:
+                return None
     except Exception:
         return None
 
