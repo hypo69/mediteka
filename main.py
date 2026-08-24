@@ -150,8 +150,8 @@ app.mount('/simple-assistant', StaticFiles(directory=simple_assistant_dir, html=
 
 
 def _parse_version(v: str) -> list[int]:
-    """Parse a simple semantic version string into a list of ints for comparison.
-    Non-numeric parts are ignored. Examples: 'v1.2.3' -> [1,2,3]
+    """Legacy simple numeric parser kept for backward compatibility.
+    Prefer using semver-aware functions below.
     """
     if not v:
         return [0, 0, 0]
@@ -235,6 +235,16 @@ def get_remote_latest_version() -> str | None:
 
         # Fallback: get tags and pick the highest semver-like tag
         try:
+            # Optionally fetch tags from remote to ensure local tag refs are up-to-date
+            fetch_tags_env = os.getenv('FETCH_TAGS') or os.getenv('MEDITEKA_FETCH_TAGS') or os.getenv('FETCH_REMOTE_TAGS')
+            fetch_tags_enabled = str(fetch_tags_env or '').lower() in ('1', 'true', 'yes')
+            if fetch_tags_enabled:
+                try:
+                    logger.info('Fetching remote tags (git fetch --tags origin)')
+                    subprocess.check_call(['git', 'fetch', '--tags', 'origin'], cwd=str(__root__))
+                except Exception as e:
+                    logger.debug(f'Failed to fetch tags: {e}')
+
             url = f'https://api.github.com/repos/{owner}/{repo}/tags'
             req = urllib.request.Request(url, headers=_headers())
             with urllib.request.urlopen(req, timeout=5) as resp:
@@ -242,11 +252,31 @@ def get_remote_latest_version() -> str | None:
                 tags = [t.get('name') for t in data if t.get('name')]
                 if not tags:
                     return None
-                # pick tag with highest parsed numeric version
+
+                # Logging of the remote tag list when debug enabled
+                debug_enabled = os.getenv('VERSION_CHECK_DEBUG') == '1' or (hasattr(logger, 'isEnabledFor') and logger.isEnabledFor(10))
+                if debug_enabled:
+                    logger.debug(f'Remote tags from API: {tags}')
+
+                # Prefer stable releases unless prerelease is explicitly allowed
+                allow_prerelease = str(os.getenv('ALLOW_PRERELEASE') or os.getenv('MEDITEKA_ALLOW_PRERELEASE') or '').lower() in ('1', 'true', 'yes')
+
+                # Filter tags: stable tags have no prerelease (no '-' in base tag before +)
+                def is_prerelease_tag(t: str) -> bool:
+                    base = t.split('+', 1)[0]
+                    return '-' in base
+
+                stable_candidates = [t for t in tags if not is_prerelease_tag(t)]
+                candidates = stable_candidates if stable_candidates and not allow_prerelease else tags
+
                 best = None
-                for t in tags:
+                for t in candidates:
                     if best is None or _compare_versions(best, t) < 0:
                         best = t
+
+                if debug_enabled:
+                    logger.debug(f'Selected tag: {best} (allow_prerelease={allow_prerelease})')
+
                 return best
         except Exception:
             # Try using git ls-remote --tags origin as a last-resort fallback
@@ -266,10 +296,25 @@ def get_remote_latest_version() -> str | None:
                         tags.append(tag)
                 if not tags:
                     return None
+
+                debug_enabled = os.getenv('VERSION_CHECK_DEBUG') == '1' or (hasattr(logger, 'isEnabledFor') and logger.isEnabledFor(10))
+                if debug_enabled:
+                    logger.debug(f'Remote tags from ls-remote: {tags}')
+
+                allow_prerelease = str(os.getenv('ALLOW_PRERELEASE') or os.getenv('MEDITEKA_ALLOW_PRERELEASE') or '').lower() in ('1', 'true', 'yes')
+                def is_prerelease_tag(t: str) -> bool:
+                    base = t.split('+', 1)[0]
+                    return '-' in base
+
+                stable_candidates = [t for t in tags if not is_prerelease_tag(t)]
+                candidates = stable_candidates if stable_candidates and not allow_prerelease else tags
+
                 best = None
-                for t in tags:
+                for t in candidates:
                     if best is None or _compare_versions(best, t) < 0:
                         best = t
+                if debug_enabled:
+                    logger.debug(f'Selected tag from ls-remote: {best} (allow_prerelease={allow_prerelease})')
                 return best
             except Exception:
                 return None
@@ -282,18 +327,89 @@ def _is_interactive() -> bool:
 
 
 def _compare_versions(a: str, b: str) -> int:
-    """Compare two version strings. Return -1 if a<b, 0 if equal, 1 if a>b."""
-    pa = _parse_version(a)
-    pb = _parse_version(b)
-    # normalize length
-    L = max(len(pa), len(pb))
-    pa += [0] * (L - len(pa))
-    pb += [0] * (L - len(pb))
-    if pa < pb:
-        return -1
-    if pa > pb:
-        return 1
-    return 0
+    """Compare two version strings using semver rules when possible.
+
+    Returns -1 if a<b, 0 if equal, 1 if a>b.
+    """
+    def parse_semver(v: str):
+        # regex to capture major.minor.patch and optional prerelease
+        if not v:
+            return None
+        m = re.match(r"^v?(?P<major>0|[1-9]\d*)(?:\.(?P<minor>0|[1-9]\d*))?(?:\.(?P<patch>0|[1-9]\d*))?(?:-(?P<prerelease>[0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$", v)
+        if not m:
+            return None
+        major = int(m.group('major'))
+        minor = int(m.group('minor') or 0)
+        patch = int(m.group('patch') or 0)
+        prerelease_raw = m.group('prerelease')
+        prerelease = None
+        if prerelease_raw:
+            prerelease = prerelease_raw.split('.')
+        return (major, minor, patch, prerelease)
+
+    def compare_semver(a_parsed, b_parsed):
+        # a_parsed and b_parsed are tuples or None
+        if a_parsed is None and b_parsed is None:
+            return 0
+        if a_parsed is None:
+            # fallback to numeric parse
+            pa = _parse_version(a)
+            pb = _parse_version(b)
+            L = max(len(pa), len(pb))
+            pa += [0] * (L - len(pa))
+            pb += [0] * (L - len(pb))
+            if pa < pb:
+                return -1
+            if pa > pb:
+                return 1
+            return 0
+        if b_parsed is None:
+            return -compare_semver(b_parsed, a_parsed)
+
+        # compare major, minor, patch
+        for i in range(3):
+            if a_parsed[i] < b_parsed[i]:
+                return -1
+            if a_parsed[i] > b_parsed[i]:
+                return 1
+
+        # Handle prerelease: absence of prerelease means higher precedence
+        a_pr = a_parsed[3]
+        b_pr = b_parsed[3]
+        if a_pr is None and b_pr is None:
+            return 0
+        if a_pr is None:
+            return 1
+        if b_pr is None:
+            return -1
+
+        # both have prerelease: compare identifiers
+        for ai, bi in zip(a_pr, b_pr):
+            if ai == bi:
+                continue
+            # numeric identifiers are compared numerically
+            if ai.isdigit() and bi.isdigit():
+                ai_n = int(ai); bi_n = int(bi)
+                if ai_n < bi_n:
+                    return -1
+                if ai_n > bi_n:
+                    return 1
+            else:
+                # ASCII sort order
+                if ai < bi:
+                    return -1
+                if ai > bi:
+                    return 1
+        # all compared identifiers equal; shorter prerelease has lower precedence
+        if len(a_pr) < len(b_pr):
+            return -1
+        if len(a_pr) > len(b_pr):
+            return 1
+        return 0
+
+    a_parsed = parse_semver(a)
+    b_parsed = parse_semver(b)
+    return compare_semver(a_parsed, b_parsed)
 
 
 def prompt_and_perform_update(branch: str = 'main') -> None:
