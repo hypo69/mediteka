@@ -120,6 +120,8 @@ webinterface_dir = __root__ / 'webinterface'
 webinterface_dir.mkdir(parents=True, exist_ok=True)
 app.mount('/webinterface', StaticFiles(directory=webinterface_dir), name='webinterface')
 app.mount('/html', StaticFiles(directory=webinterface_dir), name='html')
+simple_assistant_dir = __root__ / 'SANDBOX' / 'AI Assistant' / 'Simple Assistant'
+app.mount('/simple-assistant', StaticFiles(directory=simple_assistant_dir, html=True), name='simple-assistant')
 
 
 _api_key_names: list[str] = [n.strip() for n in os.getenv('GEMINI_API_KEY_NAMES', '').split(',') if n.strip()]
