@@ -4,8 +4,9 @@
 
 .DESCRIPTION
     1. Проверяет наличие сертификатов в $env:USERPROFILE\.certs (localhost+2.pem, localhost+2-key.pem).
-    2. Если отсутствуют — генерирует их через mkcert (если установлен) или встроенным генератором (Python/PowerShell).
-    3. Импортирует сертификат в хранилища Windows (CurrentUser\My и CurrentUser\Root), чтобы браузер доверял HTTPS.
+    2. Генерирует их через mkcert (если установлен) или встроенным генератором (Python cryptography).
+    3. Автоматически включает в сертификат: localhost, 127.0.0.1, ::1, имя компьютера и все текущие IP-адреса сети.
+    4. Импортирует сертификат в хранилища Windows (CurrentUser\My и CurrentUser\Root).
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -29,6 +30,13 @@ Write-Host "║              MEDITEKA — НАСТРОЙКА SSL СЕРТИФИ�
 Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
+# Получаем все локальные IPv4 адреса
+$localIps = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object { $_.IPAddress -notmatch '^(169\.254)' } |
+    Select-Object -ExpandProperty IPAddress -Unique)
+
+$ipListStr = ($localIps | ForEach-Object { "'$_'" }) -join ", "
+
 # 1. Проверка / Генерация сертификатов
 if (-not ((Test-Path $certPath) -and (Test-Path $keyPath))) {
     Write-Host "[1/3] SSL-сертификаты не найдены. Генерация..." -ForegroundColor Cyan
@@ -38,7 +46,8 @@ if (-not ((Test-Path $certPath) -and (Test-Path $keyPath))) {
         Write-Host "    Использование mkcert для генерации доверенного сертификата..." -ForegroundColor DarkGray
         try {
             & mkcert -install
-            & mkcert -cert-file $certPath -key-file $keyPath "localhost" "127.0.0.1" "::1"
+            $mkcertArgs = @("-cert-file", $certPath, "-key-file", $keyPath, "localhost", "127.0.0.1", "::1", $env:COMPUTERNAME) + $localIps
+            & mkcert $mkcertArgs
             Write-Host "    [OK] Сертификаты успешно сгенерированы через mkcert" -ForegroundColor Green
         } catch {
             Write-Host "    [WARN] Ошибка mkcert: $_. Попытка создания через Python..." -ForegroundColor Yellow
@@ -51,7 +60,7 @@ if (-not ((Test-Path $certPath) -and (Test-Path $keyPath))) {
         $pyTarget = if (Test-Path $pythonExe) { $pythonExe } else { "python" }
         
         $genScript = @"
-import os, ipaddress
+import os, ipaddress, socket
 from datetime import datetime, timedelta, timezone
 from cryptography import x509
 from cryptography.x509.oid import NameOID
@@ -63,6 +72,22 @@ subject = issuer = x509.Name([
     x509.NameAttribute(NameOID.COMMON_NAME, 'localhost'),
     x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Mediteka Local Dev'),
 ])
+
+san_list = [
+    x509.DNSName('localhost'),
+    x509.DNSName(socket.gethostname()),
+    x509.IPAddress(ipaddress.IPv4Address('127.0.0.1')),
+    x509.IPAddress(ipaddress.IPv6Address('::1')),
+]
+
+for ip_str in [$ipListStr]:
+    try:
+        ip_obj = ipaddress.ip_address(ip_str)
+        if ip_obj not in [x.value for x in san_list if isinstance(x, x509.IPAddress)]:
+            san_list.append(x509.IPAddress(ip_obj))
+    except Exception:
+        pass
+
 cert = (
     x509.CertificateBuilder()
     .subject_name(subject)
@@ -72,11 +97,7 @@ cert = (
     .not_valid_before(datetime.now(timezone.utc))
     .not_valid_after(datetime.now(timezone.utc) + timedelta(days=1825))
     .add_extension(
-        x509.SubjectAlternativeName([
-            x509.DNSName('localhost'),
-            x509.IPAddress(ipaddress.IPv4Address('127.0.0.1')),
-            x509.IPAddress(ipaddress.IPv6Address('::1')),
-        ]),
+        x509.SubjectAlternativeName(san_list),
         critical=False,
     )
     .sign(key, hashes.SHA256())
@@ -121,7 +142,18 @@ if ((Test-Path $certPath) -and (Test-Path $keyPath)) {
     Write-Host ""
     Write-Host "[2/3] Добавление сертификата в доверенные сертификаты Windows..." -ForegroundColor Cyan
     try {
-        $certObj = [System.Security.Cryptography.X509Certificates.X509Certificate2]::CreateFromPemFile($certPath, $keyPath)
+        $certObj = $null
+        try {
+            if ([System.Security.Cryptography.X509Certificates.X509Certificate2].GetMethod('CreateFromPemFile', [type[]]@([string], [string]))) {
+                $certObj = [System.Security.Cryptography.X509Certificates.X509Certificate2]::CreateFromPemFile($certPath, $keyPath)
+            }
+        } catch {}
+
+        if (-not $certObj) {
+            $certBytes = [System.IO.File]::ReadAllBytes($certPath)
+            $certObj = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+            $certObj.Import($certBytes)
+        }
         
         # Импорт в Personal (My)
         $storeMy = New-Object System.Security.Cryptography.X509Certificates.X509Store("My", "CurrentUser")
@@ -143,10 +175,11 @@ if ((Test-Path $certPath) -and (Test-Path $keyPath)) {
     Write-Host "    [WARN] Файлы сертификатов отсутствуют — запуск сервера будет без SSL." -ForegroundColor Yellow
 }
 
+
 Write-Host ""
 Write-Host "[3/3] Завершение настройки SSL" -ForegroundColor Cyan
 Write-Host "╔═══════════════════════════════════════════════════════════════╗" -ForegroundColor Green
 Write-Host "║  SSL-СЕРТИФИКАТЫ ГОТОВЫ!                                      ║" -ForegroundColor Green
-Write-Host "║  Адрес: https://localhost:3000                                ║" -ForegroundColor Green
+Write-Host "║  Локальный адрес: https://localhost:3000                      ║" -ForegroundColor Green
 Write-Host "╚═══════════════════════════════════════════════════════════════╝" -ForegroundColor Green
 Write-Host ""

@@ -197,13 +197,8 @@ $env:PRELOAD_SILERO = $preloadSilero
 $unicornScript = Join-Path $scriptDir "Run-Unicorn.ps1"
 if (Test-Path $unicornScript) {
     Write-Host "    Запуск Run-Unicorn.ps1..." -ForegroundColor DarkGray
-    
-    Start-Job -ScriptBlock {
-        Start-Sleep -Seconds 5
-        Start-Process "https://kino.davidka.net/"
-    } | Out-Null
-
     & $unicornScript
+
 } else {
     Write-Host "    [ERROR] Run-Unicorn.ps1 не найден: $unicornScript" -ForegroundColor Red
     exit 1

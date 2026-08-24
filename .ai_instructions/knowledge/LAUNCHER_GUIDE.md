@@ -31,7 +31,7 @@ C:\mediteka\
 | `Run-Unicorn.ps1` | FastAPI | `uvicorn main:app` на порту из `config.json` | — |
 | `Run-Cloudflared.ps1` | Cloudflare | `cloudflared.exe tunnel run` | — |
 | `Run-Foundry.ps1` | AI Foundry | Локальная LLM-служба | `-Action start\|stop\|status` |
-| `Run-LightServer.ps1` | HTTP | Лёгкий статический сервер | — |
+| `Run-LightServer.ps1` | FastAPI / Uvicorn | Лёгкий сервер (1 воркер, без туннелей) | `-mode 0.0.0.0\|localhost` (по умолчанию `0.0.0.0`), `-port 3000` |
 | `Run-Engrock.ps1` | ngrok | HTTP-туннель (альтернатива Cloudflare) | `-Port 3000` |
 
 ---

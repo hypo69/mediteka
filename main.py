@@ -20,6 +20,26 @@ import signal
 import sys
 from pathlib import Path
 
+# Подавление системного шума Windows asyncio (WinError 10054 при сбросе соединений клиентами)
+if sys.platform == 'win32':
+    try:
+        from asyncio.proactor_events import _ProactorBasePipeTransport
+        _orig_call_connection_lost = _ProactorBasePipeTransport._call_connection_lost
+
+        def _silence_connection_lost(self, exc=None):
+            try:
+                _orig_call_connection_lost(self, exc)
+            except (ConnectionResetError, ConnectionAbortedError, OSError) as e:
+                if getattr(e, 'winerror', None) in (10054, 10053) or isinstance(e, (ConnectionResetError, ConnectionAbortedError)):
+                    pass
+                else:
+                    raise
+
+        _ProactorBasePipeTransport._call_connection_lost = _silence_connection_lost
+    except Exception:
+        pass
+
+
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request

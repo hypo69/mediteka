@@ -171,9 +171,39 @@ if (-not (Test-Path $logsDir)) {
     New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 }
 $timestamp = (Get-Date).ToString("yyyyMMdd_HHmmss")
-$logFilePath = Join-Path $logsDir "uvicorn_$timestamp.log"
+# Фоновый watcher: ждет готовности TCP-порта и мгновенно открывает браузер
+$lanIp = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object { $_.IPAddress -notmatch '^(169\.254|127\.)' -and $_.InterfaceAlias -notmatch 'Loopback' } |
+    Select-Object -ExpandProperty IPAddress -First 1)
 
+$browserProto = if ($useSsl) { "https" } else { "http" }
+$browserUrl   = "${browserProto}://localhost:${port}/"
+
+Start-Job -ScriptBlock {
+    param($targetPort, $targetOpenUrl)
+    $maxAttempts = 40
+    $connected = $false
+    for ($i = 0; $i -lt $maxAttempts; $i++) {
+        Start-Sleep -Milliseconds 400
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $tcp.Connect("127.0.0.1", $targetPort)
+            if ($tcp.Connected) {
+                $tcp.Close()
+                $connected = $true
+                break
+            }
+        } catch {}
+    }
+    if ($connected) {
+        Start-Sleep -Milliseconds 200
+        Start-Process $targetOpenUrl
+    }
+} -ArgumentList ([int]$port), $browserUrl | Out-Null
+
+Write-Host "[INFO] Сервер запускается. Браузер откроется автоматически: $browserUrl" -ForegroundColor Green
 Write-Host "[INFO] Запуск uvicorn в текущем окне..." -ForegroundColor Green
 $cmdToRun = "set CONNECTED_DRIVES=$env:CONNECTED_DRIVES && `"$venvPython`" $argStr 2>&1"
 cmd /c $cmdToRun | Tee-Object -FilePath $logFilePath
+
 
