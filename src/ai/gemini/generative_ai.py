@@ -703,7 +703,7 @@ class GoogleGenerativeAI:
         system_instruction: str = '',
         attempts: int = 15,
         model_name: str = '',
-        **kwargs: Any,
+        **kwargs,
     ) -> str:
         """Обработка сообщения в контексте чат-диалога.
 

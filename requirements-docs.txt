@@ -1,4 +1,2 @@
-mkdocs>=1.4
-mkdocs-material>=9.0
-mkdocstrings[python]
-pymdown-extensions
+# Документация проекта Mediteka
+-r req/requirements-docs.txt

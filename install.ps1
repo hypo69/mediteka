@@ -1,144 +1,229 @@
-# Конфигурация установки проекта Mediteka.
-# Этот сценарий копирует рабочую директорию приложения в локальный каталог
-# пользователя, добавляет путь в PATH, настраивает автозапуск и создаёт
-# алиас команды ai для удобного запуска приложения из PowerShell.
+# ============================================================
+# Установщик проекта Mediteka (FastAPI + LangChain + AI Media)
+# ============================================================
+# Скрипт подготавливает рабочее окружение:
+# 1. Снимает Windows Mark of the Web со всех файлов проекта.
+# 2. Находит установленный Python и создает venv (если не существует).
+# 3. Обновляет pip и устанавливает зависимости из req/*.txt.
+# 4. Проверяет корректность установки всех компонентов.
 
-# Проверка, запущен ли скрипт от имени администратора
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Error "Этот скрипт необходимо запускать от имени администратора."
-    return
-}
+$ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Путь к папке %LOCALAPPDATA%
-$localAppData = [Environment]::GetFolderPath("LocalApplicationData")
+$ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$VenvDir    = Join-Path $ScriptRoot 'venv'
+$PythonPath = Join-Path $VenvDir 'Scripts\python.exe'
 
-# Путь к целевой папке AI Assistant
-$targetDir = Join-Path $localAppData "AI Assistant"
+Write-Host ''
+Write-Host '╔═══════════════════════════════════════════════════════════════╗' -ForegroundColor Cyan
+Write-Host '║              MEDITEKA — МАСТЕР УСТАНОВКИ                      ║' -ForegroundColor Cyan
+Write-Host '╚═══════════════════════════════════════════════════════════════╝' -ForegroundColor Cyan
+Write-Host ''
 
-# Путь к папке, из которой запущен скрипт
-$scriptDir = Split-Path $MyInvocation.MyCommand.Path
+# ============================================================
+# [1/5] Снятие Mark of the Web со всего проекта
+# ============================================================
+Write-Host '[1/5] Снятие блокировки Windows (Unblock-File)...' -ForegroundColor Cyan
 
-# Путь к файлу run.ps1 в целевой директории
-$targetRunScriptPath = Join-Path $targetDir "run.ps1"
+Get-ChildItem -Path $ScriptRoot -Recurse -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -notmatch '\\\.git\\' } |
+    Unblock-File -ErrorAction SilentlyContinue
 
-# Проверка существования целевой директории, и если она есть, то удаляем её
-if (Test-Path $targetDir) {
-    Write-Host "Удаление существующей директории: $($targetDir)" -ForegroundColor Yellow
-    Remove-Item $targetDir -Recurse -Force
-}
+Write-Host '    [OK] Файлы разблокированы' -ForegroundColor Green
 
-# Создание целевой директории
-Write-Host "Создание директории: $($targetDir)" -ForegroundColor Green
-New-Item -ItemType Directory -Force -Path $targetDir
+# ============================================================
+# [2/5] Проверка / Создание виртуального окружения
+# ============================================================
+Write-Host ''
+Write-Host '[2/5] Проверка виртуального окружения (venv)...' -ForegroundColor Cyan
 
-# Копирование содержимого скриптовой директории в целевую, включая поддиректории и файлы, а так же venv
-Write-Host "Копирование файлов из $($scriptDir) в $($targetDir)..." -ForegroundColor Green
-Copy-Item -Path "$scriptDir\*" -Destination $targetDir -Recurse -Force
+$needCreateVenv = $false
 
-# Получаем текущее значение переменной PATH
-$currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-
-# Проверяем, что путь к целевой директории отсутствует в PATH
-if ($currentPath -notcontains $targetDir) {
-     # Добавляем путь к целевой директории в переменную PATH
-    $newPath = "$currentPath;$targetDir"
-    Write-Host "Добавление $($targetDir) в PATH..." -ForegroundColor Green
-    [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
-
-    Write-Host "Обновление переменной окружения PATH" -ForegroundColor Green
-    Write-Host "Пожалуйста, перезапустите ваш терминал, чтобы изменения вступили в силу" -ForegroundColor Yellow
-    # Обновляем переменную окружения PATH
-    # $env:Path = $newPath
-
-} else {
-    Write-Host "Путь $($targetDir) уже присутствует в PATH" -ForegroundColor Yellow
-}
-
-# Создание ключа реестра для автозапуска
-$appName = "AI Assistant"
-$appPath =  "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetRunScriptPath`""
-$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-
-Write-Host "Установка автозапуска $($appName)..." -ForegroundColor Green
-New-ItemProperty -Path $regPath -Name $appName -Value $appPath -PropertyType String -Force
-
-# Создание алиаса для команды 'ai'
-$aliasName = "ai"
-$aliasValue = "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$targetRunScriptPath`""
-$aliasFunction = "function $aliasName { & $aliasValue }"
-Write-Host "Создание алиаса для команды 'ai'..." -ForegroundColor Green
-
-if (Get-Alias -Name $aliasName -ErrorAction SilentlyContinue) {
-    Write-Host "Алиас '$aliasName' уже существует. Переопределение." -ForegroundColor Yellow
-    Set-Alias -Name $aliasName -Value $aliasValue -Force
-} else {
-   New-Alias -Name $aliasName -Value $aliasValue
-   
-   # Сохраняем алиас в профиль
-    Write-Host "Сохранение алиаса в профиль PowerShell" -ForegroundColor Green
-    $profile =  Split-Path -Parent $PROFILE
-    if (!(Test-Path $profile)){
-      New-Item -ItemType Directory -Force -Path $profile
-    }
-     Add-Content $PROFILE $aliasFunction
-}
-
-
-Write-Host "Копирование завершено!" -ForegroundColor Green
-Write-Host "Установка завершена. Директория AI Assistant находится по адресу $($targetDir)" -ForegroundColor Green
-Write-Host "Для использования команды 'ai', пожалуйста, перезапустите ваш терминал и профиль PowerShell" -ForegroundColor Yellow
-
-# ---- Установка Git LFS (Large File Storage) и пояснение
-# Git LFS используется для хранения больших бинарных файлов вне основного git-репозитория.
-# В нашем проекте некоторые артефакты (например, большие векторные индексы или дампы данных)
-# хранятся через Git LFS, чтобы не превышать лимиты GitHub (100 MB) и не загружать историю репозитория.
-
-function Test-CommandExists($name) {
-    return (Get-Command $name -ErrorAction SilentlyContinue) -ne $null
-}
-
-if (Test-CommandExists "git") {
-    if (Test-CommandExists "git-lfs") {
-        Write-Host "Git LFS уже установлен." -ForegroundColor Green
-    } else {
-        Write-Host "Git LFS не найден. Попытка автоматической установки..." -ForegroundColor Yellow
-
-        if (Test-CommandExists "winget") {
-            Write-Host "Установка Git LFS через winget..." -ForegroundColor Green
-            try {
-                winget install --id Git.GitLFS -e --accept-package-agreements --accept-source-agreements
-            } catch {
-                Write-Host "Не удалось установить через winget." -ForegroundColor Red
-            }
-        } elseif (Test-CommandExists "choco") {
-            Write-Host "Установка Git LFS через Chocolatey..." -ForegroundColor Green
-            try {
-                choco install git-lfs -y
-            } catch {
-                Write-Host "Не удалось установить через Chocolatey." -ForegroundColor Red
-            }
+if (Test-Path $PythonPath) {
+    try {
+        $testVer = & $PythonPath --version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "    [OK] venv уже существует: $testVer ($PythonPath)" -ForegroundColor Green
         } else {
-            Write-Host "Автоматические установщики (winget/choco) не найдены." -ForegroundColor Yellow
-            Write-Host "Пожалуйста, установите Git LFS вручную: https://git-lfs.github.com/" -ForegroundColor Cyan
+            Write-Host "    [WARN] Существующий venv поврежден. Требуется пересоздание." -ForegroundColor Yellow
+            $needCreateVenv = $true
         }
+    } catch {
+        Write-Host "    [WARN] Ошибка запуска venv python: $_" -ForegroundColor Yellow
+        $needCreateVenv = $true
+    }
+} else {
+    $needCreateVenv = $true
+}
 
-        # Инициализация Git LFS (если установка прошла)
-        if (Test-CommandExists "git-lfs") {
-            Write-Host "Инициализация Git LFS в этой системе..." -ForegroundColor Green
-            git lfs install
-        } else {
-            Write-Host "Git LFS по-прежнему не доступен. Вы можете установить его вручную и выполнить 'git lfs install'." -ForegroundColor Red
+if ($needCreateVenv) {
+    Write-Host '    Поиск системного интерпретатора Python...' -ForegroundColor DarkGray
+    
+    $sysPythonCmd = $null
+    
+    # 1. Проверяем py launcher
+    $pyCheck = Get-Command py -ErrorAction SilentlyContinue
+    if ($pyCheck) {
+        foreach ($ver in @('-3.13', '-3.12', '-3.11', '-3')) {
+            $check = & py $ver --version 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                $sysPythonCmd = @('py', $ver)
+                Write-Host "    [OK] Найден интерпретатор через Python Launcher: $check" -ForegroundColor Green
+                break
+            }
+        }
+    }
+    
+    # 2. Если py launcher не найден, ищем python / python3
+    if (-not $sysPythonCmd) {
+        foreach ($cmd in @('python', 'python3')) {
+            $cmdCheck = Get-Command $cmd -ErrorAction SilentlyContinue
+            if ($cmdCheck) {
+                $check = & $cmd --version 2>&1
+                if ($LASTEXITCODE -eq 0 -and $check -notmatch 'WindowsApps') {
+                    $sysPythonCmd = @($cmd)
+                    Write-Host "    [OK] Найден системный интерпретатор: $check ($($cmdCheck.Source))" -ForegroundColor Green
+                    break
+                }
+            }
         }
     }
 
-    Write-Host ""
-    Write-Host "Пояснение (коротко):" -ForegroundColor Cyan
-    Write-Host "Git LFS хранит большие файлы отдельно и оставляет в репозитории только указатель." -ForegroundColor Cyan
-    Write-Host "Примеры использования в проекте:" -ForegroundColor Cyan
-    Write-Host "  1) Отслеживание файла: git lfs track \"plugins/media_organizer/data/media_rag.json\"" -ForegroundColor Yellow
-    Write-Host "  2) Зафиксировать .gitattributes: git add .gitattributes && git commit -m \"track file with lfs\"" -ForegroundColor Yellow
-    Write-Host "  3) Добавить и отправить большие файлы как обычно: git add <file> && git commit && git push" -ForegroundColor Yellow
-    Write-Host "Если файл уже присутствует в истории и превышает лимит, используйте 'git lfs migrate' или BFG для переноса в LFS." -ForegroundColor Cyan
-} else {
-    Write-Host "git не найден. Установка Git LFS требует установленного git. Пожалуйста, установите git и затем git-lfs." -ForegroundColor Red
+    if (-not $sysPythonCmd) {
+        Write-Host ''
+        Write-Host '    [ERROR] Python не найден на вашей системе!' -ForegroundColor Red
+        Write-Host '    Пожалуйста, установите Python 3.12 или 3.13 с официального сайта: https://www.python.org/downloads/' -ForegroundColor Yellow
+        Write-Host '    При установке обязательно отметьте галочку "Add python.exe to PATH".' -ForegroundColor Yellow
+        exit 1
+    }
+
+    if (Test-Path $VenvDir) {
+        Write-Host '    Удаление старого каталога venv...' -ForegroundColor DarkGray
+        Remove-Item $VenvDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    Write-Host "    Создание виртуального окружения в $VenvDir..." -ForegroundColor Cyan
+    & $sysPythonCmd[0] $sysPythonCmd[1..($sysPythonCmd.Length-1)] -m venv $VenvDir
+    
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $PythonPath)) {
+        Write-Host '    [ERROR] Не удалось создать виртуальное окружение.' -ForegroundColor Red
+        exit 1
+    }
+    
+    # Снимаем блокировку со свежесозданного venv
+    Get-ChildItem -Path $VenvDir -Recurse -File -ErrorAction SilentlyContinue |
+        Unblock-File -ErrorAction SilentlyContinue
+
+    Write-Host '    [OK] Виртуальное окружение успешно создано' -ForegroundColor Green
 }
+
+# ============================================================
+# [3/5] Обновление pip
+# ============================================================
+Write-Host ''
+Write-Host '[3/5] Обновление pip и базовых утилит...' -ForegroundColor Cyan
+& $PythonPath -m pip install --upgrade pip setuptools wheel --quiet
+if ($LASTEXITCODE -eq 0) {
+    Write-Host '    [OK] pip, setuptools, wheel обновлены' -ForegroundColor Green
+} else {
+    Write-Host '    [WARN] Не удалось обновить pip (продолжаем установку)' -ForegroundColor Yellow
+}
+
+# ============================================================
+# [4/5] Установка зависимостей проекта
+# ============================================================
+Write-Host ''
+Write-Host '[4/5] Установка зависимостей проекта...' -ForegroundColor Cyan
+
+$reqMain = Join-Path $ScriptRoot 'requirements.txt'
+$reqCore = Join-Path $ScriptRoot 'req\requirements-core.txt'
+$reqAi   = Join-Path $ScriptRoot 'req\requirements-ai.txt'
+$reqTest = Join-Path $ScriptRoot 'req\requirements-test.txt'
+$reqDocs = Join-Path $ScriptRoot 'req\requirements-docs.txt'
+
+Write-Host '    Выберите вариант установки зависимостей:' -ForegroundColor Gray
+Write-Host '      [1] Полная установка (Core + AI + Media + Utils) — РЕКОМЕНДУЕТСЯ' -ForegroundColor White
+Write-Host '      [2] Только базовый сервер (Core)' -ForegroundColor Gray
+Write-Host '      [3] Сервер + AI модули (Core + AI)' -ForegroundColor Gray
+Write-Host '      [4] Полная установка + Тесты и Документация (Dev)' -ForegroundColor Gray
+Write-Host '      [5] Пропустить установку зависимостей' -ForegroundColor DarkGray
+Write-Host ''
+
+$choice = Read-Host '    Ваш выбор [по умолчанию 1]'
+if (-not $choice) { $choice = '1' }
+
+switch ($choice) {
+    '1' {
+        Write-Host ''
+        Write-Host '    Установка всех основных зависимостей из requirements.txt...' -ForegroundColor Cyan
+        & $PythonPath -m pip install -r $reqMain
+    }
+    '2' {
+        Write-Host ''
+        Write-Host '    Установка Core зависимостей...' -ForegroundColor Cyan
+        & $PythonPath -m pip install -r $reqCore
+    }
+    '3' {
+        Write-Host ''
+        Write-Host '    Установка Core + AI зависимостей...' -ForegroundColor Cyan
+        & $PythonPath -m pip install -r $reqCore -r $reqAi
+    }
+    '4' {
+        Write-Host ''
+        Write-Host '    Установка полного набора + Dev...' -ForegroundColor Cyan
+        & $PythonPath -m pip install -r $reqMain -r $reqTest -r $reqDocs
+    }
+    '5' {
+        Write-Host '    Установка зависимостей пропущена пользователем.' -ForegroundColor Yellow
+    }
+    default {
+        Write-Host ''
+        Write-Host '    Выбрано по умолчанию: полная установка из requirements.txt...' -ForegroundColor Cyan
+        & $PythonPath -m pip install -r $reqMain
+    }
+}
+
+if ($choice -ne '5' -and $LASTEXITCODE -ne 0) {
+    Write-Host '    [ERROR] Возникли ошибки при установке пакетов pip.' -ForegroundColor Red
+    exit 1
+}
+
+# ============================================================
+# [5/5] Финальная проверка работоспособности
+# ============================================================
+Write-Host ''
+Write-Host '[5/5] Проверка установленного окружения...' -ForegroundColor Cyan
+
+$testScript = "
+import sys
+modules = ['fastapi', 'uvicorn', 'dotenv', 'pydantic', 'aiohttp']
+loaded = []
+failed = []
+for m in modules:
+    try:
+        __import__(m)
+        loaded.append(m)
+    except ImportError:
+        failed.append(m)
+print('loaded=' + ','.join(loaded))
+if failed:
+    print('missing=' + ','.join(failed))
+"
+
+$checkOutput = & $PythonPath -c $testScript 2>&1
+
+if ($LASTEXITCODE -eq 0 -and $checkOutput -match 'loaded=') {
+    Write-Host "    [OK] Основные библиотеки успешно инициализированы" -ForegroundColor Green
+    Write-Host "    [OK] Python интерпретатор: $PythonPath" -ForegroundColor Green
+} else {
+    Write-Host "    [WARN] Результат проверки: $checkOutput" -ForegroundColor Yellow
+}
+
+Write-Host ''
+Write-Host '╔═══════════════════════════════════════════════════════════════╗' -ForegroundColor Green
+Write-Host '║         УСТАНОВКА MEDITEKA УСПЕШНО ЗАВЕРШЕНА!                 ║' -ForegroundColor Green
+Write-Host '║                                                               ║' -ForegroundColor Green
+Write-Host '║  Запуск сервера:  ./run.ps1                                   ║' -ForegroundColor Green
+Write-Host '╚═══════════════════════════════════════════════════════════════╝' -ForegroundColor Green
+Write-Host ''

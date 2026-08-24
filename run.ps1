@@ -21,18 +21,26 @@ Write-Host ""
 # АКТИВАЦИЯ ВИРТУАЛЬНОГО ОКРУЖЕНИЯ
 # ============================================
 Write-Host "[1/5] Проверка виртуального окружения..." -ForegroundColor Cyan
-if (Test-Path $venvActivate) {
+
+# Явный путь к python внутри venv — не зависит от $PATH и сломанных Store-заглушек
+$venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
+
+if (Test-Path $venvPython) {
     Write-Host "    [OK] Виртуальное окружение найдено" -ForegroundColor Green
     Write-Host "    Активация..." -ForegroundColor DarkGray
-    . $venvActivate
+    if (Test-Path $venvActivate) { . $venvActivate }
     Write-Host "    [OK] Виртуальное окружение активировано" -ForegroundColor Green
-    
-    # Показываем активный Python
-    $pythonPath = python -c "import sys; print(sys.executable)"
+
+    # Берём python напрямую из venv, минуя $PATH
+    $pythonPath = $venvPython
     Write-Host "    Python: $pythonPath" -ForegroundColor Gray
 } else {
-    Write-Host "    [WARN] Виртуальное окружение не найдено: $venvActivate" -ForegroundColor Yellow
-    $pythonPath = (Get-Command python -ErrorAction Stop).Source
+    Write-Host "    [WARN] Виртуальное окружение не найдено: $venvPython" -ForegroundColor Yellow
+    $pythonPath = (Get-Command python -ErrorAction SilentlyContinue).Source
+    if (-not $pythonPath) {
+        Write-Host "    [ERROR] Python не найден! Установите Python с python.org и пересоздайте venv." -ForegroundColor Red
+        exit 1
+    }
     Write-Host "    [WARN] Используется системный Python: $pythonPath" -ForegroundColor Yellow
 }
 
@@ -42,11 +50,15 @@ if (Test-Path $venvActivate) {
 Write-Host ""
 Write-Host "[2/5] Проверка зависимостей..." -ForegroundColor Cyan
 try {
-    $packages = python -c "import fastapi, uvicorn, dotenv, jwt; print('fastapi, uvicorn, python-dotenv, PyJWT - OK')"
-    Write-Host "    [OK] Основные зависимости загружены" -ForegroundColor Green
+    $packages = & $pythonPath -c "import fastapi, uvicorn, dotenv, jwt; print('fastapi, uvicorn, python-dotenv, PyJWT - OK')" 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    [OK] Основные зависимости загружены" -ForegroundColor Green
+    } else {
+        Write-Host "    [WARN] Некоторые зависимости не установлены. Запустите install.cmd" -ForegroundColor Yellow
+    }
 } catch {
     Write-Host "    [ERROR] Ошибка при проверке зависимостей: $_" -ForegroundColor Red
-    Write-Host "    Установка: pip install fastapi uvicorn python-dotenv PyJWT" -ForegroundColor Yellow
+    Write-Host "    Установка: install.cmd или pip install -r requirements.txt" -ForegroundColor Yellow
 }
 
 # ============================================

@@ -88,7 +88,10 @@ plugins:
       lang: ru
   - mkdocstrings:
       handlers:
-        python: {}
+        python:
+          setup_commands:
+            - "import sys"
+            - "sys.path.insert(0, 'src')"
 
 # Extra
 extra:
