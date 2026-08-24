@@ -258,14 +258,96 @@ py manage_tools.py media complete --title "Фауда"
 
 ---
 
-## 7. Скрипты запуска сервисов
+## 7. Скрипты запуска сервисов (Лончеры)
 
-* `Run-Unicorn.ps1` — запускает основной FastAPI сервер (`main.py`) в фоновом режиме в отдельном окне PowerShell.
-* `Run-Engrock.ps1` — запускает туннель ngrok (если настроен) для внешнего доступа к серверу.
-* `install.ps1` / `install.cmd` — скрипты установки зависимостей проекта и инициализации виртуального окружения.
-* `install_ssl_cert.ps1` — генерирует/устанавливает локальный SSL-сертификат для работы HTTPS.
+Все лончеры в **корне проекта** `C:\mediteka\`. Полная документация: `.ai_instructions/knowledge/LAUNCHER_GUIDE.md`
+
+| Лончер | Что запускает | Пример запуска |
+|--------|--------------|----------------|
+| `run.ps1` | Всё сразу: Cloudflare + Foundry + uvicorn | `.\run.ps1` |
+| `Run-Unicorn.ps1` | FastAPI сервер (`main.py`) через uvicorn | `.\Run-Unicorn.ps1` |
+| `Run-Cloudflared.ps1` | Cloudflare Tunnel (`cloudflared.exe`) | `.\Run-Cloudflared.ps1` |
+| `Run-Foundry.ps1` | Azure AI Foundry (локальная LLM) | `.\Run-Foundry.ps1 -Action start` |
+| `Run-LightServer.ps1` | Лёгкий HTTP-сервер | `.\Run-LightServer.ps1` |
+| `Run-Engrock.ps1` | ngrok HTTP-туннель | `.\Run-Engrock.ps1` |
+| `install.ps1` / `install.cmd` | Установка зависимостей и venv | `.\install.ps1` |
+| `install_ssl_cert.ps1` | Генерация локального SSL-сертификата | `.\install_ssl_cert.ps1` |
+| `run_tests.ps1` | Запуск тестов pytest | `.\run_tests.ps1 -Coverage` |
+
+**Для агентов ИИ:** `& "C:\mediteka\Run-<ServiceName>.ps1"`
 
 ---
+
+## 8. Рекомендации по автоматическому запуску для ИИ-ассистентов (AI Execution Guidelines)
+
+ИИ-ассистенты (включая pair programming агентов) могут и должны самостоятельно принимать решение о запуске консольных скриптов проекта без явного указания пользователя в следующих сценариях:
+
+### 8.1 Синхронизация данных после файловых операций
+Если в ходе выполнения задачи ИИ-ассистент производил переименование, перенос или удаление медиафайлов/директорий:
+* **MUST**: Запустить `py manage_tools.py db sizes` для пересчета размеров в БД и обновления свободного места в таблице `storage`.
+* **SHOULD**: Запустить `py manage_tools.py torrents path`, чтобы qBittorrent узнал о новых путях расположения файлов.
+* **MAY**: Запустить `py manage_tools.py audit media <пути>` для проверки отсутствия расхождений между диском и БД.
+
+### 8.2 Добавление или обновление торрентов
+При добавлении новых раздач в qBittorrent или привязке существующих к медиатеке:
+* **SHOULD**: Запустить `py manage_tools.py torrents assign` для автоматической разметки категорий на основе названий из БД.
+* **MAY**: Запустить `py manage_tools.py torrents state` для запуска принудительной проверки (Force Recheck) перенесенных раздач.
+
+### 8.3 Изменение схемы базы данных
+Если ИИ-ассистент внес изменения в структуру таблиц SQLite в коде (например, в классе `MediaDatabase`):
+* **MUST**: Запустить `py manage_tools.py db update` для миграции структуры таблиц.
+
+### 8.4 Диагностика при решении проблем с медиатекой
+Если пользователь сообщает об ошибках поиска, неверном отображении типов или пустых полях:
+* **SHOULD**: Запустить `py manage_tools.py check media_type` или `py manage_tools.py check data` для быстрого сбора статистики по типам данных и проверки наличия записей в таблицах.
+* **MAY**: Запустить `py manage_tools.py check db` для верификации текущей схемы БД на диске.
+
+### 8.5 Использование CLI (Рекомендовано)
+* Всегда начинайте с `manage_tools.py` — это единая точка входа.
+* Используйте `--help` для получения справки: `py manage_tools.py --help`
+* Структура: `py manage_tools.py <группа> <команда> [аргументы...]`
+
+---
+
+## 9. Структура директорий проекта (актуально на 2026-08-24)
+
+```
+C:\mediteka\
+├── 📄 run.ps1 + Run-*.ps1    # Лончеры — ВСЕГДА в корне
+├── 📄 main.py                # FastAPI приложение
+├── 📄 manage_tools.py        # Универсальный CLI агентов ИИ
+├── 📄 header.py              # Определение __root__ (используется main.py)
+├── 📁 src/                   # Основной код (ai/, fastapi/, tts/, utils/...)
+├── 📁 plugins/               # Плагины (media_organizer, langchain_media...)
+├── 📁 tools/                 # Служебные инструменты
+│   ├── 📁 ai/                # RAG-инструменты, поиск по коду
+│   └── 📁 setup/             # Утилиты настройки кодовой базы
+├── 📁 reports/               # Отчёты инструментов и CI
+├── 📁 media_reports/         # Отчёты по дискам медиатеки
+├── 📁 __skills/              # Навыки агентов (Antigravity)
+├── 📁 tests/                 # Тесты pytest (38 файлов)
+├── 📁 .gemini/               # Конфигурация Gemini AI
+└── 📁 .ai_instructions/      # Инструкции для ИИ
+```
+
+### Инструменты ИИ (tools/ai/)
+
+| Инструмент | Команда |
+|------------ |---------|
+| Пересборка RAG кодовой базы | `py tools/ai/rebuild_dev_rag.py` |
+| Пересборка RAG медиатеки | `py tools/ai/rebuild_rag.py` |
+| Поиск по коду | `py tools/ai/search_code.py --query "..."` |
+| Обновление документации | `py tools/ai/update_docs.py` |
+| Упаковка навыка | `py tools/ai/package_skill.py <name>` |
+
+### Правила расположения файлов
+
+- **Лончеры `Run-*.ps1`** → всегда в корне
+- **AI-инструменты** → `tools/ai/`
+- **Отчёты CI/аудита** → `reports/`
+- **Отчёты по дискам** → `media_reports/`
+- **Документация лончеров** → `.ai_instructions/knowledge/LAUNCHER_GUIDE.md`
+
 
 ## 8. Рекомендации по автоматическому запуску для ИИ-ассистентов (AI Execution Guidelines)
 

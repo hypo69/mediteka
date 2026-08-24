@@ -1,21 +1,19 @@
-# -*- coding: utf-8 -*-
-# =============================================================================
-# Название процесса: Запуск локального сервера Microsoft Foundry
-# =============================================================================
-# Описание:
-#   Скрипт для проверки, запуска и управления локальной службой Microsoft AI Foundry.
-#   Использует CLI команду 'foundry server start' и определяет активный порт.
-#
-# Examples:
-#   .\Run-Foundry.ps1
-#   .\Run-Foundry.ps1 -Action restart
-#   .\Run-Foundry.ps1 -Action stop
-#
-# File: Run-Foundry.ps1
-# Project: gemini-simplechat
-# Author: hypo69
-# Copyright: © 2026 hypo69
-# =============================================================================
+<#
+.SYNOPSIS
+    Запуск и управление локальным сервером Microsoft Foundry.
+
+.DESCRIPTION
+    Скрипт для проверки, запуска и управления локальной службой Microsoft AI Foundry.
+    Использует CLI команду 'foundry server start' и определяет активный порт.
+
+.PARAMETER Action
+    start | stop | restart | status
+
+.EXAMPLE
+    .\Run-Foundry.ps1
+    .\Run-Foundry.ps1 -Action restart
+    .\Run-Foundry.ps1 -Action stop
+#>
 
 [CmdletBinding()]
 param (

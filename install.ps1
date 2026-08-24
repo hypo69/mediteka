@@ -5,7 +5,8 @@
 # 1. Снимает Windows Mark of the Web со всех файлов проекта.
 # 2. Находит установленный Python и создает venv (если не существует).
 # 3. Обновляет pip и устанавливает зависимости из req/*.txt.
-# 4. Проверяет корректность установки всех компонентов.
+# 4. Проверяет и генерирует SSL-сертификаты для локального HTTPS.
+# 5. Проверяет корректность установки всех компонентов.
 
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -22,9 +23,9 @@ Write-Host '╚═════════════════════�
 Write-Host ''
 
 # ============================================================
-# [1/5] Снятие Mark of the Web со всего проекта
+# [1/6] Снятие Mark of the Web со всего проекта
 # ============================================================
-Write-Host '[1/5] Снятие блокировки Windows (Unblock-File)...' -ForegroundColor Cyan
+Write-Host '[1/6] Снятие блокировки Windows (Unblock-File)...' -ForegroundColor Cyan
 
 Get-ChildItem -Path $ScriptRoot -Recurse -File -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch '\\\.git\\' } |
@@ -33,10 +34,10 @@ Get-ChildItem -Path $ScriptRoot -Recurse -File -ErrorAction SilentlyContinue |
 Write-Host '    [OK] Файлы разблокированы' -ForegroundColor Green
 
 # ============================================================
-# [2/5] Проверка / Создание виртуального окружения
+# [2/6] Проверка / Создание виртуального окружения
 # ============================================================
 Write-Host ''
-Write-Host '[2/5] Проверка виртуального окружения (venv)...' -ForegroundColor Cyan
+Write-Host '[2/6] Проверка виртуального окружения (venv)...' -ForegroundColor Cyan
 
 $needCreateVenv = $false
 
@@ -119,10 +120,10 @@ if ($needCreateVenv) {
 }
 
 # ============================================================
-# [3/5] Обновление pip
+# [3/6] Обновление pip
 # ============================================================
 Write-Host ''
-Write-Host '[3/5] Обновление pip и базовых утилит...' -ForegroundColor Cyan
+Write-Host '[3/6] Обновление pip и базовых утилит...' -ForegroundColor Cyan
 & $PythonPath -m pip install --upgrade pip setuptools wheel --quiet
 if ($LASTEXITCODE -eq 0) {
     Write-Host '    [OK] pip, setuptools, wheel обновлены' -ForegroundColor Green
@@ -131,10 +132,10 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 # ============================================================
-# [4/5] Установка зависимостей проекта
+# [4/6] Установка зависимостей проекта
 # ============================================================
 Write-Host ''
-Write-Host '[4/5] Установка зависимостей проекта...' -ForegroundColor Cyan
+Write-Host '[4/6] Установка зависимостей проекта...' -ForegroundColor Cyan
 
 $reqMain = Join-Path $ScriptRoot 'requirements.txt'
 $reqCore = Join-Path $ScriptRoot 'req\requirements-core.txt'
@@ -190,14 +191,36 @@ if ($choice -ne '5' -and $LASTEXITCODE -ne 0) {
 }
 
 # ============================================================
-# [5/5] Финальная проверка работоспособности
+# [5/6] Проверка и настройка SSL-сертификатов (.certs)
 # ============================================================
 Write-Host ''
-Write-Host '[5/5] Проверка установленного окружения...' -ForegroundColor Cyan
+Write-Host '[5/6] Проверка SSL-сертификатов...' -ForegroundColor Cyan
+
+$certsDir = Join-Path $env:USERPROFILE ".certs"
+$certFile = Join-Path $certsDir "localhost+2.pem"
+$keyFile  = Join-Path $certsDir "localhost+2-key.pem"
+
+if ((Test-Path $certFile) -and (Test-Path $keyFile)) {
+    Write-Host "    [OK] SSL-сертификаты найдены ($certFile)" -ForegroundColor Green
+} else {
+    Write-Host '    [INFO] SSL-сертификаты не найдены. Вызов мастера создания сертификатов...' -ForegroundColor Yellow
+    $sslScript = Join-Path $ScriptRoot "install_ssl_cert.ps1"
+    if (Test-Path $sslScript) {
+        & $sslScript
+    } else {
+        Write-Host "    [WARN] Скрипт $sslScript не найден. Сервер будет запускаться без SSL." -ForegroundColor Yellow
+    }
+}
+
+# ============================================================
+# [6/6] Финальная проверка работоспособности
+# ============================================================
+Write-Host ''
+Write-Host '[6/6] Проверка установленного окружения...' -ForegroundColor Cyan
 
 $testScript = "
 import sys
-modules = ['fastapi', 'uvicorn', 'dotenv', 'pydantic', 'aiohttp']
+modules = ['fastapi', 'uvicorn', 'dotenv', 'pydantic', 'aiohttp', 'cryptography']
 loaded = []
 failed = []
 for m in modules:

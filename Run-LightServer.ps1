@@ -1,3 +1,15 @@
+<#
+.SYNOPSIS
+    Запуск облегченного локального сервера проекта Mediteka.
+
+.DESCRIPTION
+    Активирует виртуальное окружение, освобождает порт при необходимости и запускает
+    локальный сервер FastAPI/uvicorn в облегченном режиме.
+
+.EXAMPLE
+    .\Run-LightServer.ps1
+#>
+
 $scriptDir = Split-Path $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
 $venvActivate = Join-Path $scriptDir "venv\Scripts\Activate.ps1"

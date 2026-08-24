@@ -184,12 +184,54 @@ py manage_tools.py torrents --help           # Справка по торрен�
 ```
 
 ### Где найти полную документацию?
-- `.ai_instructions/knowledge/scripts_tools.md` - полный справочник
-- `.ai_instructions/prompts/chat/system_instruction.md` - инструкция для чата
-- `manage_tools.py --help` - встроенная справка
+- `.ai_instructions/knowledge/scripts_tools.md` — полный справочник скриптов
+- `.ai_instructions/knowledge/LAUNCHER_GUIDE.md` — правила лончеров (Run-*.ps1)
+- `manage_tools.py --help` — встроенная справка CLI
+
+---
+
+## 🗂️ Инструменты ИИ (tools/ai/)
+
+Скрипты для работы агентов с RAG-индексами и кодовой базой.  
+Путь от корня проекта `C:\mediteka`:
+
+```bash
+# Пересборка RAG-индекса кода (после изменений в src/)
+py tools/ai/rebuild_dev_rag.py
+
+# Пересборка RAG медиатеки
+py tools/ai/rebuild_rag.py
+
+# Поиск по кодовой базе
+py tools/ai/search_code.py --query "MediaDatabase"
+
+# Обновление документации
+py tools/ai/update_docs.py
+
+# Валидация RAG-файлов
+py tools/ai/validate_rag_files.py
+
+# Упаковка навыка
+py tools/ai/package_skill.py <skill_name>
+```
+
+## 🚀 Запуск лончеров агентами ИИ
+
+```powershell
+# Все лончеры — в корне C:\mediteka\
+& "C:\mediteka\run.ps1"                         # Запуск всего
+& "C:\mediteka\Run-Unicorn.ps1"                 # Только FastAPI
+& "C:\mediteka\Run-Cloudflared.ps1"             # Только Cloudflare
+& "C:\mediteka\Run-Foundry.ps1" -Action start   # Foundry AI
+& "C:\mediteka\Run-Foundry.ps1" -Action stop
+& "C:\mediteka\Run-Foundry.ps1" -Action status
+
+# Проверить что FastAPI запущен
+Invoke-WebRequest -Uri "https://localhost:3000/health" -SkipCertificateCheck
+```
 
 ---
 
 **Статус:** Актуально  
-**Дата обновления:** 25 июля 2026  
-**Для моделей AI:** Используй это руководство для четкого и однозначного запуска скриптов!
+**Дата обновления:** 24 августа 2026  
+**Для моделей AI:** Используй это руководство для чёткого и однозначного запуска скриптов!

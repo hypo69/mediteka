@@ -1,7 +1,15 @@
-# Запуск Unicorn/uvicorn для проекта Mediteka.
-# Скрипт активирует виртуальное окружение, загружает параметры
-# конфигурации из config.json, освобождает порт, применяет SSL
-# при необходимости и запускает FastAPI-сервер в текущем окне.
+<#
+.SYNOPSIS
+    Запускает FastAPI-сервер через uvicorn (Unicorn) для проекта Mediteka.
+
+.DESCRIPTION
+    Активирует виртуальное окружение, загружает параметры из config.json,
+    освобождает порт, применяет SSL при необходимости и запускает
+    FastAPI-сервер в текущем окне PowerShell.
+
+.EXAMPLE
+    .\Run-Unicorn.ps1
+#>
 
 $scriptDir = Split-Path $MyInvocation.MyCommand.Path
 $venvPython = Join-Path $scriptDir "venv\Scripts\python.exe"
